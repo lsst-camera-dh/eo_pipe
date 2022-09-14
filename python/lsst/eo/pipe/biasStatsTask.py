@@ -1,8 +1,6 @@
 from collections import defaultdict
 from typing import List
 
-from astropy.table import Table as AstropyTable
-
 from astro_metadata_translator import ObservationInfo
 
 import lsst.afw.image as afwImage
