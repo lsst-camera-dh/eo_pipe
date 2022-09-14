@@ -1,0 +1,19 @@
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/config/bps/bps_default_configs.yaml
+
+parsl_config:
+  retries: 1
+  monitoring: true
+  executor: ThreadPool
+  max_threads: 1
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStats.yaml
+instrument: lsst.obs.lsst.LsstCam
+
+payload:
+  b_protocol_run: 13162
+  weekly: ${WEEKLY}
+  inCollection: LSSTCam/raw/all
+  payloadName: bias_stats_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias'"
