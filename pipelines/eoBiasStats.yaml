@@ -3,6 +3,6 @@ tasks:
   bias_stats:
     class: lsst.eo.pipe.BiasStatsTask
     config:
-      connections.raw_frames: 'raw_frames'
+      connections.raw_frames: 'raw'
       connections.bias_stats: 'eoBiasStats'
       edge_buffer: 2
