@@ -39,8 +39,8 @@ class BiasStatsTask(pipeBase.PipelineTask):
     ConfigClass = BiasStatsTaskConfig
     _DefaultName = "biasStatsTask"
 
-    def __init__(self, config: pexConfig.Config, *args, **kwargs):
-        super().__init__(config, *args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.edge_buffer = self.config.edge_buffer
 
     def run(self, exposures: List[afwImage.Exposure]) -> AstropyTable:
