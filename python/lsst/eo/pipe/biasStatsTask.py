@@ -13,9 +13,8 @@ from lsst.pipe.base import connectionTypes as cT
 
 
 class BiasStatsTaskConnections(pipeBase.PipelineTaskConnections,
-                               dimensions=("instrument", "exposure",
-                                           "detector")):
-    raw_frames = cT.Input(name="raw_frame",
+                               dimensions=("instrument", "detector")):
+    raw_frames = cT.Input(name="raw_frames",
                           doc="Raw input frames",
                           storageClass="Exposure",
                           dimensions=("instrument", "exposure", "detector"),
@@ -23,8 +22,8 @@ class BiasStatsTaskConnections(pipeBase.PipelineTaskConnections,
                           deferLoad=True)
     bias_stats = cT.Output(name="bias_stats",
                            doc="bias frame statistics",
-                           storageClass="AstropyTable",
-                           dimensions=("instrument", "exposure", "detector"))
+                           storageClass="StructuredDataDict",
+                           dimensions=("instrument", "detector"))
 
 
 class BiasStatsTaskConfig(pipeBase.PipelineTaskConfig,
@@ -43,9 +42,10 @@ class BiasStatsTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.edge_buffer = self.config.edge_buffer
 
-    def run(self, exposures: List[afwImage.Exposure]) -> AstropyTable:
+    def run(self, raw_frames: List[afwImage.Exposure]) -> pipeBase.Struct:
         data = defaultdict(list)
-        for exposure in exposures:
+        for ds_handle in raw_frames:
+            exposure = ds_handle.get()
             obs_info = ObservationInfo(exposure.getMetadata())
             det = exposure.getDetector()
             for amp in det:
@@ -60,4 +60,4 @@ class BiasStatsTask(pipeBase.PipelineTask):
                 data['amp'].append(amp.getName())
                 data['median'].append(stats.getValue(afwMath.MEDIAN))
                 data['stdevclip'].append(stats.getValue(afwMath.STDEVCLIP))
-        return AstropyTable(data)
+        return pipeBase.Struct(bias_stats=dict(data))
