@@ -98,6 +98,7 @@ class PtcPlotsTask(pipeBase.PipelineTask):
             ax = plots[field].add_subplot(111)
             # TODO: figure out how to get the run number into the
             # plot title.
-            plot_focal_plane(ax, amp_data[field], title=f"{field}")
+            plot_focal_plane(ax, amp_data[field], title=f"{field}",
+                             z_range="clipped_autoscale")
 
         return pipeBase.Struct(**plots)

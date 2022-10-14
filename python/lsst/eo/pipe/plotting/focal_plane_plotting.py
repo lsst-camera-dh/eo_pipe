@@ -200,13 +200,15 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         Focalplane plotting region in x-direction in units of mm.
     y_range: tuple [(-325, 325)]
         Focalplane plotting region in y-direction in units of mm.
-    z_range: 2-tuple of floats [None]
+    z_range: 2-tuple of floats or `str` [None]
         Minimum and maximum values into which to map the unit interval
         for the color map.  Values are mapped using
         max(0, min(1, (amp_value - z_range[0])/(z_range[1] - z_range[0])))
         If None, then use
-        z_range = get_median_nsigma_range(amp_data, nsigma=nsigma,
-                                          use_log10=use_log10)
+           z_range = (min(amp_data.values(), max(amp_data.values())
+        If "clipped_autoscale", then use
+           z_range = get_median_nsigma_range(amp_data, nsigma=nsigma,
+                                             use_log10=use_log10)
     use_log10: bool [False]
         If True, then use log10(amp_value) for positive amp_value.  For
         non-positive amp_value, don't render the amp color.
