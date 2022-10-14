@@ -1,5 +1,5 @@
 includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/config/bps/bps_default_configs.yaml
+  - ${CP_PIPE_PROCESSING_DIR}/bps/bps_default_configs.yaml
 
 parsl_config:
   retries: 1

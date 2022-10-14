@@ -3,6 +3,6 @@ tasks:
   ptc_plots:
     class: lsst.eo.pipe.PtcPlotsTask
     config:
-      connections.ptc_results: "PhotonTransferCurveDataset"
-      connections.ptc_plots: "eoPtcPlots"
-      figsize: (12, 10)
+      connections.ptc_results: "ptc"
+      xfigsize: 10
+      yfigsize: 12
