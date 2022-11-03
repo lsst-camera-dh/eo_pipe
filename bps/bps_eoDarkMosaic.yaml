@@ -1,0 +1,62 @@
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDarkMosaic.yaml
+
+wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+project: "{outputRun}"
+
+payload:
+  b_protocol_run: 13162
+  weekly: ${WEEKLY}
+#  inCollection: LSSTCam/raw/all,LSSTCam/calib
+  inCollection: u/jchiang/bias_0_13162_w_2022_39
+  payloadName: dark_mosaic_{b_protocol_run}_{weekly}_P+S_bias
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure=3021121200214 and detector in (0..188)"
+
+#computeSite: local
+computeSite: slurm_wq_8
+#computeSite: slurm_wq_32
+#computeSite: local_wq
+
+parsl:
+  log_level: INFO
+
+site:
+  local:
+    class: lsst.ctrl.bps.parsl.sites.Local
+    cores: 2
+    monitorEnable: true
+    monitorFilename: runinfo/monitoring.db
+  local_wq:
+    class: lsst.ctrl.bps.parsl.sites.work_queue.LocalSrunWorkQueue
+    worker_options: "--memory=8000"
+    nodes_per_block: 1
+    monitorEnable: true
+    monitorFilename: runinfo/monitoring.db
+  slurm_wq_8:
+    class: lsst.ctrl.bps.parsl.sites.work_queue.SlurmWorkQueue
+    nodes_per_block: 1
+    walltime: 0:30:00
+    cores_per_node: 8
+    qos: normal
+    scheduler_options: |
+      #SBATCH --ntasks=1
+      #SBATCH --cpus-per-task=8
+      #SBATCH --mem-per-cpu=5G
+    exclusive: false
+    worker_options: "--memory=40000"
+    monitorEnable: true
+    monitorFilename: runinfo/monitoring.db
+  slurm_wq_32:
+    class: lsst.ctrl.bps.parsl.sites.work_queue.SlurmWorkQueue
+    nodes_per_block: 1
+    walltime: 0:30:00
+    cores_per_node: 32
+    qos: normal
+    scheduler_options: |
+      #SBATCH --ntasks=1
+      #SBATCH --cpus-per-task=32
+      #SBATCH --nodelist=sdfrome005,sdfrome007,sdfrome008,sdfrome009
+    exclusive: false
+    worker_options: "--memory=130000"
+    monitorEnable: true
+    monitorFilename: runinfo/monitoring.db
