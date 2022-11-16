@@ -2,6 +2,10 @@ import pandas as pd
 import lsst.geom
 import lsst.daf.butler as daf_butler
 
+
+__all__ = ['tabulate_defects']
+
+
 def get_overlap_region(row, bbox):
     llc = lsst.geom.Point2I(max(row.x0, bbox.minX),
                             max(row.y0, bbox.minY))
@@ -9,8 +13,6 @@ def get_overlap_region(row, bbox):
                             min(row.y0 + row.height - 1, bbox.maxY))
     return lsst.geom.Box2I(llc, urc)
 
-def area(row):
-    return row.width*row.height
 
 def tabulate_defects(butler, dsref, colthresh=100):
     defects = butler.getDirect(dsref).toDict()
@@ -20,9 +22,10 @@ def tabulate_defects(butler, dsref, colthresh=100):
     det = camera[detector]
     total_area = 0
     for _, row in df0.iterrows():
-        total_area += area(row)
+        total_area += row.width*row.height
     total_region_area = 0
-    amp_data = {}
+    bad_columns = {}
+    bad_pixels = {}
     for i, amp in enumerate(det):
         bbox = amp.getBBox()
         df = df0.query(f'{bbox.minX} - width < x0 <= {bbox.maxX} and '
@@ -30,34 +33,17 @@ def tabulate_defects(butler, dsref, colthresh=100):
         regions = []
         for _, row in df.iterrows():
             regions.append(get_overlap_region(row, bbox))
-        total_region_area += sum(area(_) for _ in regions)
+        total_region_area += sum(_.area for _ in regions)
 
-        bad_columns = set()
+        bad_cols = set()
         for region in regions:
             if region.height > colthresh:
-                bad_columns.add(region.minX)
-        isolated_regions = [_ for _ in regions if _.minX not in bad_columns]
+                bad_cols.add(region.minX)
+        bad_columns[amp.getName()] = len(bad_cols)
 
-        bad_pixel_area = (sum(area(_) for _ in isolated_regions)
-                          + bbox.height*len(bad_columns))
-        amp_data[amp.getName()] = (bad_pixel_area, len(bad_columns))
+        isolated_regions = [_ for _ in regions if _.minX not in bad_cols]
+        bad_pixel_area = (sum(_.area for _ in isolated_regions)
+                          + bbox.height*len(bad_cols))
+        bad_pixels[amp.getName()] = bad_pixel_area
     assert total_area == total_region_area
-    return amp_data
-
-if __name__ == '__main__':
-    repo = '/repo/main'
-    #collections = ['u/jchiang/dark_defects_13162_w_2022_39']
-    #colthresh = 100
-    collections = ['u/jchiang/bright_defects_13162_w_2022_39']
-    colthresh = 20
-    butler = daf_butler.Butler(repo, collections=collections)
-
-    dstype = 'defects'
-    dsrefs = list(set(butler.registry.queryDatasets(dstype)))
-    print("len(dsrefs):", len(dsrefs))
-
-    for dsref in dsrefs[:10]:
-        amp_data = tabulate_defects(butler, dsref, colthresh=colthresh)
-        print(dsref.dataId['detector'])
-        print(amp_data)
-        print()
+    return bad_columns, bad_pixels

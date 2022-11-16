@@ -266,6 +266,7 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         ticklabels[-1] = '{} x {}'.format(ticklabels[-1], scale_factor)
         colorbar.set_ticklabels(ticklabels)
     plt.title(title)
+    ax.set_aspect('equal')
     return colorbar
 
 def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
