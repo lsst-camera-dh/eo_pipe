@@ -4,21 +4,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 from lsst.eo.pipe.plotting import plot_focal_plane
 
-
-__all__ = ['LinearityPlotsTask']
+__all__ = ['LinearityPlotsTask', 'LinearityFpPlotsTask']
 
 
 def get_pd_values(pd_integrals, ptc, amp_name='C10'):
     values = []
     for pair in ptc.inputExpIdPairs[amp_name]:
         if pair[0][0] not in pd_integrals or pair[0][1] not in pd_integrals:
-            values.append(0)
+            # Use sentinel value of -1 to enable this entry to be deselected.
+            values.append(-1)
         else:
             values.append((pd_integrals[pair[0][0]] +
                            pd_integrals[pair[0][1]])/2.)
@@ -28,15 +29,18 @@ def get_pd_values(pd_integrals, ptc, amp_name='C10'):
 def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
     max_index = np.where(Ne == max(Ne))[0][0]
     index = np.where((y_range[0] < Ne) & (Ne < y_range[1])
-                     & (flux <= flux[max_index]))
+                     & (flux <= flux[max_index]) & (flux > 0))
     aa = sum(flux[index]*Ne[index])/sum(flux[index]**2)
-    func = lambda x : aa*x
+
+    def func(x):
+        return aa*x
+
     resids = (Ne - func(flux))/Ne
     return func, resids, index
 
 
-class LinearityPlotsConnections(pipeBase.PipeTaskConnections,
-                                dimensions=("instrument",)):
+class LinearityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
+                                    dimensions=("instrument", "detector")):
     pd_data = cT.Input(
         name="photodiode",
         doc="Photodiode readings data.",
@@ -53,19 +57,21 @@ class LinearityPlotsConnections(pipeBase.PipeTaskConnections,
         isCalibration=True,
         deferLoad=True)
 
-    camera = cT.Input(
+    camera = cT.PrerequisiteInput(
         name="camera",
         doc="Camera used in observations",
         storageClass="Camera",
-        dimensions=("instrument",))
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
 
-    linearity_plots = ct.Output(
+    linearity_plots = cT.Output(
         name="linearity_fit_plot",
         doc="Plot of linearity fit to mean amp signal vs pd integral",
         storageClass="Plot",
         dimensions=("instrument", "detector"))
 
-    residual_plots = ct.Output(
+    residual_plots = cT.Output(
         name="linearity_residuals_plot",
         doc="Plot of linearity fit residuals vs pd integral",
         storageClass="Plot",
@@ -79,7 +85,7 @@ class LinearityPlotsConnections(pipeBase.PipeTaskConnections,
 
 
 class LinearityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
-                               pipelineConnections=LinearityPlotsConnections):
+                               pipelineConnections=LinearityPlotsTaskConnections):
     """Configuration for LinearityPlotsTask."""
     fit_range_min = pexConfig.Field(doc="Fit range lower bound in e-",
                                     dtype=float, default=1e3)
@@ -128,8 +134,9 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
 
         pd_integrals = {}
         for exposure, (physical_filter, handle) in pd_data.items():
-            pd = handle.get()
-            pd_integrals[exposure] = pd.integrate()[0]*pd_corr(physical_filter)
+            photodiode = handle.get()
+            pd_integrals[exposure] \
+                = photodiode.integrate()[0]*pd_corr(physical_filter)
 
         # Fit linear model to each amp.
         detector = ptc_ref.dataId['detector']
@@ -184,6 +191,95 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             plt.ylim(-0.03, 0.03)
         plt.tight_layout(rect=(0, 0, 1, 0.95))
         plt.suptitle(f'linearity residuals, run {acq_run}, {det_name}')
-    return pipeBase.Struct(dict(linearity_plots=linearity_plots,
-                                residual_plots=residual_plots,
-                                linearity_results=pd.DataFrame(amp_data)))
+
+        linearity_results = pd.DataFrame(amp_data)
+
+        outputs = {'linearity_plots': linearity_plots,
+                   'residual_plots': residual_plots,
+                   'linearity_results': linearity_results}
+        return pipeBase.Struct(**outputs)
+
+
+class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
+                                      dimensions=("instrument",)):
+    linearity_results = cT.Input(
+        name="linearity_results",
+        doc="Linearity results for each detector",
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    max_frac_dev = cT.Output(name="max_frac_dev",
+                             doc=("Maximum fractional deviation from "
+                                  "linear fit of signal vs flux"),
+                             storageClass="Plot",
+                             dimensions=("instrument",))
+
+    max_observed_signal = cT.Output(name="max_observed_signal",
+                                    doc=("Maximum observed signal (ADU) "
+                                         "from flat pair acquisition."),
+                                    storageClass="Plot",
+                                    dimensions=("instrument",))
+
+
+class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
+                                 pipelineConnections=LinearityFpPlotsTaskConnections):
+    """Configuration for LinearityFpPlotsTask."""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+
+
+class LinearityFpPlotsTask(pipeBase.PipelineTask):
+    """Create summary plots of linearity analysis results for the
+    full focal plane."""
+    ConfigClass = LinearityFpPlotsTaskConfig
+    _defaultName = "linearityFpPlotsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = (self.config.yfigsize, self.config.xfigsize)
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        handles = butlerQC.get(inputRefs)
+        results = {_.dataId['detector']: _ for _
+                   in handles["linearity_results"]}
+        struct = self.run(results)
+        butlerQC.put(struct, outputRefs)
+        plt.close()
+
+    def run(self, results):
+        """
+        Create summary plots of linearity analysis results for the full
+        focal plane.
+
+        Parameters
+        ----------
+        results : `dict`
+            Dictionary of handles to `DataFrame`s containing the linearity
+            results keyed by detector.
+
+        Returns
+        -------
+        struct : `lsst.pipe.base.struct`
+            Struct of `~matplotlib.figure.Figure`s keyed by result name.
+        """
+        amp_data = defaultdict(lambda: defaultdict(dict))
+        for detector, handle in results.items():
+            df = handle.get()
+            columns = set(df.columns)
+            columns.discard('amp_name')
+            columns.discard('det_name')
+            for _, row in df.iterrows():
+                for column in columns:
+                    amp_data[column][row.det_name][row.amp_name] = row[column]
+        plots = {}
+        for column in set(amp_data.keys()):
+            plots[column] = plt.figure(figsize=self.figsize)
+            ax = plots[column].add_subplot(111)
+            plot_focal_plane(ax, amp_data[column], title=f"{column}",
+                             z_range=None)
+
+        return pipeBase.Struct(**plots)
