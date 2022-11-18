@@ -1,0 +1,18 @@
+description:
+  Pipeline to plot linearity results for the CCDs in the LSSTCam focal plane.
+tasks:
+  linearityPlots:
+    class: lsst.eo.pipe.LinearityPlotsTask
+    config:
+      connections.pd_data: 'photodiode'
+      connections.ptc_results: 'ptc'
+      connections.camera: 'camera'
+      connections.linearity_plots: 'linearity_fit_plot'
+      connections.residual_plots: 'linearity_residuals_plot'
+      connections.linearity_results: 'linearity_results'
+  linearityFocalPlanePlots:
+    class: lsst.eo.pipe.LinearityFpPlotsTask
+    config:
+      connections.linearity_results: "linearity_results"
+      connections.max_frac_dev: "max_frac_dev"
+      connections.max_observed_signal: "max_observed_signal"
