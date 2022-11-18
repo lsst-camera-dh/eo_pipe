@@ -152,27 +152,31 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             amp_name = amp.getName()
             gain = amp.getGain()
             Ne = np.array(ptc.rawMeans[amp_name])*gain
-            func, resids[amp_name], index[amp_name] \
-                = linearity_fit(pd_values, Ne, y_range=self.fit_range)
-            # Results to include in final data frame:
-            amp_data['det_name'].append(det_name)
-            amp_data['amp_name'].append(amp_name)
-            amp_data['max_frac_dev'].append(
-                max(np.abs(resids[amp_name][index[amp_name]])))
-            amp_data['max_observed_signal'].append(max(ptc.rawMeans[amp_name]))
-            # plot for current amp
-            ax = plt.subplot(4, 4, i)
-            plt.scatter(pd_values, Ne, s=2)
-            plt.scatter(pd_values[index[amp_name]], Ne[index[amp_name]],
-                        s=2, color='red')
-            plt.xscale('log')
-            plt.yscale('log')
-            plt.axhline(1e3, linestyle=':')
-            plt.axhline(9e4, linestyle=':')
-            xlims = ax.get_xlim()
-            xvals = np.logspace(np.log10(xlims[0]), np.log10(xlims[1]),
-                                100)
-            plt.plot(xvals, func(xvals), linestyle='--')
+            try:
+                func, resids[amp_name], index[amp_name] \
+                    = linearity_fit(pd_values, Ne, y_range=self.fit_range)
+            except (IndexError, ZeroDivisionError) as eobj:
+                pass
+            else:
+                # Results to include in final data frame:
+                amp_data['det_name'].append(det_name)
+                amp_data['amp_name'].append(amp_name)
+                amp_data['max_frac_dev'].append(
+                    max(np.abs(resids[amp_name][index[amp_name]])))
+                amp_data['max_observed_signal'].append(
+                    max(ptc.rawMeans[amp_name]))
+                # plot for current amp
+                ax = plt.subplot(4, 4, i)
+                plt.scatter(pd_values, Ne, s=2)
+                plt.scatter(pd_values[index[amp_name]], Ne[index[amp_name]],
+                            s=2, color='red')
+                plt.xscale('log')
+                plt.yscale('log')
+                plt.axhline(1e3, linestyle=':')
+                plt.axhline(9e4, linestyle=':')
+                xlims = ax.get_xlim()
+                xvals = np.logspace(np.log10(xlims[0]), np.log10(xlims[1]), 100)
+                plt.plot(xvals, func(xvals), linestyle='--')
         plt.tight_layout(rect=(0, 0, 1, 0.95))
         plt.suptitle(f'linearity curves, run {acq_run}, {det_name}')
 
@@ -180,15 +184,19 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         for i, amp in enumerate(det, 1):
             ax = plt.subplot(4, 4, i)
             amp_name = amp.getName()
-            plt.scatter(pd_values, resids[amp_name], s=2)
-            plt.scatter(pd_values[index[amp_name]],
-                        resids[amp_name][index[amp_name]],
-                        s=2, color='red')
-            plt.xscale('log')
-            plt.axhline(0.02, linestyle=':')
-            plt.axhline(-0.02, linestyle=':')
-            plt.axhline(0, linestyle='--')
-            plt.ylim(-0.03, 0.03)
+            try:
+                plt.scatter(pd_values, resids[amp_name], s=2)
+            except KeyError:
+                pass
+            else:
+                plt.scatter(pd_values[index[amp_name]],
+                            resids[amp_name][index[amp_name]],
+                            s=2, color='red')
+                plt.xscale('log')
+                plt.axhline(0.02, linestyle=':')
+                plt.axhline(-0.02, linestyle=':')
+                plt.axhline(0, linestyle='--')
+                plt.ylim(-0.03, 0.03)
         plt.tight_layout(rect=(0, 0, 1, 0.95))
         plt.suptitle(f'linearity residuals, run {acq_run}, {det_name}')
 
