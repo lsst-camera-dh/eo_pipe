@@ -1,6 +1,6 @@
-description: eo_pipe task to gather bias frame statistics
+description: Pipeline to gather bias frame statistics.
 tasks:
-  bias_stats:
+  biasStats:
     class: lsst.eo.pipe.BiasStatsTask
     config:
       connections.raw_frames: 'raw'

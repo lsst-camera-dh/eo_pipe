@@ -1,6 +1,6 @@
-description: eo_pipe task to plot PTC results for the LSSTCam focal plane
+description: Pipeline to plot PTC results for the LSSTCam focal plane.
 tasks:
-  ptc_plots:
+  ptcPlots:
     class: lsst.eo.pipe.PtcPlotsTask
     config:
       connections.ptc_results: "ptc"
