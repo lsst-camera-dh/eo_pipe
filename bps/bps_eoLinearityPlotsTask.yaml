@@ -9,9 +9,9 @@ payload:
   inCollection: u/jchiang/ptc_0_13144_w_2022_39,LSSTCam/photodiode
   payloadName: linearity_plots_{flat_pair_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{flat_pair_run}' and detector in (90..98)"
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{flat_pair_run}'"
 
 includeConfigs:
   - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
 
-computeSite: slurm_wq_16
+computeSite: slurm_wq_32

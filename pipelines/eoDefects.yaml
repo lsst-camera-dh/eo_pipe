@@ -1,0 +1,22 @@
+description: Pipeline to merge bright and dark defects separately.
+tasks:
+  mergeBrightDefects:
+    class: lsst.eo.pipe.MergeBrightDefectsTask
+    config:
+      connections.inputDefects: "cpPartialDefects"
+      connections.mergedDefects: "brightDefects"
+  mergeDarkDefects:
+    class: lsst.eo.pipe.MergeDarkDefectsTask
+    config:
+      connections.inputDefects: "cpPartialDefects"
+      connections.mergedDefects: "darkDefects"
+  defectsPlots:
+    class: lsst.eo.pipe.DefectsPlotsTask
+    config:
+      connections.bright_defects: "brightDefects"
+      connections.dark_defects: "darkDefects"
+      connections.bright_columns_fp_plot: "brightColumnsFpPlot"
+      connections.bright_pixels_fp_plot: "brightPixelsFpPlot"
+      connections.dark_columns_fp_plot: "darkColumnsFpPlot"
+      connections.dark_pixels_fp_plot: "darkPixelsFpPlot"
+      connections.defects_results: "defectsResults"
