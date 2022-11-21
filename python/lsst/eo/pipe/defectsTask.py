@@ -14,7 +14,7 @@ from lsst.pipe.base import connectionTypes as cT
 from lsst.eo.pipe.plotting import plot_focal_plane
 
 
-__all__ = ["MergeBrightDefectsTask", "MergeDarkDefectsTask", "DefectsPlotsTask"]
+__all__ = ["MergeSelectedDefectsTask", "DefectsPlotsTask"]
 
 
 def get_overlap_region(row, bbox):
@@ -54,19 +54,34 @@ def tabulate_defects(det, defects, colthresh=100):
     return bad_columns, bad_pixels
 
 
-def convert_amp_data_to_df(amp_data, colname):
+def convert_amp_data_to_df(amp_data_dict):
     data = defaultdict(list)
-    for det_name, channel_data in amp_data.items():
-        for amp_name, value in channel_data.items():
-            data['det_name'].append(det_name)
-            data['amp_name'].append(amp_name)
-            data[colname].append(value)
+    for column, amp_data in amp_data_dict.items():
+        if not data:
+            for det_name in amp_data:
+                for amp_name in amp_data[det_name]:
+                    data['det_name'].append(det_name)
+                    data['amp_name'].append(amp_name)
+        for det_name, amp_name in zip(data['det_name'], data['amp_name']):
+            data[column].append(amp_data[det_name][amp_name])
     return pd.DataFrame(data)
 
 
-class MergeBrightDefectsTask(MergeDefectsTask):
-    ConfigClass = MergeDefectsTaskConfig
-    _defaultName = "mergeBrightDefects"
+class MergeSelectedDefectsTaskConfig(MergeDefectsTaskConfig):
+    """Configuration for merging single exposure defects, with
+    exposures selected by image_type.
+    """
+    imageType = pexConfig.Field(
+        dtype=str,
+        doc=("Image type of exposures to select the types of defects, "
+             "i.e., image_type='dark' for bright defects, "
+             "image_type='flat' for dark defects"),
+        default=None)  # Make no selection on image type
+
+
+class MergeSelectedDefectsTask(MergeDefectsTask):
+    ConfigClass = MergeSelectedDefectsTaskConfig
+    _defaultName = "mergeSelectedDefects"
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -77,30 +92,8 @@ class MergeBrightDefectsTask(MergeDefectsTask):
         for candidate in inputs["inputDefects"]:
             image_type = candidate.getMetadata()\
                                   .get('cpDefectGenImageType', 'UNKNOWN')
-            if image_type.lower() == "dark":
-                inputDefects.append(candidate)
-
-        if not inputDefects:
-            outputs = pipeBase.Struct(mergedDefects=Defects())
-        else:
-            outputs = self.run(inputDefects, camera)
-        butlerQC.put(outputs, outputRefs)
-
-
-class MergeDarkDefectsTask(MergeDefectsTask):
-    ConfigClass = MergeDefectsTaskConfig
-    _defaultName = "mergeDarkDefects"
-
-    def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        inputs = butlerQC.get(inputRefs)
-
-        camera = inputs["camera"]
-
-        inputDefects = []
-        for candidate in inputs["inputDefects"]:
-            image_type = candidate.getMetadata()\
-                                  .get('cpDefectGenImageType', 'UNKNOWN')
-            if image_type.lower() != "dark":
+            if (self.config.imageType is None or
+                image_type.lower() == self.config.imageType.lower()):
                 inputDefects.append(candidate)
 
         if not inputDefects:
@@ -182,6 +175,9 @@ class DefectsPlotsTaskConfig(pipeBase.PipelineTaskConfig,
     dark_colthresh = pexConfig.Field(doc=("Minimum # continguous pixels "
                                           "defining a dark column."),
                                      dtype=int, default=100)
+    acq_run = pexConfig.Field(doc="Run number for camera acquisition.",
+                              dtype=str, default="")
+
 
 class DefectsPlotsTask(pipeBase.PipelineTask):
     """
@@ -196,6 +192,10 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.bright_colthresh = self.config.bright_colthresh
         self.dark_colthresh = self.config.dark_colthresh
+        if self.config.acq_run is not "":
+            self.acq_run_title = f", run {self.config.acq_run}"
+        else:
+            self.acq_run_title = ""
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -226,9 +226,11 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
             bright_pixel_data[det_name] = pixels
 
         outputs['bright_columns_fp_plot'] \
-            = self._make_fp_plot(bright_column_data, "bright columns, run ?")
+            = self._make_fp_plot(bright_column_data,
+                                 f"bright columns{self.acq_run_title}")
         outputs['bright_pixels_fp_plot'] \
-            = self._make_fp_plot(bright_pixel_data, "bright pixels, run ?")
+            = self._make_fp_plot(bright_pixel_data,
+                                 f"bright pixels{self.acq_run_title}")
 
         dark_column_data = {}
         dark_pixel_data = {}
@@ -242,15 +244,17 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
             dark_pixel_data[det_name] = pixels
 
         outputs['dark_columns_fp_plot'] \
-            = self._make_fp_plot(dark_column_data, "dark columns, run ?")
+            = self._make_fp_plot(dark_column_data,
+                                 f"dark columns{self.acq_run_title}")
         outputs['dark_pixels_fp_plot'] \
-            = self._make_fp_plot(dark_pixel_data, "dark pixels, run ?")
+            = self._make_fp_plot(dark_pixel_data,
+                                 f"dark pixels{self.acq_run_title}")
 
-        outputs['defects_results'] = pd.concat(
-            [convert_amp_data_to_df(bright_column_data, 'bright_columns'),
-             convert_amp_data_to_df(bright_pixel_data, 'bright_pixels'),
-             convert_amp_data_to_df(dark_column_data, 'dark_columns'),
-             convert_amp_data_to_df(dark_pixel_data, 'dark_pixels')])
+        outputs['defects_results'] = convert_amp_data_to_df(
+            {'bright_columns': bright_column_data,
+             'bright_pixels': bright_pixel_data,
+             'dark_columns': dark_column_data,
+             'dark_pixels': dark_pixel_data})
 
         return pipeBase.Struct(**outputs)
 
