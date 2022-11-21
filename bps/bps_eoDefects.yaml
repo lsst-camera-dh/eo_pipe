@@ -8,9 +8,9 @@ payload:
   inCollection: u/{operator}/defects_{b_protocol_run}_w_2022_39
   payloadName: eo_pipe_defects_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and detector in (15,90..98,171)"
+  dataQuery: "instrument='LSSTCam'"
 
 includeConfigs:
   - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
 
-computeSite: slurm_wq_16
+computeSite: slurm_wq_32
