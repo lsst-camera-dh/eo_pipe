@@ -1,0 +1,9 @@
+description:
+  Pipeline to plot CTI results for the CCDs in the LSSTCam focal plane.
+tasks:
+  ctiPlots:
+    class: lsst.eo.pipe.CtiFpPlotsTask
+    config:
+      connections.cti_calibs: 'cpCtiCalib'
+      connections.camera: 'camera'
+      connections.serial_cti: 'serial_cti'

@@ -1,0 +1,17 @@
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoCtiPlots.yaml
+
+wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+project: "{outputRun}"
+
+payload:
+  b_protocol_run: 13162
+  weekly: ${WEEKLY}
+  inCollection: u/jchiang/deferredCharge_{b_protocol_run}_w_2022_48
+  payloadName: cti_plots_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam'"
+
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
+
+computeSite: local
