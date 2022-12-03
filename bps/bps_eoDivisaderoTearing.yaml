@@ -1,0 +1,17 @@
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
+
+wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+project: "{outputRun}"
+
+payload:
+  b_protocol_run: 13162
+  weekly: ${WEEKLY}
+  inCollection: u/jchiang/flat_13162_w_2022_39
+  payloadName: divisadero_tearing_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and detector in (94)"
+
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
+
+computeSite: slurm_wq_2

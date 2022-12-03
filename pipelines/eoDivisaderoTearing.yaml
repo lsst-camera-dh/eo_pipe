@@ -1,0 +1,10 @@
+description:
+  Pipeline to compute divisadero tearing from combined flats.
+tasks:
+  divisaderoTearing:
+    class: lsst.eo.pipe.DivisaderoTearingTask
+    config:
+      connections.flats: "flat"
+      connections.camera: "camera"
+      connections.divisadero_response: "divisadero_response"
+      connections.divisadero_stats: "divisadero_stats"
