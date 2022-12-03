@@ -287,7 +287,7 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
         for column in set(amp_data.keys()):
             plots[column] = plt.figure(figsize=self.figsize)
             ax = plots[column].add_subplot(111)
-            plot_focal_plane(ax, amp_data[column], title=f"{column}",
-                             z_range=None)
+            plot_focal_plane(ax, amp_data[column], camera=camera,
+                             z_range=None, title=f"{column}")
 
         return pipeBase.Struct(**plots)

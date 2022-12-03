@@ -9,9 +9,9 @@ payload:
   inCollection: u/jchiang/flat_13162_w_2022_39
   payloadName: divisadero_tearing_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and detector in (94)"
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and physical_filter='SDSSi'"
 
 includeConfigs:
   - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
 
-computeSite: slurm_wq_2
+computeSite: slurm_wq_16
