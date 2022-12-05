@@ -41,10 +41,10 @@ def divisadero_raft_plots(butler, acq_run, instrument='LSSTCam'):
     # Make a plot for each raft.
     for raft, data in raft_data.items():
         outfile = f"{acq_run}_{raft}_divisadero_tearing.png"
-        make_raft_summary_plot(data, outfile)
+        make_raft_summary_plot(data, outfile, title=f"Run {acq_run}, {raft}")
 
 
-def make_raft_summary_plot(raft_data, outfile):
+def make_raft_summary_plot(raft_data, outfile, title=None):
     """
     Make summary plot for a single raft.
     """
@@ -86,4 +86,6 @@ def make_raft_summary_plot(raft_data, outfile):
                 ax.text(0.825, 0.05, 'Seg 00-07', transform=ax.transAxes)
             f.add_subplot(ax)
 
+    if title is not None:
+        plt.title(title)
     plt.savefig(outfile)
