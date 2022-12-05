@@ -87,5 +87,5 @@ def make_raft_summary_plot(raft_data, outfile, title=None):
             f.add_subplot(ax)
 
     if title is not None:
-        plt.title(title)
+        plt.suptitle(title)
     plt.savefig(outfile)
