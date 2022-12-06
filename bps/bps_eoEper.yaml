@@ -1,0 +1,17 @@
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoEper.yaml
+
+wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+project: "{outputRun}"
+
+payload:
+  b_protocol_run: 13162
+  weekly: ${WEEKLY}
+  inCollection: u/jchiang/dark_13162_w_2022_39
+  payloadName: eper_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason='sflat'"
+
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
+
+computeSite: slurm_wq_32

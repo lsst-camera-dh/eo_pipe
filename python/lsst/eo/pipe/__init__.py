@@ -5,4 +5,5 @@ from .linearityPlotsTask import *
 from .defectsTask import *
 from .ctiPlotsTask import *
 from .divisaderoTearingTask import *
+from .eperTask import *
 from .et_results import *

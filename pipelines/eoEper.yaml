@@ -1,0 +1,18 @@
+description:
+  Pipeline to compute serial and parallel CTI using EPER method.
+tasks:
+  eperTask:
+    class: lsst.eo.pipe.EperTask
+    config:
+      connections.raws: "raw"
+      connections.bias: "bias"
+      connections.dark: "dark"
+      connections.camera: "camera"
+      connections.eper_stats: "eper_stats"
+  eperFpPlots:
+    class: lsst.eo.pipe.EperFpPlotsTask
+    config:
+      connections.eper_stats: "eper_stats"
+      connections.camera: "camera"
+      connections.scti_eper_plot: "scti_eper_plot"
+      connections.pcti_eper_plot: "pcti_eper_plot"
