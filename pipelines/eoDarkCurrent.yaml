@@ -1,0 +1,10 @@
+description:
+  Pipeline to extract dark current values from combined darks.
+tasks:
+  darkCurrentTask:
+    class: lsst.eo.pipe.DarkCurrentTask
+    config:
+      connections.darks: "dark"
+      connections.camera: "camera"
+      connections.dark_current_stats: "dark_current_stats"
+      connections.dark_current_plot: "dark_current_plot"

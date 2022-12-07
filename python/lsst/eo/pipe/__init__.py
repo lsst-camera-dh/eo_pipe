@@ -6,4 +6,5 @@ from .defectsTask import *
 from .ctiPlotsTask import *
 from .divisaderoTearingTask import *
 from .eperTask import *
+from .darkCurrentTask import *
 from .et_results import *
