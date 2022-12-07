@@ -58,7 +58,7 @@ class CtiFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
 class CtiFpPlotsTask(pipeBase.PipelineTask):
     """Create focal plane mosaic of serial CTI per amp."""
     ConfigClass = CtiFpPlotsTaskConfig
-    _defaultName = "ctiFpPlotsTask"
+    _DefaultName = "ctiFpPlotsTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

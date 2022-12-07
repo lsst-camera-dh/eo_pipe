@@ -44,7 +44,7 @@ class DarkMosaicTaskConfig(pipeBase.PipelineTaskConfig,
 class DarkMosaicTask(pipeBase.PipelineTask):
     """Create mosaic of ISR'd dark frames for a particular exposure."""
     ConfigClass = DarkMosaicTaskConfig
-    _defaultName = "darkMosaicTask"
+    _DefaultName = "darkMosaicTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

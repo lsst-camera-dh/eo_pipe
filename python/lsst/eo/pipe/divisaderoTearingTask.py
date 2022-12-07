@@ -66,7 +66,7 @@ class DivisaderoTearingTask(pipeBase.PipelineTask):
     the CCDs in the focal plane.
     """
     ConfigClass = DivisaderoTearingTaskConfig
-    _defaultName = 'divisaderoTearingTask'
+    _DefaultName = 'divisaderoTearingTask'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -213,7 +213,7 @@ class DivisaderoFpPlotsTask(pipeBase.PipelineTask):
     Create a focal plane mosaic of the divisadero tearing results.
     """
     ConfigClass = DivisaderoFpPlotsTaskConfig
-    _defaultName = 'divisaderoFpPlotsTask'
+    _DefaultName = 'divisaderoFpPlotsTask'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

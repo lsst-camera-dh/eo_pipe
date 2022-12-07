@@ -81,7 +81,7 @@ class MergeSelectedDefectsTaskConfig(MergeDefectsTaskConfig):
 
 class MergeSelectedDefectsTask(MergeDefectsTask):
     ConfigClass = MergeSelectedDefectsTaskConfig
-    _defaultName = "mergeSelectedDefects"
+    _DefaultName = "mergeSelectedDefects"
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -185,7 +185,7 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
     over the focal plane.
     """
     ConfigClass = DefectsPlotsTaskConfig
-    _defaultName = "defectsPlotsTask"
+    _DefaultName = "defectsPlotsTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

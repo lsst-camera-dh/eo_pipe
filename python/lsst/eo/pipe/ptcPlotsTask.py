@@ -48,7 +48,7 @@ class PtcPlotsTaskConfig(pipeBase.PipelineTaskConfig,
 class PtcPlotsTask(pipeBase.PipelineTask):
     """Create summary plots of the PTC results for the full focal plane."""
     ConfigClass = PtcPlotsTaskConfig
-    _defaultName = "ptcPlotsTask"
+    _DefaultName = "ptcPlotsTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

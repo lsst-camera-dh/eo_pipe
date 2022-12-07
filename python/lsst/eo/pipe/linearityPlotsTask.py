@@ -100,7 +100,7 @@ class LinearityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
 class LinearityPlotsTask(pipeBase.PipelineTask):
     """Create linearity plots from a flat pairs dataset using PTC results."""
     ConfigClass = LinearityPlotsTaskConfig
-    _defaultName = "linearityPlotsTask"
+    _DefaultName = "linearityPlotsTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -244,7 +244,7 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
     """Create summary plots of linearity analysis results for the
     full focal plane."""
     ConfigClass = LinearityFpPlotsTaskConfig
-    _defaultName = "linearityFpPlotsTask"
+    _DefaultName = "linearityFpPlotsTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -275,7 +275,7 @@ class EperFpPlotsTask(pipeBase.PipelineTask):
     Create a focal plane mosaic of the serial and parallel CTI results.
     """
     ConfigClass = EperFpPlotsTaskConfig
-    _defaultName = 'eperFpPlotsTask'
+    _DefaultName = 'eperFpPlotsTask'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
