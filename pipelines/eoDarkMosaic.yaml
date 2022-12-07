@@ -4,7 +4,7 @@ tasks:
     class: lsst.ip.isr.IsrTask
     config:
       connections.ccdExposure: 'raw'
-      connections.outputExposure: 'eoDarkIsr'
+      connections.outputExposure: 'postISRCCD'
       doWrite: true
       doBrighterFatter: false
       doBias: true
@@ -17,8 +17,8 @@ tasks:
       overscan.fitType: 'MEDIAN_PER_ROW'
       overscan.doParallelOverscan: true
   darkMosaic:
-    class: lsst.eo.pipe.DarkMosaicTask
+    class: lsst.eo.pipe.FocalPlaneMosaicTask
     config:
-      connections.dark_exposures: 'eoDarkIsr'
-      connections.output_mosaic: 'eoDarkMosaic'
+      connections.exposures: 'postISRCCD'
+      connections.output_mosaic: 'eoFpMosaic'
       binSize: 8

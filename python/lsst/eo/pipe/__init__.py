@@ -1,6 +1,6 @@
 from .biasStatsTask import *
 from .ptcPlotsTask import *
-from .darkMosaicTask import *
+from .focalPlaneMosaicTask import *
 from .linearityPlotsTask import *
 from .defectsTask import *
 from .ctiPlotsTask import *

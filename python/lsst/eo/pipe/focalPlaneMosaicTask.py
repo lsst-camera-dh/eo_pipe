@@ -1,14 +1,18 @@
 import lsst.afw.math as afwMath
 from lsst.afw.cameraGeom import utils as cgu
-from lsst.obs.lsst import LsstCam
+from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 
-class MyImageSource:
+__all__ = ['FocalPlaneMosaicTask']
+
+
+class ImageSource:
     isTrimmed = True
     background = 0.0
+
     def __init__(self, exposure_handles):
         self.exposure_handles = exposure_handles
 
@@ -19,48 +23,55 @@ class MyImageSource:
                                        det.getOrientation().getNQuarter()), det
 
 
-class DarkMosaicTaskConnections(pipeBase.PipelineTaskConnections,
-                                dimensions=("instrument",)):
-    dark_exposures = cT.Input(
-        name="eoDarkISR",
+class FocalPlaneMosaicTaskConnections(pipeBase.PipelineTaskConnections,
+                                      dimensions=("instrument",)):
+    exposures = cT.Input(
+        name="postISRCCD",
         doc="Input pre-processed exposures to combine.",
         storageClass="Exposure",
         dimensions=("instrument", "exposure", "detector"),
         multiple=True,
         deferLoad=True)
 
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
+
     output_mosaic = cT.Output(
-        name="eoDarkMosaic",
-        doc="Full focal plane mosaic of dark frames with ISR applied.",
+        name="eoFpMosaic",
+        doc="Full focal plane mosaic of CCD exposures with ISR applied.",
         storageClass="ImageF",
         dimensions=("instrument",))
 
-class DarkMosaicTaskConfig(pipeBase.PipelineTaskConfig,
-                           pipelineConnections=DarkMosaicTaskConnections):
-    """Configuration for DarkMosaicTask."""
+
+class FocalPlaneMosaicTaskConfig(pipeBase.PipelineTaskConfig,
+                                 pipelineConnections=FocalPlaneMosaicTaskConnections):
+    """Configuration for FocalPlaneMosaicTask."""
     binSize = pexConfig.Field(doc="Bin size in pixels for rebinning.",
                               dtype=int, default=4)
 
-class DarkMosaicTask(pipeBase.PipelineTask):
-    """Create mosaic of ISR'd dark frames for a particular exposure."""
-    ConfigClass = DarkMosaicTaskConfig
-    _DefaultName = "darkMosaicTask"
+
+class FocalPlaneMosaicTask(pipeBase.PipelineTask):
+    """Create mosaic of ISR'd CCD frames for a particular exposure."""
+    ConfigClass = FocalPlaneMosaicTaskConfig
+    _DefaultName = "fpMosaicTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.binSize = self.config.binSize
 
-    def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        exposure_handles = {_.dataId['detector']: _ for _ in
-                            butlerQC.get(inputRefs)['dark_exposures']}
-        image = self.run(exposure_handles)
-        butlerQC.put(image, outputRefs)
-
-    def run(self, exposure_handles):
-        camera = LsstCam.getCamera()
-        image_source = MyImageSource(exposure_handles)
-        detectorNameList = [camera[detector].getName() for detector in
-                            exposure_handles]
+    def run(self, exposures, camera):
+        exposure_handles = {}
+        detectorNameList = []
+        for handle in exposures:
+            detector = handle.dataId['detector']
+            exposure_handles[detector] = handle
+            detectorNameList.append(camera[detector].getName())
+        image_source = ImageSource(exposure_handles)
         output_mosaic = cgu.showCamera(camera, imageSource=image_source,
                                        detectorNameList=detectorNameList,
                                        binSize=self.binSize)
