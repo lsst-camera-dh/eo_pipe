@@ -31,7 +31,7 @@ def apply_overscan_correction(raw, amp, dx=4, method='1d_poly', deg=2):
     Apply serial overcan correction to the specified amp.
     This function will modify the raw pixel data in place.
 
-    It returns the full segment, including pre- and overscane regions,
+    It returns the full segment, including pre- and overscan regions,
     after applying the correction to all rows.
     """
     raw_image = raw.getImage()
@@ -74,7 +74,7 @@ def subtract_calib(raw, calib, amp, scale=1):
         -= calib_image[calib_amp_info.getBBox()]
 
 
-def apply_isr(raw, bias, dark, amp, dx=4, oscan_method='median_by_row'):
+def apply_isr(raw, bias, dark, amp, dx=4, oscan_method='median_by_row', deg=2):
     """
     Apply a bare-bones ISR consisting of serial overscan correction,
     combined bias subtraction, combined dark correction.
@@ -84,7 +84,7 @@ def apply_isr(raw, bias, dark, amp, dx=4, oscan_method='median_by_row'):
     Return the full amplifier segment.
     """
     full_segment = apply_overscan_correction(raw, amp, dx=4,
-                                             method=oscan_method)
+                                             method=oscan_method, deg=deg)
     subtract_calib(raw, bias, amp)
     subtract_calib(raw, dark, amp, scale=raw.getMetadata().get('DARKTIME'))
     return full_segment
@@ -210,7 +210,8 @@ class EperTask(pipeBase.PipelineTask):
             for handle in raws[:self.max_raws]:
                 raw = handle.get()
                 images.append(apply_isr(raw, bias, dark, amp, dx=self.dx,
-                                        oscan_method=self.oscan_method))
+                                        oscan_method=self.oscan_method,
+                                        deg=self.deg))
             combined_flat = afw_math.statisticsStack(images, afw_math.MEDIAN)
             scti, pcti = compute_ctis(combined_flat, det[amp], npix=self.npix)
             data['det_name'].append(det_name)
