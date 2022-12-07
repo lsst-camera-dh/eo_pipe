@@ -188,7 +188,7 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
 
 
 class EperTask(pipeBase.PipelineTask):
-
+    """Task to measure serial and parallel CTI using the EPER method."""
     ConfigClass = EperTaskConfig
     _DefaultName = "eperTask"
 
