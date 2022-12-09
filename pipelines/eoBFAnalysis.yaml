@@ -1,0 +1,17 @@
+description:
+  Pipeline to compute Brighter-Fatter statistics from PTC results.
+tasks:
+  bfAnalysisTask:
+    class: lsst.eo.pipe.BFAnalysisTask
+    config:
+      connections.ptc: "ptc"
+      connections.camera: "camera"
+      connections.bf_stats: "bf_stats"
+      connections.bf_covariance_plots: "bf_covariance_plots"
+  bfAnalysisFpPlotsTask:
+    class: lsst.eo.pipe.BFAnalysisFpPlotsTask
+    config:
+      connections.bf_stats: "bf_stats"
+      connections.camera: "camera"
+      connections.bf_xcorr_plot: "bf_xcorr_plot"
+      connections.bf_ycorr_plot: "bf_ycorr_plot"

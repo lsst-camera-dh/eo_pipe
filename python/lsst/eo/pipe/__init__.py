@@ -7,4 +7,5 @@ from .ctiPlotsTask import *
 from .divisaderoTearingTask import *
 from .eperTask import *
 from .darkCurrentTask import *
+from .bfAnalysisTask import *
 from .et_results import *
