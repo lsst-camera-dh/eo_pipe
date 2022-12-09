@@ -58,7 +58,7 @@ class FocalPlaneMosaicTaskConfig(pipeBase.PipelineTaskConfig,
 class FocalPlaneMosaicTask(pipeBase.PipelineTask):
     """Create mosaic of ISR'd CCD frames for a particular exposure."""
     ConfigClass = FocalPlaneMosaicTaskConfig
-    _DefaultName = "fpMosaicTask"
+    _DefaultName = "focalPlaneMosaicTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
