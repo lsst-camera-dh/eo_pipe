@@ -17,7 +17,7 @@ __all__ = ['apply_isr', 'compute_ctis', 'EperTask', 'EperFpPlotsTask']
 def get_overscan_region(amp_info, dx):
     """
     Get the bounding box of the serial overscan region omitting dx
-    leading and trailing edge pixels.
+    pixels at the leading and trailing edges.
     """
     bbox = amp_info.getRawHorizontalOverscanBBox()
     minY = amp_info.getRawBBox().minY
@@ -43,7 +43,7 @@ def apply_overscan_correction(raw, amp, dx=4, method='1d_poly', deg=2):
         full_segment -= np.median(overscan.array)
     elif method == 'mean':
         full_segment -= np.mean(overscan.array)
-    elif method in ('median_by_row', '1d_poly'):
+    elif method in ('median_per_row', '1d_poly'):
         row_vals = np.median(overscan.array, axis=1)
         ny = full_segment.array.shape[0]
         if method == '1d_poly':
@@ -74,7 +74,7 @@ def subtract_calib(raw, calib, amp, scale=1):
         -= calib_image[calib_amp_info.getBBox()]
 
 
-def apply_isr(raw, bias, dark, amp, dx=4, oscan_method='median_by_row', deg=2):
+def apply_isr(raw, bias, dark, amp, dx=4, oscan_method='median_per_row', deg=2):
     """
     Apply a bare-bones ISR consisting of serial overscan correction,
     combined bias subtraction, combined dark correction.
@@ -83,7 +83,7 @@ def apply_isr(raw, bias, dark, amp, dx=4, oscan_method='median_by_row', deg=2):
 
     Return the full amplifier segment.
     """
-    full_segment = apply_overscan_correction(raw, amp, dx=4,
+    full_segment = apply_overscan_correction(raw, amp, dx=dx,
                                              method=oscan_method, deg=deg)
     subtract_calib(raw, bias, amp)
     subtract_calib(raw, dark, amp, scale=raw.getMetadata().get('DARKTIME'))
@@ -158,7 +158,7 @@ class EperTaskConnections(pipeBase.PipelineTaskConnections,
 class EperTaskConfig(pipeBase.PipelineTaskConfig,
                      pipelineConnections=EperTaskConnections):
     nx_skip = pexConfig.Field(
-        doc=("Number columns at leading and trailing edge of "
+        doc=("Number columns at the leading and trailing edges of "
              "the serial overscan to omit when estimating the "
              "serial overscan correction."),
         default=4,
@@ -175,8 +175,8 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
         allowed={
             "mean": "Mean of all selected pixels in overscan region",
             "median": "Median of all selected pixels in overscan region",
-            "median_by_row": "Median of each row of selected pixels.",
-            "1d_poly": "1D polynomial of degree 2 fit to median_by_row data"})
+            "median_per_row": "Median of each row of selected pixels",
+            "1d_poly": "1D polynomial of degree 2 fit to median_per_row data"})
     polynomial_degree = pexConfig.Field(
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
@@ -246,7 +246,7 @@ class EperFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument",))
 
     pcti_eper_plot = cT.Output(
-        name="[cti_eper_plot",
+        name="pcti_eper_plot",
         doc="Focal plane mosaic of parallel CTI for each amp",
         storageClass="Plot",
         dimensions=("instrument",))
@@ -272,7 +272,7 @@ class EperFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
 
 class EperFpPlotsTask(pipeBase.PipelineTask):
     """
-    Create a focal plane mosaic of the serial and parallel CTI results.
+    Create focal plane mosaics of the serial and parallel CTI results.
     """
     ConfigClass = EperFpPlotsTaskConfig
     _DefaultName = 'eperFpPlotsTask'
