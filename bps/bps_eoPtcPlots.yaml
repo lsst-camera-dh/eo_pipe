@@ -1,19 +1,14 @@
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/bps_default_configs.yaml
-
-parsl_config:
-  retries: 1
-  monitoring: true
-  executor: ThreadPool
-  max_threads: 1
-
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoPtcPlots.yaml
-instrument: lsst.obs.lsst.LsstCam
 
 payload:
   flat_pair_run: 13144
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2022_38
+  inCollection: u/jchiang/ptc_0_13144_w_2022_39
   payloadName: ptc_plots_{flat_pair_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='LSSTCam' and exposure.science_program='{flat_pair_run}'"
+
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
+
+computeSite: slurm_wq_2
