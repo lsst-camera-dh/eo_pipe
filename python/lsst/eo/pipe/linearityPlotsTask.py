@@ -218,6 +218,14 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         multiple=True,
         deferLoad=True)
 
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
+
     max_frac_dev = cT.Output(name="max_frac_dev",
                              doc=("Maximum fractional deviation from "
                                   "linear fit of signal vs flux"),
@@ -251,14 +259,15 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
         self.figsize = (self.config.yfigsize, self.config.xfigsize)
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        handles = butlerQC.get(inputRefs)
+        inputs = butlerQC.get(inputRefs)
         results = {_.dataId['detector']: _ for _
-                   in handles["linearity_results"]}
-        struct = self.run(results)
+                   in inputs["linearity_results"]}
+        camera = inputs['camera']
+        struct = self.run(results, camera)
         butlerQC.put(struct, outputRefs)
         plt.close()
 
-    def run(self, results):
+    def run(self, results, camera):
         """
         Create summary plots of linearity analysis results for the full
         focal plane.
@@ -268,6 +277,8 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
         results : `dict`
             Dictionary of handles to `DataFrame`s containing the linearity
             results keyed by detector.
+        camera: `lsst.afw.cameraGeom.Camera`
+            Camera object.
 
         Returns
         -------
