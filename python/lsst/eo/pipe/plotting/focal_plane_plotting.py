@@ -4,6 +4,7 @@ Functions to plot amplifier-level quantities in the LSST focal plane.
 import matplotlib.pyplot as plt
 from matplotlib.collections import PatchCollection
 from matplotlib.patches import Rectangle
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 import lsst.geom as lsstGeom
 from lsst.afw import cameraGeom
@@ -252,7 +253,10 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     norm = plt.Normalize(vmin=z_range[0], vmax=z_range[1])
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
-    colorbar = plt.colorbar(sm)
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    colorbar = plt.colorbar(sm, cax=cax)
     if use_log10:
         ticks = sorted(list(set([int(_) for _ in
                                  np.log10(np.logspace(0, z_range[1]))])))
