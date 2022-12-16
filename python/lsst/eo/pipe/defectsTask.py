@@ -192,7 +192,7 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.bright_colthresh = self.config.bright_colthresh
         self.dark_colthresh = self.config.dark_colthresh
-        if self.config.acq_run is not "":
+        if self.config.acq_run != "":
             self.acq_run_title = f", run {self.config.acq_run}"
         else:
             self.acq_run_title = ""
