@@ -5,7 +5,7 @@ tasks:
     config:
       connections.ptc_results: "ptc"
       connections.camera: "camera"
-      connectons.ptc_plots: "ptc_plots
+      connections.ptc_plots: "ptc_plots"
       xfigsize: 9
       yfigsize: 9
   ptcFocalPlanePlots:

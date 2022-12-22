@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+from lsst.cp.pipe.utils import funcAstier, funcPolynomial
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -44,6 +45,10 @@ class PtcPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
 
 
+_ptc_func = {'EXPAPPROXIMATION': funcAstier,
+             'POLYNOMIAL': funcPolynomial}
+
+
 class PtcPlotsTask(pipeBase.PipelineTask):
     """Plot the photon transfer curves for all of the amps in a CCD."""
     ConfigClass = PtcPlotsTaskConfig
@@ -66,9 +71,25 @@ class PtcPlotsTask(pipeBase.PipelineTask):
                       if use],)
             means = np.array(ptc.rawMeans[amp_name])
             variances = np.array(ptc.rawVars[amp_name])
-            plt.scatter(means, variances, s=4, color='blue')
-            plt.scatter(means[index], variances[index], s=2, color='green')
+            plt.scatter(means, variances, s=8, color='blue')
+            plt.scatter(means[index], variances[index], s=2, color='red')
+            if ptc.ptcFitType == "EXPAPPROXIMATION":
+                a00, gain, _ = ptc.ptcFitPars[amp_name]
+                a00_err, gain_err, _ = ptc.ptcFitParsError[amp_name]
+                turnoff = ptc.ptcTurnoff[amp_name]
+                note = (f"{amp_name}\n"
+                        f"gain = {gain:.2f} +/- {gain_err:.2f}\n"
+                        f"a00 = {a00:.1e} +/- {a00_err:.1e}\n"
+                        f"turnoff = {turnoff:7.0f}")
+                plt.annotate(note, (0.05, 0.95), xycoords='axes fraction',
+                             verticalalignment='top', size='x-small')
             if means.size != 0:
+                if ptc.ptcFitType in _ptc_func:
+                    ptc_func = _ptc_func[ptc.ptcFitType]
+                    x = np.logspace(np.log10(np.nanmin(means)),
+                                    np.log10(np.nanmax(means)), 100)
+                    y = ptc_func(ptc.ptcFitPars[amp_name], x)
+                    plt.plot(x, y, linestyle=':')
                 plt.xscale('log')
                 plt.yscale('log')
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
