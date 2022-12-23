@@ -4,11 +4,13 @@ import numpy as np
 import pandas as pd
 import lsst.afw.math as afw_math
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
-import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 from .isr_utils import apply_minimal_isr
+
+
+__all__ = ['FlatGainStabilityTask', 'FlatGainStabilityPlotsTask']
 
 
 class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
@@ -93,10 +95,14 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
         det_name = det.getName()
         raft, slot = det_name.split('_')
         data = defaultdict(list)
-        for handle in raws:
+        num_raws = len(raws)
+        self.log.info(f"Analyzing {det_name}, with {num_raws} flats")
+        for i, handle in enumerate(raws):
             raw = handle.get()
             md = raw.getMetadata()
             exposure = handle.dataId['exposure']
+            self.log.info(f"Processing exposure {exposure}, "
+                          f"image {i} of {num_raws}")
             mjd_obs = md.get('MJD-OBS')
             for amp, amp_info in enumerate(det):
                 amp_name = amp_info.getName()
@@ -116,13 +122,21 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
 
 
 class FlatGainStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
-                                            dimensions=("instrument")):
-    flat_gain_stabilty_stats = cT.Input(
+                                            dimensions=("instrument",)):
+    flat_gain_stability_stats = cT.Input(
         name="flat_gain_stability_stats",
         doc=("Flat median signal for each amp, normalized by photodiode "
              "integrals, as a function of time."),
         storageClass="DataFrame",
         dimensions=("instrument", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    pd_data = cT.Input(
+        name="photodiode",
+        doc="Photodiode readings data.",
+        storageClass="IsrCalib",
+        dimensions=("instrument", "exposure"),
         multiple=True,
         deferLoad=True)
 
@@ -144,9 +158,23 @@ class FlatGainStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
 class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                        pipelineConnections=FlatGainStabilityPlotsTaskConnections):
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
-                               dtype=float, default=9)
+                               dtype=float, default=18)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
-                               dtype=float, default=9)
+                               dtype=float, default=18)
+    y_range_min = pexConfig.Field(doc="Minimum of y-axis range in each plot",
+                                  dtype=float, default=0.998)
+    y_range_max = pexConfig.Field(doc="Maximum of y-axis range in each plot",
+                                  dtype=float, default=1.002)
+    pd_integration_method = pexConfig.ChoiceField(
+        dtype=str,
+        doc="Integration method for photodiode monitoring data.",
+        default="DIRECT_SUM",
+        allowed={
+            "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
+                           "readout entries"),
+            "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
+                            "leading and trailing entries, which are "
+                            "nominally at zero baseline level.")})
 
 
 class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
@@ -160,8 +188,18 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.figsize = self.config.yfigsize, self.config.xfigsize
+        self.y_range = self.config.y_range_min, self.config.y_range_max
+        self.pd_integration_method = self.config.pd_integration_method
 
-    def run(self, flat_gain_stability_stats, camera):
+    def run(self, flat_gain_stability_stats, pd_data, camera):
+        # Prepare dict of photodiode integrals and key by exposure.
+        pd_integrals = {}
+        for ref in pd_data:
+            exposure = ref.dataId['exposure']
+            pd_calib = ref.get()
+            pd_calib.integrationMethod = self.pd_integration_method
+            pd_integrals[exposure] = pd_calib.integrate()[0]
+
         # Sort by raft and slot:
         handles = defaultdict(dict)
         for ref in flat_gain_stability_stats:
@@ -179,11 +217,21 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
                 if t0 is None:
                     t0 = np.floor(min(stats['mjd']))
                 time = 24.*(stats['mjd'].to_numpy() - t0)
-                signal = stats['median']/np.mean(stats['median'])
+                signal = stats['median'].to_numpy()
+                amp_names = stats['amp_name'].to_numpy()
+                exposures = stats['exposure'].to_numpy()
+                for amp in det:
+                    index = np.where(amp_names == amp.getName())
+                    pd_values = np.array([pd_integrals[_] for
+                                          _ in exposures[index]])
+                    pd_values /= np.mean(pd_values)
+                    signal[index] /= pd_values
+                    signal[index] /= np.mean(signal[index])
                 plt.scatter(time, signal, s=2, label=slot)
+            plt.ylim(*self.y_range)
             plt.legend(fontsize='x-small', ncol=2)
-            plt.title(raft)
+            plt.title(raft, fontsize='small')
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
-        fig.supxlabel(f'(MJD - {int(t0)}*24 (hours)')
+        fig.supxlabel(f'(MJD - {int(t0)})*24 (hours)')
         fig.supylabel('counts/mean(counts)')
         return pipeBase.Struct(flat_gain_stability_plots=fig)
