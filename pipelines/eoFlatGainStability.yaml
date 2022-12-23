@@ -1,0 +1,18 @@
+description:
+  Pipeline to compute flat gain stability curves.
+tasks:
+  flatGainStabilityTask:
+    class: lsst.eo.pipe.FlatGainStabilityTask
+    config:
+      connections.raws: "raw"
+      connections.bias: "bias"
+      connections.dark: "dark"
+      connections.camera: "camera"
+      connections.flat_gain_stability_stats: "flat_gain_stability_stats"
+  eperFpPlots:
+    class: lsst.eo.pipe.FlatGainStabilityPlotsTask
+    config:
+      connections.flat_gain_stability_stats: "flat_gain_stability_stats"
+      connections.camera: "camera"
+      connections.flat_gain_stability_plots: "flat_gain_stability_plots"
+
