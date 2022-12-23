@@ -59,8 +59,8 @@ class EperTaskConnections(pipeBase.PipelineTaskConnections,
         isCalibration=True)
 
     dark = cT.Input(
-        name="bias_frame",
-        doc="Combined bias frame",
+        name="dark_frame",
+        doc="Combined dark frame",
         storageClass="Exposure",
         dimensions=("instrument", "detector"),
         isCalibration=True)
