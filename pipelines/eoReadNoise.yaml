@@ -1,0 +1,14 @@
+description: Pipeline to gather bias frame statistics.
+tasks:
+  readNoise:
+    class: lsst.eo.pipe.ReadNoiseTask
+    config:
+      connections.raw_frames: 'raw'
+      connections.read_noise: 'eo_read_noise'
+      edge_buffer: 2
+  readNoiseFpPlots:
+    class: lsst.eo.pipe.ReadNoiseFpPlotsTask
+    config:
+      connections.read_noise_data: 'eo_read_noise'
+      connections.camera: 'camera'
+      connections.read_noise_plot: 'read_noise_plot'

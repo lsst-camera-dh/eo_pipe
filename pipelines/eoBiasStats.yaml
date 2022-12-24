@@ -1,8 +1,0 @@
-description: Pipeline to gather bias frame statistics.
-tasks:
-  biasStats:
-    class: lsst.eo.pipe.BiasStatsTask
-    config:
-      connections.raw_frames: 'raw'
-      connections.bias_stats: 'eoBiasStats'
-      edge_buffer: 2

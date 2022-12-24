@@ -1,0 +1,15 @@
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoise.yaml
+instrument: lsst.obs.lsst.LsstCam
+
+payload:
+  b_protocol_run: 13162
+  weekly: ${WEEKLY}
+  inCollection: LSSTCam/raw/all
+  payloadName: read_noise_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias'"
+
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
+
+computeSite: slurm_wq_32
