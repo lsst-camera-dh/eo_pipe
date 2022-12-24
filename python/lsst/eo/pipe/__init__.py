@@ -1,4 +1,4 @@
-from .biasStatsTask import *
+from .readNoiseTask import *
 from .ptcPlotsTask import *
 from .focalPlaneMosaicTask import *
 from .linearityPlotsTask import *

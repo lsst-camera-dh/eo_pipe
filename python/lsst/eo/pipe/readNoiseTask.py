@@ -1,19 +1,24 @@
 from collections import defaultdict
 from typing import List
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from astro_metadata_translator import ObservationInfo
 
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
+from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
+from lsst.eo.pipe.plotting import plot_focal_plane
 
-__all__ = ['ReadNoiseTask', 'SubRegionSampler']
+
+__all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask']
 
 
 class SubRegionSampler:
@@ -36,15 +41,17 @@ class SubRegionSampler:
 
 class ReadNoiseTaskConnections(pipeBase.PipelineTaskConnections,
                                dimensions=("instrument", "detector")):
+
     raw_frames = cT.Input(name="raw_frames",
                           doc="Raw input frames",
                           storageClass="Exposure",
                           dimensions=("instrument", "exposure", "detector"),
                           multiple=True,
                           deferLoad=True)
-    read_noise = cT.Output(name="read_noise",
-                           doc="read frame statistics",
-                           storageClass="StructuredDataDict",
+
+    read_noise = cT.Output(name="eo_read_noise",
+                           doc="read noise statistics",
+                           storageClass="DataFrame",
                            dimensions=("instrument", "detector"))
 
 
@@ -80,7 +87,7 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                 data['run'].append(obs_info.science_program)
                 data['exposure_id'].append(obs_info.exposure_id)
                 data['det_name'].append(det.getName())
-                data['amp'].append(amp.getName())
+                data['amp_name'].append(amp.getName())
 
                 bbox = amp.getRawSerialOverscanBBox()
                 bbox.grow(-self.edge_buffer)
@@ -91,4 +98,75 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                     for _, subregion in zip(range(self.nsamp), sampler)]
                 data['read_noise'].append(float(np.median(stdevs)))
                 data['median'].append(float(np.median(overscan.array)))
-        return pipeBase.Struct(read_noise=dict(data))
+        return pipeBase.Struct(read_noise=pd.DataFrame(data))
+
+
+class ReadNoiseFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
+                                      dimensions=("instrument",)):
+    read_noise_data = cT.Input(name="eo_read_noise",
+                               doc="read noise statistics",
+                               storageClass="DataFrame",
+                               dimensions=("instrument", "detector"),
+                               multiple=True,
+                               deferLoad=True)
+
+    camera = cT.PrerequisiteInput(name="camera",
+                                  doc="Camera used in observations",
+                                  storageClass="Camera",
+                                  isCalibration=True,
+                                  dimensions=("instrument",),
+                                  lookupFunction=lookupStaticCalibration)
+
+    read_noise_plot = cT.Output(name="read_noise_plot",
+                                doc="Focal plane plot of read noise values",
+                                storageClass="Plot",
+                                dimensions=("instrument",))
+
+
+class ReadNoiseFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
+                                 pipelineConnections=ReadNoiseFpPlotsTaskConnections):
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    zmin = pexConfig.Field(doc="Minimum of color bar range.",
+                           dtype=float, default=0)
+    zmax = pexConfig.Field(doc="Maximum of color bar range.",
+                           dtype=float, default=20)
+    zscale_factor = pexConfig.Field(doc=("Scale factor to apply to z-values."
+                                         "This should be a float-convertable "
+                                         "string so that formatting is taken "
+                                         "care of automatically when "
+                                         "rendering the label in matplotlib"),
+                                    dtype=str, default="1")
+
+
+class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
+    """
+    Create focal plane mosaics of the serial and parallel CTI results.
+    """
+    ConfigClass = ReadNoiseFpPlotsTaskConfig
+    _DefaultName = 'readNoiseFpPlotsTask'
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.yfigsize, self.config.xfigsize
+        self.z_range = self.config.zmin, self.config.zmax
+        self.z_scale_factor = self.config.zscale_factor
+
+    def run(self, read_noise_data, camera):
+        amp_data = defaultdict(dict)
+        for ref in read_noise_data:
+            det = camera[ref.dataId['detector']]
+            det_name = det.getName()
+            df0 = ref.get()
+            for amp in det:
+                amp_name = amp.getName()
+                df = df0.query(f"amp_name == '{amp_name}'")
+                amp_data[det_name][amp_name] = np.median(df['read_noise'])
+        fig = plt.figure(figsize=self.figsize)
+        ax = fig.add_subplot(111)
+        plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
+                         scale_factor=self.z_scale_factor,
+                         title='Read Noise')
+        return pipeBase.Struct(read_noise_plot=fig)
