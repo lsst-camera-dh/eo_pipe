@@ -13,7 +13,7 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 
-__all__ = ['BiasStatsTask', 'SubRegionSampler']
+__all__ = ['ReadNoiseTask', 'SubRegionSampler']
 
 
 class SubRegionSampler:
@@ -34,7 +34,7 @@ class SubRegionSampler:
         return self
 
 
-class BiasStatsTaskConnections(pipeBase.PipelineTaskConnections,
+class ReadNoiseTaskConnections(pipeBase.PipelineTaskConnections,
                                dimensions=("instrument", "detector")):
     raw_frames = cT.Input(name="raw_frames",
                           doc="Raw input frames",
@@ -42,14 +42,14 @@ class BiasStatsTaskConnections(pipeBase.PipelineTaskConnections,
                           dimensions=("instrument", "exposure", "detector"),
                           multiple=True,
                           deferLoad=True)
-    bias_stats = cT.Output(name="bias_stats",
-                           doc="bias frame statistics",
+    read_noise = cT.Output(name="read_noise",
+                           doc="read frame statistics",
                            storageClass="StructuredDataDict",
                            dimensions=("instrument", "detector"))
 
 
-class BiasStatsTaskConfig(pipeBase.PipelineTaskConfig,
-                          pipelineConnections=BiasStatsTaskConnections):
+class ReadNoiseTaskConfig(pipeBase.PipelineTaskConfig,
+                          pipelineConnections=ReadNoiseTaskConnections):
     edge_buffer = pexConfig.Field(doc="Number of pixels to exclude around "
                                   "the edge of the serial overscan region.",
                                   dtype=int, default=2)
@@ -59,10 +59,10 @@ class BiasStatsTaskConfig(pipeBase.PipelineTaskConfig,
                           dtype=int, default=20)
 
 
-class BiasStatsTask(pipeBase.PipelineTask):
+class ReadNoiseTask(pipeBase.PipelineTask):
 
-    ConfigClass = BiasStatsTaskConfig
-    _DefaultName = "biasStatsTask"
+    ConfigClass = ReadNoiseTaskConfig
+    _DefaultName = "readNoiseTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -91,4 +91,4 @@ class BiasStatsTask(pipeBase.PipelineTask):
                     for _, subregion in zip(range(self.nsamp), sampler)]
                 data['read_noise'].append(float(np.median(stdevs)))
                 data['median'].append(float(np.median(overscan.array)))
-        return pipeBase.Struct(bias_stats=dict(data))
+        return pipeBase.Struct(read_noise=dict(data))
