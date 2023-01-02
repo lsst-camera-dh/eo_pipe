@@ -5,6 +5,7 @@ import pandas as pd
 
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask
+import lsst.daf.butler as daf_butler
 import lsst.geom
 from lsst.ip.isr import Defects
 import lsst.pex.config as pexConfig
@@ -15,6 +16,21 @@ from lsst.eo.pipe.plotting import plot_focal_plane
 
 
 __all__ = ["MergeSelectedDefectsTask", "DefectsPlotsTask"]
+
+
+def get_amp_data(repo, collections):
+    """Return amp-level pixel defects data."""
+    butler = daf_butler.Butler(repo, collections=collections)
+    dsrefs = list(set(butler.registry.queryDatasets('defectsResults',
+                                                    findFirst=True)))
+    df = butler.getDirect(dsrefs[0])
+    fields = 'bright_columns bright_pixels dark_columns dark_pixels'.split()
+
+    amp_data = defaultdict(lambda : defaultdict(dict))
+    for _, row in df.iterrows():
+        for field in fields:
+            amp_data[field][row.det_name][row.amp_name] = row[field]
+    return {field: dict(data) for field, data in amp_data.items()}
 
 
 def get_overlap_region(row, bbox):

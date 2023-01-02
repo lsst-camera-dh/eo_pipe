@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import astropy.stats
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -11,6 +12,20 @@ from lsst.eo.pipe.plotting import plot_focal_plane
 
 
 __all__ = ['DivisaderoTearingTask', 'DivisaderoFpPlotsTask']
+
+
+def get_amp_data(repo, collections):
+    """Get divisadero tearing results for each amp in the focal plane."""
+    butler = daf_butler.Butler(repo, collections=collections)
+    dsrefs = list(set(butler.registry.queryDatasets('divisadero_stats',
+                                                    findFirst=True)))
+    field = 'divisadero_tearing'
+    amp_data = defaultdict(dict)
+    for dsref in dsrefs:
+        df = butler.getDirect(dsref)
+        for _, row in df.iterrows():
+            amp_data[row.det_name][row.amp_name] = row[field]
+    return {field: dict(amp_data)}
 
 
 class DivisaderoTearingTaskConnections(pipeBase.PipelineTaskConnections,

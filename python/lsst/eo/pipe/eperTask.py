@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import lsst.afw.math as afw_math
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+import lsst.daf.butler as daf_butler
 import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -13,6 +14,20 @@ from .isr_utils import apply_minimal_isr
 
 
 __all__ = ['compute_ctis', 'EperTask', 'EperFpPlotsTask']
+
+
+def get_amp_data(repo, collections):
+    """Get EPER results for each amp in the focal plane."""
+    butler = daf_butler.Butler(repo, collections=collections)
+    dsrefs = list(set(butler.registry.queryDatasets('eper_stats',
+                                                    findFirst=True)))
+    amp_data = defaultdict(lambda : defaultdict(dict))
+    for dsref in dsrefs:
+        df = butler.getDirect(dsref)
+        for _, row in df.iterrows():
+            for field in ('scti', 'pcti'):
+                amp_data[field][row.det_name][row.amp_name] = row[field]
+    return {field: dict(data) for field, data in amp_data.items()}
 
 
 def compute_ctis(processed_segment, raw_amp_info, npix=3):
