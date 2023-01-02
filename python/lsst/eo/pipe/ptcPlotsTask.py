@@ -36,7 +36,8 @@ def get_amp_data(repo, collections, camera=None):
             ptc_a00, ptc_gain, ptc_var = values
             amp_data['ptc_a00'][det_name][amp_name] = -ptc_a00
             amp_data['ptc_gain'][det_name][amp_name] = ptc_gain
-            amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
+            if ptc_var > 0:
+                amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
             amp_data['ptc_turnoff'][det_name][amp_name] \
                 = (np.max(ptc.finalMeans[amp_name])
                    if ptc.finalMeans[amp_name] else -1)
@@ -207,7 +208,8 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                 ptc_a00, ptc_gain, ptc_var = values
                 amp_data['ptc_a00'][detector][amp] = -ptc_a00
                 amp_data['ptc_gain'][detector][amp] = ptc_gain
-                amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
+                if ptc_var > 0:
+                    amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
                 amp_data['ptc_turnoff'][detector][amp] \
                     = np.max(ptc.finalMeans[amp]) if ptc.finalMeans[amp] else -1
 
