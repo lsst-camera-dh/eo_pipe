@@ -17,7 +17,7 @@ def get_amp_data(repo, collections):
     """Return amp-level dark current data."""
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('dark_current_stats',
-                                                    findFirst=True).expanded()))
+                                                    findFirst=True)))
     df = butler.getDirect(dsrefs[0])
     amp_data = defaultdict(dict)
     for _, row in df.iterrows():

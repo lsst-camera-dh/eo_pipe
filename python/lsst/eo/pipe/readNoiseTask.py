@@ -29,7 +29,7 @@ def get_amp_data(repo, collections, camera=None):
         camera = LsstCam.getCamera()
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('eo_read_noise',
-                                                    findFirst=True).expanded()))
+                                                    findFirst=True)))
     amp_data = defaultdict(dict)
     for dsref in dsrefs:
         det = camera[dsref.dataId['detector']]
