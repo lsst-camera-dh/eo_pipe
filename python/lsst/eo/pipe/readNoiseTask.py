@@ -10,7 +10,9 @@ from astro_metadata_translator import ObservationInfo
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+import lsst.daf.butler as daf_butler
 import lsst.geom
+from lsst.obs.lsst import LsstCam
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -19,6 +21,24 @@ from lsst.eo.pipe.plotting import plot_focal_plane
 
 
 __all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask']
+
+
+def get_amp_data(repo, collections, camera=None):
+    """Return amp-level read noise data"""
+    if camera is None:
+        camera = LsstCam.getCamera()
+    butler = daf_butler.Butler(repo, collections=collections)
+    dsrefs = list(set(butler.registry.queryDatasets('eo_read_noise',
+                                                    findFirst=True)))
+    amp_data = defaultdict(dict)
+    for dsref in dsrefs:
+        det = camera[dsref.dataId['detector']]
+        det_name = det.getName()
+        for amp in det:
+            amp_name = amp.getName()
+            df = butler.getDirect(dsref).query(f"amp_name=='{amp_name}'")
+            amp_data[det_name][amp_name] = np.median(df['read_noise'])
+    return {'read_noise': dict(amp_data)}
 
 
 class SubRegionSampler:

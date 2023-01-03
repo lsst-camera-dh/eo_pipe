@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -10,6 +11,18 @@ from lsst.eo.pipe.plotting import plot_focal_plane
 
 
 __all__ = ['DarkCurrentTask']
+
+
+def get_amp_data(repo, collections):
+    """Return amp-level dark current data."""
+    butler = daf_butler.Butler(repo, collections=collections)
+    dsrefs = list(set(butler.registry.queryDatasets('dark_current_stats',
+                                                    findFirst=True)))
+    df = butler.getDirect(dsrefs[0])
+    amp_data = defaultdict(dict)
+    for _, row in df.iterrows():
+        amp_data[row.det_name][row.amp_name] = row.dark_current
+    return {'dark_current': dict(amp_data)}
 
 
 class DarkCurrentTaskConnections(pipeBase.PipelineTaskConnections,

@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe.utils import funcAstier, funcPolynomial
+import lsst.daf.butler as daf_butler
+from lsst.obs.lsst import LsstCam
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -13,6 +15,33 @@ from lsst.eo.pipe.plotting import plot_focal_plane
 
 
 __all__ = ['PtcPlotsTask', 'PtcFpPlotsTask']
+
+
+def get_amp_data(repo, collections, camera=None):
+    """Get PTC results for each amp in the focal plane."""
+    if camera is None:
+        camera = LsstCam.getCamera()
+
+    butler = daf_butler.Butler(repo, collections=collections)
+    dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
+
+    amp_data = defaultdict(lambda : defaultdict(dict))
+    for dsref in dsrefs:
+        det = camera[dsref.dataId['detector']]
+        det_name = det.getName()
+        ptc = butler.getDirect(dsref)
+        for amp_name, values in ptc.ptcFitPars.items():
+            if len(values) != 3:
+                continue
+            ptc_a00, ptc_gain, ptc_var = values
+            amp_data['ptc_a00'][det_name][amp_name] = -ptc_a00
+            amp_data['ptc_gain'][det_name][amp_name] = ptc_gain
+            if ptc_var > 0:
+                amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
+            amp_data['ptc_turnoff'][det_name][amp_name] \
+                = (np.max(ptc.finalMeans[amp_name])
+                   if ptc.finalMeans[amp_name] else -1)
+    return {field: dict(data) for field, data in amp_data.items()}
 
 
 class PtcPlotsTaskConnections(pipeBase.PipelineTaskConnections,
@@ -179,7 +208,8 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                 ptc_a00, ptc_gain, ptc_var = values
                 amp_data['ptc_a00'][detector][amp] = -ptc_a00
                 amp_data['ptc_gain'][detector][amp] = ptc_gain
-                amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
+                if ptc_var > 0:
+                    amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
                 amp_data['ptc_turnoff'][detector][amp] \
                     = np.max(ptc.finalMeans[amp]) if ptc.finalMeans[amp] else -1
 
