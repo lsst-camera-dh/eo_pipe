@@ -253,6 +253,7 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     norm = plt.Normalize(vmin=z_range[0], vmax=z_range[1])
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
+    plt.title(title)
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -269,9 +270,9 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
         ticklabels = [_/float(scale_factor) for _ in ticks]
         ticklabels[-1] = '{} x {}'.format(ticklabels[-1], scale_factor)
         colorbar.set_ticklabels(ticklabels)
-    plt.title(title)
     ax.set_aspect('equal')
     return colorbar
+
 
 def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
                   label=None, use_log10=False, yscale='log',
