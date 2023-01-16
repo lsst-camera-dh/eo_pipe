@@ -1,0 +1,13 @@
+description:
+  Pipeline to serial and parallel CTI vs flux for flat pair data.
+tasks:
+  ctiVsFluxTask:
+    class: lsst.eo.pipe.CtiVsFluxTask
+    config:
+      connections.raws: "raw"
+      connections.bias: "bias"
+      connections.dark: "dark"
+      connections.camera: "camera"
+      connections.ctiVsFlux_stats: "cti_vs_flux_stats"
+      connections.scti_eper_plot: "scti_vs_flux_plot"
+      connections.pcti_eper_plot: "pcti_vs_flux_plot"
