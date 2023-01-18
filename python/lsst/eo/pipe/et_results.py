@@ -1,10 +1,6 @@
 from collections import defaultdict
 import pickle
 import pandas as pd
-try:
-    from eTraveler.clientAPI.connection import Connection
-except ImportError:
-    print("Could not import eTraveler.clientAPI.")
 
 
 __all__ = ['ETResults']
@@ -35,6 +31,7 @@ class ETResults(dict):
         prodServer: bool [True]
             Flag to use the prod or dev eT server.
         """
+        from eTraveler.clientAPI.connection import Connection
         super(ETResults, self).__init__()
         db_name = 'Dev' if run.endswith('D') else 'Prod'
         conn = Connection(user, db_name, prodServer=prodServer)
