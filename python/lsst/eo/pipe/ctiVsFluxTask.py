@@ -113,7 +113,7 @@ class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
         dtype=int)
     oscan_method = pexConfig.ChoiceField(
         doc="Overscan modeling method",
-        default="1d_poly",
+        default="median_per_row",
         dtype=str,
         allowed={
             "mean": "Mean of all selected pixels in overscan region",
