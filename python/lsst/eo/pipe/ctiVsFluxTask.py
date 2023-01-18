@@ -11,22 +11,25 @@ from .isr_utils import apply_minimal_isr
 from .eperTask import compute_ctis
 
 
-def find_flat_pairs(raws, flux_keyword=None):
+__all__ = ['CtiVsFluxTask']
+
+
+def find_flat_pairs(raws, flux_keyword=""):
     # Make sure raws can be indexed.
     raws = list(raws)
 
     # Test if flux_keyword exists by checking first raw exposure.  If not,
     # then set to flux_keyword=None and use exposure time instead.
-    if flux_keyword not in raws[0].get().getMetaData():
-        flux_keyword = None
+    if flux_keyword not in raws[0].get().getMetadata():
+        flux_keyword = ""
 
     # Assemble the list of key values for each raw.
     key_values = []
     for handle in raws:
-        if flux_keyword is not None:
+        if flux_keyword != "":
             key_values.append(handle.get().getMetadata()[flux_keyword])
         else:
-            key_values.append(handle.dataId.record['exposure'].exposure_time)
+            key_values.append(handle.dataId.records['exposure'].exposure_time)
 
     # Find the pairs based on the key_values.
     raw_pairs = []
@@ -124,7 +127,7 @@ class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
     flux_keyword = pexConfig.Field(
         doc=("FITS header keyword with target flux value "
              "for finding image pairs"),
-        default=None,
+        default="",
         dtype=str)
 
 
