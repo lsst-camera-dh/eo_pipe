@@ -172,12 +172,14 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
                 data['pcti'].append(pcti)
         df0 = pd.DataFrame(data)
 
+        markers = ['o']*8 + ['^']*8
         # Serial CTI vs flux plot.
         scti_vs_flux_plot = plt.figure()
-        for amp in det:
+        for i, amp in enumerate(det):
             amp_name = amp.getName()
             df = df0.query(f"amp_name=='{amp_name}'")
-            plt.scatter(df['signal'], df['scti'], label=amp_name)
+            plt.plot(df['signal'], df['scti'], marker=markers[i], markersize=3,
+                     label=amp_name)
         plt.legend(fontsize='x-small', ncol=4)
         plt.xlabel("Signal [ADU]")
         plt.ylabel("Serial CTI")
@@ -187,10 +189,11 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
 
         # Parallel CTI vs flux plot.
         pcti_vs_flux_plot = plt.figure()
-        for amp in det:
+        for i, amp in enumerate(det):
             amp_name = amp.getName()
             df = df0.query(f"amp_name=='{amp_name}'")
-            plt.scatter(df['signal'], df['pcti'], label=amp_name)
+            plt.plot(df['signal'], df['pcti'], marker=markers[i], markersize=3,
+                     label=amp_name)
         plt.legend(fontsize='x-small', ncol=4)
         plt.xlabel("Signal [ADU]")
         plt.ylabel("Parallel CTI")
