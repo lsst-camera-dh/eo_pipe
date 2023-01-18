@@ -171,6 +171,7 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
                 data['scti'].append(scti)
                 data['pcti'].append(pcti)
         df0 = pd.DataFrame(data)
+        df0.sort_values('signal', inplace=True)
 
         markers = ['o']*8 + ['^']*8
         # Serial CTI vs flux plot.
