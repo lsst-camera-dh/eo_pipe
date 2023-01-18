@@ -54,6 +54,8 @@ def subtract_calib(raw, calib, amp, scale=1):
 
     This function modifies the raw pixel data in place.
     """
+    if calib is None:
+        return
     raw_image = raw.getImage()
     amp_info = raw.getDetector()[amp]
     calib_image = calib.getImage()
