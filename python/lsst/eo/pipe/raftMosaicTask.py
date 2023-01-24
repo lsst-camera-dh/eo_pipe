@@ -1,6 +1,7 @@
 from collections import defaultdict
 import matplotlib
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from lsst.afw.cameraGeom import utils as cgu
 from lsst.afw.math import flipImage
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
@@ -76,6 +77,12 @@ class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
 class RaftMosaicTaskConfig(pipeBase.PipelineTaskConfig,
                            pipelineConnections=RaftMosaicTaskConnections):
     """Configuration for RaftMosaicTask."""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    nsig = pexConfig.Field(doc="Number of stdevs below and above median "
+                           "for color bar range", dtype=float, default=5.0)
     binSize = pexConfig.Field(doc="Bin size in pixels for rebinning.",
                               dtype=int, default=2)
     cmap = pexConfig.Field(doc="Matplotlib color map", dtype=str, default='hot')
@@ -88,6 +95,8 @@ class RaftMosaicTask(pipeBase.PipelineTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+        self.nsig = self.config.nsig
         self.binSize = self.config.binSize
         self.cmap = self.config.cmap
 
@@ -109,12 +118,14 @@ class RaftMosaicTask(pipeBase.PipelineTask):
 
         camera = inputs['camera']
 
-        # Do output ref persistence in .run method since collecting
-        # all of the raft-level plots uses a lot of memory.
+        # Do output ref persistence in the .run method since
+        # collecting all of the raft-level plots in a single returned
+        # pipeBase.Struct uses too much memory for the entire
+        # focal plane.
         self.run(calibs, camera, butlerQC, output_refs)
 
     def run(self, calibs, camera, butlerQC, output_refs):
-        # Map representative detector number to raft name.
+        # Map the representative detector number to raft name.
         det_lists = defaultdict(list)
         for det in camera:
             det_name = det.getName()
@@ -141,16 +152,21 @@ class RaftMosaicTask(pipeBase.PipelineTask):
                                         binSize=self.binSize)
                 mosaic = flipImage(mosaic, flipLR=False, flipTB=True)
                 imarr = mosaic.array
-                raft_plot = plt.figure()
+                raft_plot = plt.figure(figsize=self.figsize)
+                ax = raft_plot.add_subplot(111)
                 image = plt.imshow(imarr, interpolation='nearest',
                                    cmap=self.cmap)
-                vmin, vmax = cmap_range(imarr, nsig=5)
+                vmin, vmax = cmap_range(imarr, nsig=self.nsig)
                 norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
                 image.set_norm(norm)
-                plt.colorbar(image)
                 plt.title(f'{calib_type}, {raft}')
                 plt.tick_params(axis='both', which='both', top=False,
                                 bottom=False, left=False, right=False,
                                 labelbottom=False, labelleft=False)
+
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.1)
+                plt.colorbar(image, cax=cax)
+
                 butlerQC.put(raft_plot, ref_map[raft])
                 plt.close()
