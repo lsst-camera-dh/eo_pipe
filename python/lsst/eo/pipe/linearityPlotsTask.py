@@ -44,10 +44,24 @@ def get_pd_values(pd_integrals, ptc, amp_name='C10'):
 
 
 def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
+    """
+    Fit a line with the y-intercept fixed to zero, using the
+    signal counts Ne as the variance in the chi-square, i.e.,
+
+    chi2 = sum( (Ne - aa*flux)**2/Ne )
+
+    Minimizing chi2 wrt aa, gives
+
+    aa = sum(flux) / sum(flux**2*Ne)
+
+    Also apply the y_range selection to the signal counts, Ne,
+    and omit any flux values above the Ne peak and any non-positive
+    flux values.
+    """
     max_index = np.where(Ne == max(Ne))[0][0]
     index = np.where((y_range[0] < Ne) & (Ne < y_range[1])
                      & (flux <= flux[max_index]) & (flux > 0))
-    aa = sum(flux[index]*Ne[index])/sum(flux[index]**2)
+    aa = sum(flux[index])/sum(flux[index]**2*Ne[index])
 
     def func(x):
         return aa*x
