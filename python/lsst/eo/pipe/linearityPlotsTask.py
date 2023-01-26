@@ -52,7 +52,7 @@ def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
 
     Minimizing chi2 wrt aa, gives
 
-    aa = sum(flux) / sum(flux**2*Ne)
+    aa = sum(flux) / sum(flux**2/Ne)
 
     Also apply the y_range selection to the signal counts, Ne,
     and omit any flux values above the Ne peak and any non-positive
@@ -61,7 +61,7 @@ def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
     max_index = np.where(Ne == max(Ne))[0][0]
     index = np.where((y_range[0] < Ne) & (Ne < y_range[1])
                      & (flux <= flux[max_index]) & (flux > 0))
-    aa = sum(flux[index])/sum(flux[index]**2*Ne[index])
+    aa = sum(flux[index])/sum(flux[index]**2/Ne[index])
 
     def func(x):
         return aa*x
