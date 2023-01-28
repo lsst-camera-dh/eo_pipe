@@ -181,7 +181,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         amp_data = defaultdict(list)
         for i, amp in enumerate(det, 1):
             amp_name = amp.getName()
-            gain = amp.getGain()
+            gain = ptc.gain[amp_name]
             Ne = np.array(ptc.rawMeans[amp_name])*gain
             try:
                 func, resids[amp_name], index[amp_name] \
