@@ -43,7 +43,7 @@ def get_pd_values(pd_integrals, ptc, amp_name='C10'):
     return np.array(values)
 
 
-def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
+def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05):
     """
     Fit a line with the y-intercept fixed to zero, using the
     signal counts Ne as the variance in the chi-square, i.e.,
@@ -67,7 +67,12 @@ def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
         return aa*x
 
     resids = (Ne - func(flux))/Ne
-    return func, resids, index
+
+    # Compute maximum signal consistent with the linear fit within
+    # the specified maximum fractional deviation.
+    linearity_turnoff = np.max(Ne[np.where(np.abs(resids) < max_frac_dev)])
+
+    return func, resids, index, linearity_turnoff
 
 
 class LinearityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
@@ -122,6 +127,10 @@ class LinearityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                     dtype=float, default=1e3)
     fit_range_max = pexConfig.Field(doc="Fit range upper bound in e-",
                                     dtype=float, default=9e4)
+    max_frac_dev_spec = pexConfig.Field(doc=("Maximum fractional deviation "
+                                             "specification to use for "
+                                             "linearity turnoff calculation."),
+                                        dtype=float, default=0.05)
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
@@ -136,6 +145,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fit_range = self.config.fit_range_min, self.config.fit_range_max
+        self.max_frac_dev_spec = self.config.max_frac_dev_spec
         self.figsize = self.config.yfigsize, self.config.xfigsize
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
@@ -184,8 +194,10 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             gain = ptc.gain[amp_name]
             Ne = np.array(ptc.rawMeans[amp_name])*gain
             try:
-                func, resids[amp_name], index[amp_name] \
-                    = linearity_fit(pd_values, Ne, y_range=self.fit_range)
+                func, resids[amp_name], index[amp_name], linearity_turnoff \
+                    = linearity_fit(pd_values, Ne, y_range=self.fit_range,
+                                    max_frac_dev=self.max_frac_dev_spec)
+                linearity_turnoff /= gain  # Convert from e- to ADU
             except (IndexError, ZeroDivisionError) as eobj:
                 pass
             else:
@@ -196,6 +208,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                     max(np.abs(resids[amp_name][index[amp_name]])))
                 amp_data['max_observed_signal'].append(
                     max(ptc.rawMeans[amp_name]))
+                amp_data['linearity_turnoff'].append(linearity_turnoff)
                 # plot for current amp
                 ax = plt.subplot(4, 4, i)
                 plt.scatter(pd_values, Ne, s=2)
@@ -268,6 +281,14 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                          "from flat pair acquisition."),
                                     storageClass="Plot",
                                     dimensions=("instrument",))
+
+    linearity_turnoff = cT.Output(name="linearity_turnoff",
+                                  doc=("Maximum signal (ADU) consistent "
+                                       "with the linearity fit within "
+                                       "the maximum fractional deviation "
+                                       "spec, nominally 0.05.")
+                                  storageClass="Plot",
+                                  dimensions=("instrument",))
 
 
 class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
