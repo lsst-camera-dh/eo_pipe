@@ -1,0 +1,13 @@
+description: Make a focal plane mosaic of ISR'd dark exposures
+tasks:
+  raftMosaic:
+    class: lsst.eo.pipe.RaftMosaicTask
+    config:
+      connections.bias: "bias"
+      connections.dark: "dark"
+      connections.flat: "flat"
+      connections.camera: "camera"
+      connections.bias_mosaic: 'eoBiasRaftMosaic'
+      connections.dark_mosaic: 'eoDarkRaftMosaic'
+      connections.flat_mosaic: 'eoFlatRaftMosaic'
+      binSize: 2

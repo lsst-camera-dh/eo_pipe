@@ -6,7 +6,7 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 
-__all__ = ['FocalPlaneMosaicTask']
+__all__ = ['FocalPlaneMosaicTask', 'ImageSource']
 
 
 class ImageSource:
