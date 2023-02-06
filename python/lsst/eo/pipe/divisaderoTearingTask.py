@@ -8,10 +8,11 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane
+from lsst.eo.pipe.plotting import plot_focal_plane, make_divisadero_summary_plot
 
 
-__all__ = ['DivisaderoTearingTask', 'DivisaderoFpPlotsTask']
+__all__ = ['DivisaderoTearingTask', 'DivisaderoRaftPlotsTask',
+           'DivisaderoFpPlotsTask']
 
 
 def get_amp_data(repo, collections):
@@ -186,6 +187,103 @@ class DivisaderoTearingTask(pipeBase.PipelineTask):
         return response_vs_col, divisadero_tearing
 
 
+class DivisaderoRaftPlotsTaskConnections(pipeBase.PipelineTaskConnections,
+                                         dimensions=("instrument",)):
+
+    divisadero_response = cT.Input(
+        name="divisadero_response",
+        doc="mean divisadero response vs column for each CCD half",
+        storageClass="NumpyArray",
+        dimensions=("instrument", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    divisadero_stats = cT.Input(
+        name="divisadero_stats",
+        doc=("Divisadero statistics for all CCD amp boundaries "
+             "in the focal plane"),
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
+
+    divisadero_raft_plot = cT.Output(
+        name="divisadero_raft_plot",
+        doc=("Divisadero tearing response as a function of half-CCD column "
+             "for a full raft."),
+        storageClass="Plot",
+        dimensions=("instrument", "detector"),
+        multiple=True)
+
+
+class DivisaderoRaftPlotsTaskConfig(pipeBase.PipelineTaskConfig,
+                                    pipelineConnections=DivisaderoRaftPlotsTaskConnections):
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=20)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=20)
+
+
+class DivisaderoRaftPlotsTask(pipeBase.PipelineTask):
+    """
+    Create raft-level plots of divisadero tearing response as function
+    of column in the CCD halves.
+    """
+    ConfigClass = DivisaderoRaftPlotsTaskConfig
+    _DefaultName = "divisaderoRaftPlotsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.yfigsize, self.config.xfigsize
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        camera = inputs['camera']
+        raft_data = defaultdict(dict)
+        for ref in inputs['divisadero_response']:
+            det_name = ref.dataId.records['detector'].full_name
+            raft, slot = det_name.split('_')
+            raft_data[raft][slot] = list(ref.get().tolist()[det_name])
+        for ref in inputs['divisadero_stats']:
+            raft, slot = ref.dataId.records['detector'].full_name.split('_')
+            raft_data[raft][slot].append(ref.get())
+
+        self.run(raft_data, camera, butlerQC, outputRefs.divisadero_raft_plot)
+
+    def run(self, raft_data, camera, butlerQC, output_refs):
+        # Map the representative detector number to raft name.
+        det_lists = defaultdict(list)
+        for det in camera:
+            det_name = det.getName()
+            raft, _ = det_name.split('_')
+            det_lists[raft].append(det.getId())
+        detector_raft_map = {min(det_list): raft
+                             for raft, det_list in det_lists.items()}
+
+        # Map the output references for each raft.
+        ref_map = {}
+        for ref in output_refs:
+            detector = ref.dataId['detector']
+            if detector in detector_raft_map:
+                raft = detector_raft_map[detector]
+                ref_map[raft] = ref
+
+        # Loop over rafts and create summary plots.
+        for raft, data in raft_data.items():
+            title = f"Divisadero tearing response, {raft}"
+            fig = make_divisadero_summary_plot(data, title=title,
+                                               figsize=self.figsize)
+            butlerQC.put(fig, ref_map[raft])
+
+
 class DivisaderoFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                        dimensions=("instrument",)):
     divisadero_stats = cT.Input(
@@ -222,6 +320,7 @@ class DivisaderoFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                            dtype=float, default=0)
     zmax = pexConfig.Field(doc="Maximum of color bar range.",
                            dtype=float, default=0.05)
+
 
 class DivisaderoFpPlotsTask(pipeBase.PipelineTask):
     """

@@ -1,17 +1,22 @@
-pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
+includeConfigs:
+  - ${CP_PIPE_PROCESSING_DIR}/bps/bps_default_configs.yaml
 
-wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
-project: "{outputRun}"
+parsl_config:
+  max_threads: 32
+
+#wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+#project: "{outputRun}"
+#includeConfigs:
+#  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
+#computeSite: slurm_wq_16
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
 
 payload:
   b_protocol_run: 13162
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/flat_13162_w_2022_39
+  inCollection: u/jchiang/ptc_0_13144_w_2022_53
   payloadName: divisadero_tearing_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and physical_filter='SDSSi'"
+  dataQuery: "instrument='LSSTCam' and physical_filter='SDSSi'"
 
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_16

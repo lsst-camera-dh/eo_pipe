@@ -8,6 +8,13 @@ tasks:
       connections.camera: "camera"
       connections.divisadero_response: "divisadero_response"
       connections.divisadero_stats: "divisadero_stats"
+  divisaderoRaftPlots:
+    class: lsst.eo.pipe.DivisaderoRaftPlotsTask
+    config:
+      connections.divisadero_response: "divisadero_response"
+      connections.divisadero_stats: "divisadero_stats"
+      connections.camera: "camera"
+      connections.divisadero_raft_plot: "divisadero_raft_plot"
   divisaderoFpPlots:
     class: lsst.eo.pipe.DivisaderoFpPlotsTask
     config:
