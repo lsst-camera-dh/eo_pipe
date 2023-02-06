@@ -286,7 +286,7 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc=("Maximum signal (ADU) consistent "
                                        "with the linearity fit within "
                                        "the maximum fractional deviation "
-                                       "spec, nominally 0.05.")
+                                       "spec, nominally 0.05."),
                                   storageClass="Plot",
                                   dimensions=("instrument",))
 
