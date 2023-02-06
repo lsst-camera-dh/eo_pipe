@@ -16,3 +16,4 @@ tasks:
       connections.linearity_results: "linearity_results"
       connections.max_frac_dev: "max_frac_dev"
       connections.max_observed_signal: "max_observed_signal"
+      connections.linearity_turnoff: "linearity_turnoff"
