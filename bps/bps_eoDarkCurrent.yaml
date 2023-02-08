@@ -3,10 +3,10 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDarkCurrent.yaml
 payload:
   b_protocol_run: 13162
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/dark_13162_w_2022_39
+  inCollection: u/jchiang/ptc_0_13162_w_2023_05
   payloadName: dark_current_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}'"
+  dataQuery: "instrument='LSSTCam'"
 
 includeConfigs:
   - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
