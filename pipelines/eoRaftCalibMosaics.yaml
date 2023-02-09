@@ -1,7 +1,7 @@
-description: Make a focal plane mosaic of ISR'd dark exposures
+description: Make raft-level mosaics of calibration products
 tasks:
   raftMosaic:
-    class: lsst.eo.pipe.RaftMosaicTask
+    class: lsst.eo.pipe.RaftCalibMosaicTask
     config:
       connections.bias: "bias"
       connections.dark: "dark"

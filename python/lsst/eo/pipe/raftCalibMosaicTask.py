@@ -12,11 +12,11 @@ from .focalPlaneMosaicTask import ImageSource
 from lsst.eo.pipe.plotting import cmap_range
 
 
-__all__ = ['RaftMosaicTask']
+__all__ = ['RaftCalibMosaicTask']
 
 
-class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
-                                dimensions=("instrument",)):
+class RaftCalibMosaicTaskConnections(pipeBase.PipelineTaskConnections,
+                                     dimensions=("instrument",)):
     bias = cT.Input(
         name="bias",
         doc="Combined biases.",
@@ -74,9 +74,9 @@ class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
         multiple=True)
 
 
-class RaftMosaicTaskConfig(pipeBase.PipelineTaskConfig,
-                           pipelineConnections=RaftMosaicTaskConnections):
-    """Configuration for RaftMosaicTask."""
+class RaftCalibMosaicTaskConfig(pipeBase.PipelineTaskConfig,
+                                pipelineConnections=RaftCalibMosaicTaskConnections):
+    """Configuration for RaftCalibMosaicTask."""
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
@@ -88,10 +88,10 @@ class RaftMosaicTaskConfig(pipeBase.PipelineTaskConfig,
     cmap = pexConfig.Field(doc="Matplotlib color map", dtype=str, default='hot')
 
 
-class RaftMosaicTask(pipeBase.PipelineTask):
+class RaftCalibMosaicTask(pipeBase.PipelineTask):
     """Create raft mosaic of ISR'd CCD frames for a particular exposure."""
-    ConfigClass = RaftMosaicTaskConfig
-    _DefaultName = "raftMosaicTask"
+    ConfigClass = RaftCalibMosaicTaskConfig
+    _DefaultName = "raftCalibMosaicTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

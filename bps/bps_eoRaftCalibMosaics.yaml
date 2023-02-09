@@ -1,4 +1,4 @@
-pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftMosaics.yaml
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftCalibMosaics.yaml
 
 payload:
   b_protocol_run: 13162
