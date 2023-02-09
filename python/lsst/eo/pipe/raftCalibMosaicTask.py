@@ -1,15 +1,11 @@
 from collections import defaultdict
-import matplotlib
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from lsst.afw.cameraGeom import utils as cgu
-from lsst.afw.math import flipImage
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .focalPlaneMosaicTask import ImageSource
-from lsst.eo.pipe.plotting import cmap_range
+from .dsref_utils import RaftOutputRefsMapper
+from .plotting import make_mosaic
 
 
 __all__ = ['RaftCalibMosaicTask']
@@ -125,48 +121,16 @@ class RaftCalibMosaicTask(pipeBase.PipelineTask):
         self.run(calibs, camera, butlerQC, output_refs)
 
     def run(self, calibs, camera, butlerQC, output_refs):
-        # Map the representative detector number to raft name.
-        det_lists = defaultdict(list)
-        for det in camera:
-            det_name = det.getName()
-            raft, _ = det_name.split('_')
-            det_lists[raft].append(det.getId())
-        detector_raft_map = {min(det_list): raft
-                             for raft, det_list in det_lists.items()}
-
+        raft_output_refs_mapper = RaftOutputRefsMapper(camera)
         # Loop over calib_type (i.e., "bias", "dark", "flat") and
         # the lists of calib exposure refs per detector.
         for calib_type, exp_refs in calibs.items():
             # Map output references for each raft.
-            ref_map = {}
-            for ref in output_refs[calib_type]:
-                detector = ref.dataId['detector']
-                if detector in detector_raft_map:
-                    raft = detector_raft_map[detector]
-                    ref_map[raft] = ref
+            ref_map = raft_output_refs_mapper.create(output_refs[calib_type])
             # Loop over rafts and create mosaics
             for raft, refs in exp_refs.items():
-                image_source = ImageSource(refs)
-                mosaic = cgu.showCamera(camera, imageSource=image_source,
-                                        detectorNameList=list(refs.keys()),
-                                        binSize=self.binSize)
-                mosaic = flipImage(mosaic, flipLR=False, flipTB=True)
-                imarr = mosaic.array
-                raft_plot = plt.figure(figsize=self.figsize)
-                ax = raft_plot.add_subplot(111)
-                image = plt.imshow(imarr, interpolation='nearest',
-                                   cmap=self.cmap)
-                vmin, vmax = cmap_range(imarr, nsig=self.nsig)
-                norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-                image.set_norm(norm)
+                raft_plot = make_mosaic(refs, camera, self.binSize,
+                                        self.figsize, self.cmap, self.nsig)
                 plt.title(f'{calib_type}, {raft}')
-                plt.tick_params(axis='both', which='both', top=False,
-                                bottom=False, left=False, right=False,
-                                labelbottom=False, labelleft=False)
-
-                divider = make_axes_locatable(ax)
-                cax = divider.append_axes("right", size="5%", pad=0.1)
-                plt.colorbar(image, cax=cax)
-
                 butlerQC.put(raft_plot, ref_map[raft])
                 plt.close()
