@@ -5,7 +5,7 @@ __all__ = ['RaftOutputRefsMapper']
 
 
 class RaftOutputRefsMapper:
-    def __init___(self, camera):
+    def __init__(self, camera):
         # Map the representative detector number to raft name.
         det_lists = defaultdict(list)
         for det in camera:
@@ -22,6 +22,6 @@ class RaftOutputRefsMapper:
         for ref in output_refs:
             detector = ref.dataId['detector']
             if detector in self.detector_raft_map:
-                raft = detector_raft_map[detector]
+                raft = self.detector_raft_map[detector]
                 ref_map[raft] = ref
         return ref_map

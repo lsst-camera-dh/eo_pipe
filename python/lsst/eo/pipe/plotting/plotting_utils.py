@@ -34,7 +34,8 @@ class ImageSource:
                                        det.getOrientation().getNQuarter()), det
 
 
-def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig):
+def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
+                title=None):
     """
     Make a a mosaic of exposures using the
     lsst.afw.cameraGeom.utils.showCamera function.
@@ -54,6 +55,8 @@ def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig):
         Color map.
     nsig : float
         Number of clipped stdevs to use around the median for plotting range.
+    title : str [None]
+        Plot title.
 
     Returns
     -------
@@ -76,7 +79,8 @@ def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig):
     plt.tick_params(axis='both', which='both', top=False,
                     bottom=False, left=False, right=False,
                     labelbottom=False, labelleft=False)
-
+    if title is not None:
+        plt.title(title)
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
     plt.colorbar(image, cax=cax)

@@ -17,7 +17,7 @@ class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
         name="postISRCCD",
         doc="Input pre-processed exposures to combine.",
         storageClass="Exposure",
-        dimensions=("instrument", "exposure", "detector"),
+        dimensions=("instrument", "exposure", "detector", "physical_filter"),
         multiple=True,
         deferLoad=True)
 
@@ -32,13 +32,13 @@ class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
     raft_mosaic_plot = cT.Output(
         name="eoRaftMosaic",
         doc="Raft-level mosaic of CCD exposures with ISR applied.",
-        storageClass="ImageF",
-        dimensions=("instrument", "detector"),
+        storageClass="Plot",
+        dimensions=("instrument", "exposure", "detector", "physical_filter"),
         multiple=True)
 
 
 class RaftMosaicTaskConfig(pipeBase.PipelineTaskConfig,
-                                 pipelineConnections=RaftMosaicTaskConnections):
+                           pipelineConnections=RaftMosaicTaskConnections):
     """Configuration for RaftMosaicTask."""
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
                                dtype=float, default=9)
@@ -66,23 +66,31 @@ class RaftMosaicTask(pipeBase.PipelineTask):
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
         camera = inputs['camera']
-        raft_data = defaultdict(dict)
+        raft_data = defaultdict(lambda: defaultdict(dict))
         for ref in inputs['exposures']:
+            physical_filter = ref.dataId['physical_filter']
             raft = ref.dataId.records['detector'].raft
             detector = ref.dataId['detector']
-            raft_data[raft][detector] = ref
+            raft_data[physical_filter][raft][detector] = ref
+        # Collect lists of output references, keyed by physical_filter.
+        output_refs = defaultdict(list)
+        for ref in outputRefs.raft_mosaic_plot:
+            output_refs[ref.dataId['physical_filter']].append(ref)
 
-        self.run(raft_data, camera, butlerQC, outputRefs.raft_mosaic_plot)
+        self.run(raft_data, camera, butlerQC, output_refs)
 
     def run(self, raft_data, camera, butlerQC, output_refs):
         # Map the output references for each raft.
         raft_output_refs_mapper = RaftOutputRefsMapper(camera)
-        ref_map = raft_output_refs_mapper.create(output_refs)
+        for physical_filter in raft_data:
+            ref_map = raft_output_refs_mapper.create(
+                output_refs[physical_filter])
 
-        for raft, exposure_refs in raft_data.items():
-            raft_plot = make_mosaic(exposure_refs, camera, self.binSize,
-                                    self.figsize, self.cmap, self.nsig)
-            exposure = list(exposure_refs.values())[0].dataId['exposure']
-            plt.title(f'{exposure}, {raft}')
-            butlerQC.put(raft_plot, ref_map[raft])
-            plt.close()
+            for raft, exposure_refs in raft_data[physical_filter].items():
+                exposure = list(exposure_refs.values())[0].dataId['exposure']
+                title = f'{exposure}, {physical_filter}, {raft}'
+                raft_plot = make_mosaic(exposure_refs, camera, self.binSize,
+                                        self.figsize, self.cmap, self.nsig,
+                                        title=title)
+                butlerQC.put(raft_plot, ref_map[raft])
+                plt.close()
