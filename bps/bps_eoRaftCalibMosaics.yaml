@@ -3,8 +3,8 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftCalibMosaics.yaml
 payload:
   b_protocol_run: 13162
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/flat_{b_protocol_run}_w_2022_53
-  payloadName: raft_mosaics_{b_protocol_run}_{weekly}
+  inCollection: u/jchiang/flat_{b_protocol_run}_{weekly}
+  payloadName: raft_calib_mosaics_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='LSSTCam'"
 
