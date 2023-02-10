@@ -1,15 +1,11 @@
 from collections import defaultdict
-import matplotlib
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from lsst.afw.cameraGeom import utils as cgu
-from lsst.afw.math import flipImage
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .focalPlaneMosaicTask import ImageSource
-from lsst.eo.pipe.plotting import cmap_range
+from .dsref_utils import RaftOutputRefsMapper
+from .plotting import make_mosaic
 
 
 __all__ = ['RaftMosaicTask']
@@ -17,30 +13,11 @@ __all__ = ['RaftMosaicTask']
 
 class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
                                 dimensions=("instrument",)):
-    bias = cT.Input(
-        name="bias",
-        doc="Combined biases.",
+    exposures = cT.Input(
+        name="postISRCCD",
+        doc="Input pre-processed exposures to combine.",
         storageClass="Exposure",
-        dimensions=("instrument", "detector"),
-        isCalibration=True,
-        multiple=True,
-        deferLoad=True)
-
-    dark = cT.Input(
-        name="dark",
-        doc="Combined darks.",
-        storageClass="Exposure",
-        dimensions=("instrument", "detector"),
-        isCalibration=True,
-        multiple=True,
-        deferLoad=True)
-
-    flat = cT.Input(
-        name="flat",
-        doc="Combined flats.",
-        storageClass="Exposure",
-        dimensions=("instrument", "physical_filter", "detector"),
-        isCalibration=True,
+        dimensions=("instrument", "exposure", "detector", "physical_filter"),
         multiple=True,
         deferLoad=True)
 
@@ -52,25 +29,11 @@ class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument",),
         lookupFunction=lookupStaticCalibration)
 
-    bias_mosaic = cT.Output(
-        name="raft_bias_mosaic",
-        doc="Raft-level bias mosaic",
+    raft_mosaic_plot = cT.Output(
+        name="eoRaftMosaic",
+        doc="Raft-level mosaic of CCD exposures with ISR applied.",
         storageClass="Plot",
-        dimensions=("instrument", "detector"),
-        multiple=True)
-
-    dark_mosaic = cT.Output(
-        name="raft_dark_mosaic",
-        doc="Raft-level dark mosaic",
-        storageClass="Plot",
-        dimensions=("instrument", "detector"),
-        multiple=True)
-
-    flat_mosaic = cT.Output(
-        name="raft_flat_mosaic",
-        doc="Raft-level flat mosaic",
-        storageClass="Plot",
-        dimensions=("instrument", "detector"),
+        dimensions=("instrument", "exposure", "detector", "physical_filter"),
         multiple=True)
 
 
@@ -89,7 +52,7 @@ class RaftMosaicTaskConfig(pipeBase.PipelineTaskConfig,
 
 
 class RaftMosaicTask(pipeBase.PipelineTask):
-    """Create raft mosaic of ISR'd CCD frames for a particular exposure."""
+    """Create mosaic of ISR'd CCD frames for a particular exposure."""
     ConfigClass = RaftMosaicTaskConfig
     _DefaultName = "raftMosaicTask"
 
@@ -101,72 +64,33 @@ class RaftMosaicTask(pipeBase.PipelineTask):
         self.cmap = self.config.cmap
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        # Gather input reference handles, organized by raft and detector,
-        # and output refs over all detectors, keyed by calib_type.
         inputs = butlerQC.get(inputRefs)
-        calibs = {}
-        output_refs = {}
-        for calib_type in ('bias', 'dark', 'flat'):
-            # input reference handles
-            calibs[calib_type] = defaultdict(dict)
-            for ref in inputs[calib_type]:
-                raft, detector = (ref.dataId.records['detector'].raft,
-                                  ref.dataId['detector'])
-                calibs[calib_type][raft][detector] = ref
-            # output refs.  These are references per detector.
-            output_refs[calib_type] = eval(f'outputRefs.{calib_type}_mosaic')
-
         camera = inputs['camera']
+        raft_data = defaultdict(lambda: defaultdict(dict))
+        for ref in inputs['exposures']:
+            physical_filter = ref.dataId['physical_filter']
+            raft = ref.dataId.records['detector'].raft
+            detector = ref.dataId['detector']
+            raft_data[physical_filter][raft][detector] = ref
+        # Collect lists of output references, keyed by physical_filter.
+        output_refs = defaultdict(list)
+        for ref in outputRefs.raft_mosaic_plot:
+            output_refs[ref.dataId['physical_filter']].append(ref)
 
-        # Do output ref persistence in the .run method since
-        # collecting all of the raft-level plots in a single returned
-        # pipeBase.Struct uses too much memory for the entire
-        # focal plane.
-        self.run(calibs, camera, butlerQC, output_refs)
+        self.run(raft_data, camera, butlerQC, output_refs)
 
-    def run(self, calibs, camera, butlerQC, output_refs):
-        # Map the representative detector number to raft name.
-        det_lists = defaultdict(list)
-        for det in camera:
-            det_name = det.getName()
-            raft, _ = det_name.split('_')
-            det_lists[raft].append(det.getId())
-        detector_raft_map = {min(det_list): raft
-                             for raft, det_list in det_lists.items()}
+    def run(self, raft_data, camera, butlerQC, output_refs):
+        # Map the output references for each raft.
+        raft_output_refs_mapper = RaftOutputRefsMapper(camera)
+        for physical_filter in raft_data:
+            ref_map = raft_output_refs_mapper.create(
+                output_refs[physical_filter])
 
-        # Loop over calib_type (i.e., "bias", "dark", "flat") and
-        # the lists of calib exposure refs per detector.
-        for calib_type, exp_refs in calibs.items():
-            # Map output references for each raft.
-            ref_map = {}
-            for ref in output_refs[calib_type]:
-                detector = ref.dataId['detector']
-                if detector in detector_raft_map:
-                    raft = detector_raft_map[detector]
-                    ref_map[raft] = ref
-            # Loop over rafts and create mosaics
-            for raft, refs in exp_refs.items():
-                image_source = ImageSource(refs)
-                mosaic = cgu.showCamera(camera, imageSource=image_source,
-                                        detectorNameList=list(refs.keys()),
-                                        binSize=self.binSize)
-                mosaic = flipImage(mosaic, flipLR=False, flipTB=True)
-                imarr = mosaic.array
-                raft_plot = plt.figure(figsize=self.figsize)
-                ax = raft_plot.add_subplot(111)
-                image = plt.imshow(imarr, interpolation='nearest',
-                                   cmap=self.cmap)
-                vmin, vmax = cmap_range(imarr, nsig=self.nsig)
-                norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-                image.set_norm(norm)
-                plt.title(f'{calib_type}, {raft}')
-                plt.tick_params(axis='both', which='both', top=False,
-                                bottom=False, left=False, right=False,
-                                labelbottom=False, labelleft=False)
-
-                divider = make_axes_locatable(ax)
-                cax = divider.append_axes("right", size="5%", pad=0.1)
-                plt.colorbar(image, cax=cax)
-
+            for raft, exposure_refs in raft_data[physical_filter].items():
+                exposure = list(exposure_refs.values())[0].dataId['exposure']
+                title = f'{exposure}, {physical_filter}, {raft}'
+                raft_plot = make_mosaic(exposure_refs, camera, self.binSize,
+                                        self.figsize, self.cmap, self.nsig,
+                                        title=title)
                 butlerQC.put(raft_plot, ref_map[raft])
                 plt.close()

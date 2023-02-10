@@ -1,0 +1,13 @@
+description: Make raft-level mosaics of calibration products
+tasks:
+  raftMosaic:
+    class: lsst.eo.pipe.RaftCalibMosaicTask
+    config:
+      connections.bias: "bias"
+      connections.dark: "dark"
+      connections.flat: "flat"
+      connections.camera: "camera"
+      connections.bias_mosaic: 'eoBiasRaftMosaic'
+      connections.dark_mosaic: 'eoDarkRaftMosaic'
+      connections.flat_mosaic: 'eoFlatRaftMosaic'
+      binSize: 2
