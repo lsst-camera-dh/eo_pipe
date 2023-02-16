@@ -12,3 +12,9 @@ tasks:
       connections.read_noise_data: 'eo_read_noise'
       connections.camera: 'camera'
       connections.read_noise_plot: 'read_noise_plot'
+  raftOverscanCorrelations:
+    class: lsst.eo.pipe.OverscanCorrelationsTask
+    config:
+      connections.raw_frames: 'raw'
+      connections.camera: 'camera'
+      connections.overscan_correlation_plot: 'overscan_correlation_plot'
