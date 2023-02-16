@@ -197,7 +197,7 @@ class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
 
 class OverscanCorrelationsTaskConnections(pipeBase.PipelineTaskConnections,
                                           dimensions=("instrument",)):
-    raws = cT.Input(
+    raw_frames = cT.Input(
         name="raw",
         doc="Raw bias image.",
         storageClass="Exposure",
@@ -246,7 +246,7 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         inputs = butlerQC.get(inputRefs)
         camera = inputs['camera']
         raft_data = defaultdict(dict)
-        raws = inputs['raws']
+        raws = inputs['raw_frames']
         #
         # Get the exposure IDs, sort, and use the first one for the analysis.
         target = sorted(list(set(_.dataId['exposure'] for _ in raws)))[0]
