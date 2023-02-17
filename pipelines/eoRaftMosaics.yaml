@@ -10,7 +10,8 @@ tasks:
       doBias: true
       doDark: true
       doFlat: false
-      doApplyGains: false
+      doApplyGains: true
+      usePtcGains: true
       doLinearize: false
       doFringe: false
       doDefect: false
