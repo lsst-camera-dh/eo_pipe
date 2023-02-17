@@ -23,7 +23,7 @@ from .overscan_analysis import raft_oscan_correlations
 from .dsref_utils import RaftOutputRefsMapper
 
 
-__all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask']
+__all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask', 'OverscanCorrelationsTask']
 
 
 def get_amp_data(repo, collections, camera=None):
@@ -231,6 +231,8 @@ class OverscanCorrelationsTaskConfig(pipeBase.PipelineTaskConfig,
                                    "perimeter of the overscan to exclude "
                                    "from the cross-correlation calculations.",
                                    dtype=int, default=10)
+    cmap = pexConfig.Field(doc="Matplotlib color map to use", dtype=str,
+                           default='jet')
 
 
 class OverscanCorrelationsTask(pipeBase.PipelineTask):
@@ -241,6 +243,7 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.figsize = self.config.xfigsize, self.config.yfigsize
         self.buffer = self.config.oscan_buffer
+        self.cmap = self.config.cmap
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -252,26 +255,30 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         target = sorted(list(set(_.dataId['exposure'] for _ in raws)))[0]
         #
         # Organize refs by raft and slot.
+        acq_run = None
         for ref in raws:
+            if acq_run is None:
+                acq_run = ref.dataId.records['exposure'].science_program
             if ref.dataId['exposure'] != target:
                 continue
-            det_name = ref.dataId['detector'].full_name
+            det_name = ref.dataId.records['detector'].full_name
             if camera[det_name].getType() != cgu.DetectorType.SCIENCE:
                 # Skip corner rafts.
                 continue
             raft, slot = det_name.split('_')
             raft_data[raft][slot] = ref
 
-        self.run(target, raft_data, camera, butlerQC,
+        self.run(acq_run, target, raft_data, camera, butlerQC,
                  outputRefs.overscan_correlation_plot)
 
-    def run(self, exposure, raft_data, camera, butlerQC, output_refs):
+    def run(self, acq_run, exposure, raft_data, camera, butlerQC, output_refs):
         raft_output_refs_mapper = RaftOutputRefsMapper(camera)
         ref_map = raft_output_refs_mapper.create(output_refs)
 
         for raft, raws in raft_data.items():
-            title = f"Overscan correlations, {raft}, {exposure}"
+            title = f"Overscan correlations, {raft}, Run {acq_run}, {exposure}"
             fig, _ = raft_oscan_correlations(raws, buffer=self.buffer,
-                                             title=title, figsize=self.figsize)
+                                             title=title, cmap=self.cmap,
+                                             figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
             plt.close()

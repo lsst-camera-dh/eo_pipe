@@ -10,17 +10,18 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 __all__ = ('raft_oscan_correlations',)
 
 
-def raft_oscan_correlations(bias_files, buffer=10, title='',
+def raft_oscan_correlations(bias_refs, buffer=10, title='',
                             vrange=None, stretch=viz.LinearStretch,
-                            figsize=(8, 8)):
+                            cmap='jet', figsize=(8, 8)):
     """
     Compute the correlation coefficients between the overscan pixels
     of the 144 amplifiers in raft.
 
     Parameters
     ----------
-    bias_files: dict
-        Dictionary of bias image files, indexed by sensor slot id.
+    bias_refs: dict
+        Dictionary of dataset references to bias image files, indexed
+        by sensor slot id.
     buffer: int [10]
         Buffer region around perimeter of serial overscan region to
         avoid when computing the correlation coefficients.
@@ -30,6 +31,8 @@ def raft_oscan_correlations(bias_files, buffer=10, title='',
         Minimum and maximum values for color scale range. If None, then
         the range of the central 98th percentile of the absolute value
         of the data is used.
+    cmap: str ['jet']
+        Matplotlib color map to use.
     stretch: astropy.visualization.BaseStretch [LinearStretch]
         Stretch to use for the color scale.
 
@@ -66,7 +69,7 @@ def raft_oscan_correlations(bias_files, buffer=10, title='',
     if vrange is None:
         vrange = interval.get_limits(np.abs(data.ravel()))
     norm = ImageNormalize(vmin=vrange[0], vmax=vrange[1], stretch=stretch())
-    image = ax.imshow(data, interpolation='none', norm=norm)
+    image = ax.imshow(data, interpolation='none', norm=norm, cmap=cmap)
     set_ticks(ax, slots, amps=16)
 
     divider = make_axes_locatable(ax)
