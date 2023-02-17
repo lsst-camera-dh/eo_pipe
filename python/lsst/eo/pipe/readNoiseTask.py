@@ -7,6 +7,7 @@ import pandas as pd
 
 from astro_metadata_translator import ObservationInfo
 
+from lsst.afw.cameraGeom import utils as cgu
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
@@ -18,9 +19,11 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 from lsst.eo.pipe.plotting import plot_focal_plane
+from .overscan_analysis import raft_oscan_correlations
+from .dsref_utils import RaftOutputRefsMapper
 
 
-__all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask']
+__all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask', 'OverscanCorrelationsTask']
 
 
 def get_amp_data(repo, collections, camera=None):
@@ -190,3 +193,92 @@ class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
                          scale_factor=self.z_scale_factor,
                          title='Read Noise')
         return pipeBase.Struct(read_noise_plot=fig)
+
+
+class OverscanCorrelationsTaskConnections(pipeBase.PipelineTaskConnections,
+                                          dimensions=("instrument",)):
+    raw_frames = cT.Input(
+        name="raw",
+        doc="Raw bias image.",
+        storageClass="Exposure",
+        dimensions=("instrument", "exposure", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
+
+    overscan_correlation_plot = cT.Output(
+        name="overscan_correlation_plot",
+        doc="Raft-level correlations between amp overscan regions",
+        storageClass="Plot",
+        dimensions=("instrument", "detector"),
+        multiple=True)
+
+
+class OverscanCorrelationsTaskConfig(pipeBase.PipelineTaskConfig,
+                                     pipelineConnections=OverscanCorrelationsTaskConnections):
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    oscan_buffer = pexConfig.Field(doc="Size of buffer region around the "
+                                   "perimeter of the overscan to exclude "
+                                   "from the cross-correlation calculations.",
+                                   dtype=int, default=10)
+    cmap = pexConfig.Field(doc="Matplotlib color map to use", dtype=str,
+                           default='jet')
+
+
+class OverscanCorrelationsTask(pipeBase.PipelineTask):
+    ConfigClass = OverscanCorrelationsTaskConfig
+    _DefaultName = "overscanCorrelationsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+        self.buffer = self.config.oscan_buffer
+        self.cmap = self.config.cmap
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        camera = inputs['camera']
+        raft_data = defaultdict(dict)
+        raws = inputs['raw_frames']
+        #
+        # Get the exposure IDs, sort, and use the first one for the analysis.
+        target = sorted(list(set(_.dataId['exposure'] for _ in raws)))[0]
+        #
+        # Organize refs by raft and slot.
+        acq_run = None
+        for ref in raws:
+            if acq_run is None:
+                acq_run = ref.dataId.records['exposure'].science_program
+            if ref.dataId['exposure'] != target:
+                continue
+            det_name = ref.dataId.records['detector'].full_name
+            if camera[det_name].getType() != cgu.DetectorType.SCIENCE:
+                # Skip corner rafts.
+                continue
+            raft, slot = det_name.split('_')
+            raft_data[raft][slot] = ref
+
+        self.run(acq_run, target, raft_data, camera, butlerQC,
+                 outputRefs.overscan_correlation_plot)
+
+    def run(self, acq_run, exposure, raft_data, camera, butlerQC, output_refs):
+        raft_output_refs_mapper = RaftOutputRefsMapper(camera)
+        ref_map = raft_output_refs_mapper.create(output_refs)
+
+        for raft, raws in raft_data.items():
+            title = f"Overscan correlations, {raft}, Run {acq_run}, {exposure}"
+            fig, _ = raft_oscan_correlations(raws, camera, buffer=self.buffer,
+                                             title=title, cmap=self.cmap,
+                                             figsize=self.figsize)
+            butlerQC.put(fig, ref_map[raft])
+            plt.close()
