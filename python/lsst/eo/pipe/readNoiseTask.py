@@ -277,7 +277,7 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
 
         for raft, raws in raft_data.items():
             title = f"Overscan correlations, {raft}, Run {acq_run}, {exposure}"
-            fig, _ = raft_oscan_correlations(raws, buffer=self.buffer,
+            fig, _ = raft_oscan_correlations(raws, camera, buffer=self.buffer,
                                              title=title, cmap=self.cmap,
                                              figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
