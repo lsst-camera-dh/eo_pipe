@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 __all__ = ('raft_oscan_correlations',)
 
 
-def raft_oscan_correlations(bias_refs, buffer=10, title='',
+def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
                             vrange=None, stretch=viz.LinearStretch,
                             cmap='jet', figsize=(8, 8)):
     """
@@ -22,6 +22,9 @@ def raft_oscan_correlations(bias_refs, buffer=10, title='',
     bias_refs: dict
         Dictionary of dataset references to bias image files, indexed
         by sensor slot id.
+    camera: lsst.afw.cameraGeom.Camera
+        Camera to use to find amplifier flips to put the overscan
+        arrays in readout order.
     buffer: int [10]
         Buffer region around perimeter of serial overscan region to
         avoid when computing the correlation coefficients.
@@ -50,12 +53,19 @@ def raft_oscan_correlations(bias_refs, buffer=10, title='',
 
     for slot in slots:
         ref = bias_refs[slot]
-        raw = ref.get()
-        det = raw.getDetector()
-        for amp in det:
+        exp = ref.get()
+        det = exp.getDetector()
+        raw_det = camera[det.getName()]
+        for amp, raw_amp  in zip(det, raw_det):
             bbox = amp.getRawSerialOverscanBBox()
             bbox.grow(-buffer)
-            overscans.append(raw.getImage()[bbox].array)
+            data = exp.getImage()[bbox].array.copy()
+            # Put the overscan data in readout order.
+            if raw_amp.getRawFlipX():
+                data = data[:,::-1]
+            if raw_amp.getRawFlipY():
+                data = data[::-1,:]
+            overscans.append(data)
     namps = len(overscans)
     data = np.array([np.corrcoef(overscans[i[0]].ravel(),
                                  overscans[i[1]].ravel())[0, 1]
