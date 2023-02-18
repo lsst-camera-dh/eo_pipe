@@ -2,7 +2,9 @@ from collections import defaultdict
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
+import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe.utils import funcAstier, funcPolynomial
 import lsst.daf.butler as daf_butler
@@ -14,7 +16,7 @@ from lsst.pipe.base import connectionTypes as cT
 from lsst.eo.pipe.plotting import plot_focal_plane
 
 
-__all__ = ['PtcPlotsTask', 'PtcFpPlotsTask']
+__all__ = ['PtcPlotsTask', 'PtcFpPlotsTask', 'RowMeansVarianceTask']
 
 
 def get_amp_data(repo, collections, camera=None):
@@ -25,7 +27,7 @@ def get_amp_data(repo, collections, camera=None):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
 
-    amp_data = defaultdict(lambda : defaultdict(dict))
+    amp_data = defaultdict(lambda: defaultdict(dict))
     for dsref in dsrefs:
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
@@ -223,3 +225,138 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                              z_range="clipped_autoscale")
 
         return pipeBase.Struct(**plots)
+
+
+class RowMeansVarianceTaskConnections(pipeBase.PipelineTaskConnections,
+                                      dimensions=("instrument", "detector")):
+
+    ptc_results = cT.Input(
+        name="ptc_results",
+        doc="Photon Transfer Curve dataset",
+        storageClass="PhotonTransferCurveDataset",
+        dimensions=("instrument", "detector"),
+        isCalibration=True)
+
+    ptc_frames = cT.Input(
+        name="ptc_frames",
+        doc="The ISR'd flat pairs used in the PTC analysis",
+        storageClass="Exposure",
+        dimensions=("instrument", "exposure", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    row_means_variance_plot = cT.Output(
+        name="row_means_variance_plot",
+        doc=("Plots of row_means_variance vs expected Poisson signal "
+             "for each amp in a CCD for a PTC dataset"),
+        storageClass="Plot",
+        dimensions=("instrument", "detector"))
+
+    row_means_variance_stats = cT.Output(
+        name="row_means_variance_stats",
+        doc=("Slopes of row_means_variance vs expected Poisson signal "
+             "for each amp in a CCD for a PTC dataset"),
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector"))
+
+
+class RowMeansVarianceTaskConfig(pipeBase.PipelineTaskConfig,
+                                 pipelineConnections=RowMeansVarianceTaskConnections):
+    """Configuration for RowMeansVarianceTask"""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    nsig = pexConfig.Field(doc="Number of stdevs for variance clip",
+                           dtype=float, default=10.0)
+    min_signal = pexConfig.Field(doc="Minimum signal (e-/pixel) for fitting.",
+                                 dtype=float, default=3000)
+    max_signal = pexConfig.Field(doc="Maximum signal (e-/pixel) for fitting.",
+                                 dtype=float, default=1e5)
+
+
+class RowMeansVarianceTask(pipeBase.PipelineTask):
+    """Task to compute row means variance for at PTC dataset."""
+    ConfigClass = RowMeansVarianceTaskConfig
+    _DefaultName = "rowMeansVarianceTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.nsig = self.config.nsig
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+        self.min_signal = self.config.min_signal
+        self.max_signal = self.config.max_signal
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        ptc_frames = {ref.dataId['exposure']: ref for
+                      ref in inputs['ptc_frames']}
+        # The expId pairs should be the same for all amps, so just get
+        # them from one of the amps and strip out the extra layer of
+        # Python list.
+        ptc_results = inputs['ptc_results']
+        expId_pairs = [_[0] for _ in
+                       list(ptc_results.inputExpIdPairs.values())[0]]
+        outputs = self.run(ptc_frames, expId_pairs, ptc_results.gain)
+        butlerQC.put(outputs, outputRefs)
+
+    def run(self, ptc_frames, expId_pairs, gains):
+        data = defaultdict(list)
+        for expIds in expId_pairs:
+            flat1 = ptc_frames[expIds[0]].get()
+            flat2 = ptc_frames[expIds[1]].get()
+            det = flat1.getDetector()
+            det_name = det.getName()
+            for amp in det:
+                amp_name = amp.getName()
+                bbox = amp.getBBox()
+                stats1 = afwMath.makeStatistics(flat1[bbox], afwMath.MEAN)
+                stats2 = afwMath.makeStatistics(flat2[bbox], afwMath.MEAN)
+                signal = (stats1.getValue(afwMath.MEAN) +
+                          stats2.getValue(afwMath.MEAN))/2.*gains[amp_name]
+                diff = flat1.Factory(flat1, bbox, deep=True)
+                diff -= flat2[bbox]
+                row_means = np.mean(diff.getImage().array, axis=1,
+                                    dtype=np.float64)
+                sctrl = afwMath.StatisticControl()
+                sctrl.setNumSigmaClip(self.nsig)
+                row_mean_variance = afwMath.makeStatistics(
+                    row_means, afwMath.VARIANCECLIP, sctrl).getValue()
+                row_mean_variance *= gains[amp_name]**2
+                data['det_name'].append(det_name)
+                data['amp_name'].append(amp_name)
+                data['signal'].append(signal)
+                data['row_mean_variance'].append(row_mean_variance)
+        df0 = pd.DataFrame(data)
+
+        fig = plt.figure(figsize=self.figsize)
+        data = defaultdict(list)
+        for amp in det:
+            amp_name = amp.getName()
+            numcols = amp.getBBox().width
+            df = df0.query(f"amp_name == '{amp.getName()}'")
+            signal = df['signal'].to_numpy()
+            row_mean_var = df['row_mean_variance'].to_numpy()
+            index = np.where((self.min_signal < signal)
+                             & (signal < self.max_signal)
+                             & (row_mean_var == row_mean_var))
+            slope = sum(row_mean_var[index])/sum(2.*signal[index]/numcols)
+            data['det_name'].append(det_name)
+            data['amp_name'].append(amp_name)
+            data['slope'].append(slope)
+            plt.scatter(2*signal[index]/numcols, row_mean_var[index], s=2,
+                        label=amp.getName())
+        plt.xscale('log')
+        plt.yscale('log')
+        xmin, xmax, ymin, ymax = plt.axis()
+        xymin = min(xmin, ymin)
+        xymax = max(xmax, ymax)
+        plt.plot([xymin, xymax], [xymin, xymax], linestyle=':')
+        plt.legend(fontsize='x-small', ncol=2, loc=2)
+        plt.axis((xmin, xmax, ymin, ymax))
+        plt.xlabel('2*(flux/(e-/pixel))/num_cols')
+        plt.ylabel('var(row_means)')
+        plt.title(det_name)
+
+        return pipeBase.Struct(row_means_variance_plot=fig,
+                               row_means_variance_stats=pd.DataFrame(data))
