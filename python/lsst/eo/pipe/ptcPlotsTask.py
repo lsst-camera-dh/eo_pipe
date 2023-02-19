@@ -16,7 +16,8 @@ from lsst.pipe.base import connectionTypes as cT
 from lsst.eo.pipe.plotting import plot_focal_plane
 
 
-__all__ = ['PtcPlotsTask', 'PtcFpPlotsTask', 'RowMeansVarianceTask']
+__all__ = ['PtcPlotsTask', 'PtcFpPlotsTask', 'RowMeansVarianceTask',
+           'RowMeansVarianceFpPlotTask']
 
 
 def get_amp_data(repo, collections, camera=None):
@@ -162,9 +163,9 @@ class PtcFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                            pipelineConnections=PtcFpPlotsTaskConnections):
     """Configuration for PtcFpPlotsTask."""
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
-                               dtype=float, default=10)
+                               dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
-                               dtype=float, default=12)
+                               dtype=float, default=9)
 
 
 class PtcFpPlotsTask(pipeBase.PipelineTask):
@@ -361,3 +362,73 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
 
         return pipeBase.Struct(row_means_variance_plot=fig,
                                row_means_variance_stats=pd.DataFrame(data))
+
+
+class RowMeansVarianceFpPlotTaskConnections(pipeBase.PipelineTaskConnections,
+                                            dimensions=("instrument",)):
+    row_means_variance_stats = cT.Input(
+        name="row_means_variance_stats",
+        doc=("Slopes of row_means_variance vs expected Poisson signal "
+             "for each amp in a CCD for a PTC dataset"),
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
+
+    row_means_variance_slopes = cT.Output(
+        name="row_means_variance_slopes_plot",
+        doc="Focal plan map of slope of row means variance.",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+
+class RowMeansVarianceFpPlotTaskConfig(pipeBase.PipelineTaskConfig,
+                                       pipelineConnections=RowMeansVarianceFpPlotTaskConnections):
+    """Configuration for RowMeansVarianceFpPlotTask."""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+
+
+class RowMeansVarianceFpPlotTask(pipeBase.PipelineTask):
+    """Create focal plane mosaic of slope of row means variance."""
+    ConfigClass = RowMeansVarianceFpPlotTaskConfig
+    _DefaultName = "rowMeansVarianceFpPlotTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+
+        camera = inputs['camera']
+
+        rmv_stats = {_.dataId['detector']: _ for _
+                     in inputs['row_means_variance_stats']}
+
+        struct = self.run(rmv_stats, camera)
+        butlerQC.put(struct, outputRefs)
+        plt.close()
+
+    def run(self, rmv_stats, camera):
+        amp_data = defaultdict(dict)
+        for detector, ref in rmv_stats.items():
+            df = ref.get()
+            for _, row in df.iterrows():
+                amp_data[row.det_name][row.amp_name] = row.slope
+        fig = plt.figure(figsize=self.figsize)
+        ax = fig.add_subplot(111)
+        plot_focal_plane(ax, amp_data, title="row means variance slopes",
+                         camera=camera, z_range="clipped_autoscale")
+
+        return pipeBase.Struct(row_means_variance_slopes=fig)
