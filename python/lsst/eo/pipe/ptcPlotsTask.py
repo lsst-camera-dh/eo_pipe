@@ -303,9 +303,10 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
     def run(self, ptc_frames, expId_pairs, gains):
         data = defaultdict(list)
         for expIds in expId_pairs:
-            flat1 = ptc_frames[expIds[0]].get()
-            flat2 = ptc_frames[expIds[1]].get()
-            det = flat1.getDetector()
+            frame1 = ptc_frames[expIds[0]].get()
+            det = frame1.getDetector()
+            flat1 = frame1.getMaskedImage()
+            flat2 = ptc_frames[expIds[1]].get().getMaskedImage()
             det_name = det.getName()
             for amp in det:
                 amp_name = amp.getName()
@@ -318,7 +319,7 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
                 diff -= flat2[bbox]
                 row_means = np.mean(diff.getImage().array, axis=1,
                                     dtype=np.float64)
-                sctrl = afwMath.StatisticControl()
+                sctrl = afwMath.StatisticsControl()
                 sctrl.setNumSigmaClip(self.nsig)
                 row_mean_variance = afwMath.makeStatistics(
                     row_means, afwMath.VARIANCECLIP, sctrl).getValue()
