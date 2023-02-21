@@ -26,9 +26,11 @@ def get_amp_data(repo, collections, camera=None):
         camera = LsstCam.getCamera()
 
     butler = daf_butler.Butler(repo, collections=collections)
-    dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
 
     amp_data = defaultdict(lambda: defaultdict(dict))
+
+    # Extra PTC results.
+    dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
     for dsref in dsrefs:
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
@@ -44,6 +46,15 @@ def get_amp_data(repo, collections, camera=None):
             amp_data['ptc_turnoff'][det_name][amp_name] \
                 = (np.max(ptc.finalMeans[amp_name])
                    if ptc.finalMeans[amp_name] else -1)
+
+    # Extract row means variance slopes
+    dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
+    for ref in dsrefs:
+        df = butler.getDirect(ref)
+        for _, row in df.iterrows():
+            amp_data['row_mean_var_slope'][row.det_name][row.amp_name] \
+                = row.slope
+
     return {field: dict(data) for field, data in amp_data.items()}
 
 
