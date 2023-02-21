@@ -22,7 +22,7 @@ def get_amp_data(repo, collections):
     dsrefs = list(set(butler.registry.queryDatasets('linearity_results',
                                                     findFirst=True)))
     amp_data = defaultdict(lambda : defaultdict(dict))
-    fields = 'max_frac_dev max_observed_signal'.split()
+    fields = 'max_frac_dev max_observed_signal linearity_turnoff'.split()
     for dsref in dsrefs:
         df = butler.getDirect(dsref)
         for _, row in df.iterrows():
