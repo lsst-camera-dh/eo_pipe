@@ -8,6 +8,7 @@ import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe.utils import funcAstier, funcPolynomial
 import lsst.daf.butler as daf_butler
+import lsst.geom
 from lsst.obs.lsst import LsstCam
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -331,6 +332,8 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
             det = frame1.getDetector()
             flat1 = frame1.getMaskedImage()
             flat2 = ptc_frames[expIds[1]].get().getMaskedImage()
+            diff = flat1.Factory(flat1, deep=True)
+            diff -= flat2
             det_name = det.getName()
             for amp in det:
                 amp_name = amp.getName()
@@ -341,12 +344,15 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
                                                 sctrl)
                 signal = (stats1.getValue(afwMath.MEAN) +
                           stats2.getValue(afwMath.MEAN))/2.*gains[amp_name]
-                diff = flat1.Factory(flat1, bbox, deep=True)
-                diff -= flat2[bbox]
-                row_means = np.mean(diff.getImage().array, axis=1,
-                                    dtype=np.float64)
+                row_means = []
+                for row in range(bbox.minY, bbox.maxY):
+                    bbox_row = lsst.geom.Box2I(lsst.geom.Point2I(bbox.minX, row),
+                                               lsst.geom.Extent2I(bbox.width, 1))
+                    row_means.append(afwMath.makeStatistics(diff[bbox_row],
+                                                            afwMath.MEAN,
+                                                            sctrl).getValue())
                 row_mean_variance = afwMath.makeStatistics(
-                    row_means, afwMath.VARIANCECLIP, sctrl).getValue()
+                    np.array(row_means), afwMath.VARIANCECLIP, sctrl).getValue()
                 row_mean_variance *= gains[amp_name]**2
                 data['det_name'].append(det_name)
                 data['amp_name'].append(amp_name)
