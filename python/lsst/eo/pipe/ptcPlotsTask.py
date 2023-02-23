@@ -281,10 +281,17 @@ class RowMeansVarianceTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     nsig = pexConfig.Field(doc="Number of stdevs for variance clip",
                            dtype=float, default=10.0)
+    niterclip = pexConfig.Field(doc="Number of iterations to use for "
+                                "variance clip",
+                                dtype=int, default=3)
     min_signal = pexConfig.Field(doc="Minimum signal (e-/pixel) for fitting.",
                                  dtype=float, default=3000)
     max_signal = pexConfig.Field(doc="Maximum signal (e-/pixel) for fitting.",
                                  dtype=float, default=1e5)
+    maskNameList = pexConfig.ListField(
+        doc="Mask list to exclude from statistics calculations.",
+        dtype=str,
+        default=["SUSPECT", "BAD", "NO_DATA", "SAT"])
 
 
 class RowMeansVarianceTask(pipeBase.PipelineTask):
@@ -295,9 +302,11 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.nsig = self.config.nsig
+        self.niter = self.config.niterclip
         self.figsize = self.config.xfigsize, self.config.yfigsize
         self.min_signal = self.config.min_signal
         self.max_signal = self.config.max_signal
+        self.masks = self.config.maskNameList
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -316,6 +325,9 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
         data = defaultdict(list)
         for expIds in expId_pairs:
             frame1 = ptc_frames[expIds[0]].get()
+            mask_val = frame1.getMask().getPlaneBitMask(self.masks)
+            sctrl = afwMath.StatisticsControl(self.nsig, self.niter, mask_val)
+            sctrl.setAndMask(mask_val)
             det = frame1.getDetector()
             flat1 = frame1.getMaskedImage()
             flat2 = ptc_frames[expIds[1]].get().getMaskedImage()
@@ -323,16 +335,16 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
             for amp in det:
                 amp_name = amp.getName()
                 bbox = amp.getBBox()
-                stats1 = afwMath.makeStatistics(flat1[bbox], afwMath.MEAN)
-                stats2 = afwMath.makeStatistics(flat2[bbox], afwMath.MEAN)
+                stats1 = afwMath.makeStatistics(flat1[bbox], afwMath.MEAN,
+                                                sctrl)
+                stats2 = afwMath.makeStatistics(flat2[bbox], afwMath.MEAN,
+                                                sctrl)
                 signal = (stats1.getValue(afwMath.MEAN) +
                           stats2.getValue(afwMath.MEAN))/2.*gains[amp_name]
                 diff = flat1.Factory(flat1, bbox, deep=True)
                 diff -= flat2[bbox]
                 row_means = np.mean(diff.getImage().array, axis=1,
                                     dtype=np.float64)
-                sctrl = afwMath.StatisticsControl()
-                sctrl.setNumSigmaClip(self.nsig)
                 row_mean_variance = afwMath.makeStatistics(
                     row_means, afwMath.VARIANCECLIP, sctrl).getValue()
                 row_mean_variance *= gains[amp_name]**2
