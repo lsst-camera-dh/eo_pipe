@@ -4,7 +4,7 @@ This module contains functions make run reports for EO test data.
 The original version of this code was copied from
 https://github.com/lsst-camera-dh/EO-utilities/blob/master/python/lsst/eo_utils/base/report_utils.py
 """
-__all__ = ['write_run_report']
+__all__ = ['write_run_report', 'link_eo_pipe_plots']
 
 
 import sys
@@ -18,6 +18,31 @@ from xml.dom import minidom
 import yaml
 import lsst.utils
 from lsst.obs.lsst import LsstCam
+from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
+    defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
+    eperTask, linearityPlotsTask, bfAnalysisTask
+
+
+def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
+    plot_locations = {}
+    for task in (readNoiseTask, raftCalibMosaicTask, raftMosaicTask,
+                 defectsTask, darkCurrentTask, divisaderoTearingTask,
+                 ptcPlotsTask, eperTask, linearityPlotsTask, bfAnalysisTask):
+        try:
+            locations = task.get_plot_locations(repo, collections)
+        except Exception as eobj:
+            print(task, eobj)
+        else:
+            plot_locations.update(locations)
+
+    staging_dir = os.path.join(staging_dir_root, str(run))
+    os.makedirs(staging_dir, exist_ok=True)
+
+    for dstype, locations in plot_locations.items():
+        print("symlinking plots for", dstype)
+        for file_path in locations:
+            dest = os.path.join(staging_dir, os.path.basename(file_path))
+            os.symlink(file_path, dest)
 
 
 RAFT_SLOT_MAP = defaultdict(list)
