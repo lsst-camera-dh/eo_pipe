@@ -1,0 +1,114 @@
+defaults :
+  action : copy
+  header_row_class : header_row
+  table_row_class : table_row
+  row_class : plot_row
+  table_col_class : table_col
+  col_desc_class : plot_col_desc
+  col_fig_class : plot_col_fig
+  col_img_class : plot
+slot_plot_tables :
+  ptc:
+    header_text: "Photon Transfer Curves"
+    rows:
+      - text: "PTC"
+        figure: "{run}/ptc_plots_*_{raft}_{slot}_*.png"
+  nonlinearity:
+    header_text : "Nonlinearity"
+    rows :
+      - text : "Linearity"
+        figure : "{run}/linearity_fit_plot_*_{raft}_{slot}_*.png"
+      - text : "Linearity residual"
+        figure : "{run}/linearity_residuals_plot_*_{raft}_{slot}_*.png"
+  flat_pairs:
+    header_text : "Data from flat pairs"
+    rows:
+      - text : "Row means vs variance"
+        figure : "{run}/row_means_variance_plot_*_{raft}_{slot}_*.png"
+  ptc:
+    header_text : "System Gain and Photon Transfer Curves"
+    rows :
+      - text : "Photon Transfer Curves"
+        figure : "{run}/ptc_plots_*_{raft}_{slot}_*.png"
+  BF:
+    header_text: "Brighter-Fatter Covariances"
+    rows:
+      - text: "Brighter-Fatter Covariances vs flux"
+        figure: "{run}/bf_covariance_plots_*_{raft}_{slot}_*.png"
+raft_plot_tables:
+  noise:
+    header_text : "Electronic noise"
+    rows :
+      - text : "Overscan Correlations"
+        figure : "{run}/overscan_correlation_plot_*_{raft}_*.png"
+  flats_by_filter:
+    header_text : "Flats by Filter"
+    rows:
+      - text : "SDSSu"
+        figure : "{run}/eoRaftMosaic_*_SDSSu_*_{raft}_*.png"
+      - text : "SDSSg"
+        figure : "{run}/eoRaftMosaic_*_SDSSg_*_{raft}_*.png"
+      - text : "SDSSr"
+        figure : "{run}/eoRaftMosaic_*_SDSSr_*_{raft}_*.png"
+      - text : "SDSSi"
+        figure : "{run}/eoRaftMosaic_*_SDSSi_*_{raft}_*.png"
+      - text : "SDSSz"
+        figure : "{run}/eoRaftMosaic_*_SDSSz_*_{raft}_*.png"
+      - text : "SDSSY"
+        figure : "{run}/eoRaftMosaic_*_SDSSY_*_{raft}_*.png"
+  calibration_frames:
+     header_text: "Calibration Frames"
+     rows:
+       - text: "Combined Bias"
+         figure: "{run}/eoBiasRaftMosaic_*_{raft}_*.png"
+       - text: "Combined Dark"
+         figure: "{run}/eoDarkRaftMosaic_*_{raft}_*.png"
+       - text: "Combined Flat"
+         figure: "{run}/eoFlatRaftMosaic_*_{raft}_*.png"
+  divisadero_tearing:
+     header_text: "Divisadero Tearing Profiles"
+     rows:
+       - text: "Divisadero Tearing"
+         figure: "{run}/divisadero_raft_plot_*_{raft}_*.png"
+run_plot_tables:
+  mosaics:
+    header_text : "Summary Mosaics"
+    rows :
+      - text : "Read Noise"
+        figure : "{run}/read_noise_plot_*.png"
+      - text : "Bright columns"
+        figure : "{run}/brightColumnsFpPlot_*.png"
+      - text : "Bright pixels"
+        figure : "{run}/brightPixelsFpPlot_*.png"
+      - text : "Dark columns"
+        figure : "{run}/darkColumnsFpPlot_*.png"
+      - text : "Dark pixels"
+        figure : "{run}/darkPixelsFpPlot_*.png"
+      - text : "Dark current median"
+        figure : "{run}/dark_current_median_plot*.png"
+      - text : "Dark current percentile"
+        figure : "{run}/dark_current_percentile_plot*.png"
+      - text : "Serial CTI from EPER"
+        figure : "{run}/scti_eper_plot_*.png"
+      - text : "Parallel CTI from EPER"
+        figure : "{run}/pcti_eper_plot_*.png"
+      - text : "PTC gain"
+        figure : "{run}/ptc_gain_*.png"
+      - text : "PTC a00"
+        figure : "{run}/ptc_a00_*.png"
+      - text : "PTC Turnoff"
+        figure : "{run}/ptc_turnoff_*.png"
+      - text : "Slope of Row-means variance"
+        figure : "{run}/row_means_variance_slopes_*.png"
+      - text : "Maximum Fractional Deviation"
+        figure : "{run}/max_frac_dev_*.png"
+      - text : "Maximum Observed Signal"
+        figure : "{run}/max_observed_signal_*.png"
+      - text : "Linearity Turnoff"
+        figure : "{run}/linearity_turnoff_*.png"
+      - text : "Divisadero Tearing Maximum"
+        figure : "{run}/divisadero_tearing_plot_*.png"
+      - text : "Brighter-Fatter, xcorr slope"
+        figure : "{run}/bf_xcorr_plot_*.png"
+      - text : "Brighter-Fatter, ycorr slope"
+        figure : "{run}/bf_ycorr_plot_*.png"
