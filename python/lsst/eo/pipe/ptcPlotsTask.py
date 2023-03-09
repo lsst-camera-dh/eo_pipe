@@ -14,7 +14,8 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from lsst.eo.pipe.plotting import plot_focal_plane
+from .plotting import plot_focal_plane
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['PtcPlotsTask', 'PtcFpPlotsTask', 'RowMeansVarianceTask',
@@ -57,6 +58,13 @@ def get_amp_data(repo, collections, camera=None):
                 = row.slope
 
     return {field: dict(data) for field, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('ptc_plots', 'ptc_a00_plot', 'ptc_gain_plot', 'ptc_noise_plot',
+               'ptc_turnoff_plot', 'row_means_variance_plot',
+               'row_means_variance_slopes_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class PtcPlotsTaskConnections(pipeBase.PipelineTaskConnections,

@@ -1,7 +1,8 @@
 from collections import defaultdict
+import lsst.daf.butler as daf_butler
 
 
-__all__ = ['RaftOutputRefsMapper']
+__all__ = ['RaftOutputRefsMapper', 'get_plot_locations_by_dstype']
 
 
 class RaftOutputRefsMapper:
@@ -25,3 +26,12 @@ class RaftOutputRefsMapper:
                 raft = self.detector_raft_map[detector]
                 ref_map[raft] = ref
         return ref_map
+
+
+def get_plot_locations_by_dstype(repo, collections, dstypes):
+    butler = daf_butler.Butler(repo, collections=collections)
+    file_paths = defaultdict(list)
+    for dstype in dstypes:
+        for ref in set(butler.registry.queryDatasets(dstype, findFirst=True)):
+            file_paths[dstype].append(butler.getURI(ref).path)
+    return dict(file_paths)

@@ -7,7 +7,9 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane
+
+from .plotting import plot_focal_plane
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['DarkCurrentTask']
@@ -25,6 +27,11 @@ def get_amp_data(repo, collections):
         for column in amp_data:
             amp_data[column][row.det_name][row.amp_name] = row[column]
     return {column: dict(data) for column, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('dark_current_percentile_plot', 'dark_current_median_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class DarkCurrentTaskConnections(pipeBase.PipelineTaskConnections,

@@ -18,9 +18,9 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from lsst.eo.pipe.plotting import plot_focal_plane
+from .plotting import plot_focal_plane
 from .overscan_analysis import raft_oscan_correlations
-from .dsref_utils import RaftOutputRefsMapper
+from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 
 
 __all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask', 'OverscanCorrelationsTask']
@@ -42,6 +42,11 @@ def get_amp_data(repo, collections, camera=None):
             df = butler.getDirect(dsref).query(f"amp_name=='{amp_name}'")
             amp_data[det_name][amp_name] = np.median(df['read_noise'])
     return {'read_noise': dict(amp_data)}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('read_noise_plot', 'overscan_correlation_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class SubRegionSampler:

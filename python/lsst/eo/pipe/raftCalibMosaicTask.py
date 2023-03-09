@@ -4,11 +4,16 @@ from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .dsref_utils import RaftOutputRefsMapper
+from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 from .plotting import make_mosaic
 
 
 __all__ = ['RaftCalibMosaicTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('eoBiasRaftMosaic', 'eoDarkRaftMosaic', 'eoFlatRaftMosaic')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class RaftCalibMosaicTaskConnections(pipeBase.PipelineTaskConnections,

@@ -12,7 +12,8 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from lsst.eo.pipe.plotting import plot_focal_plane
+from .plotting import plot_focal_plane
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ["MergeSelectedDefectsTask", "DefectsPlotsTask"]
@@ -31,6 +32,12 @@ def get_amp_data(repo, collections):
         for field in fields:
             amp_data[field][row.det_name][row.amp_name] = row[field]
     return {field: dict(data) for field, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('brightColumnsFpPlot', 'brightPixelsFpPlot',
+               'darkColumnsFpPlot', 'darkPixelsFpPlot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 def get_overlap_region(row, bbox):

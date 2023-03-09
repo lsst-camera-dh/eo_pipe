@@ -9,8 +9,10 @@ import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane
+
+from .plotting import plot_focal_plane
 from .isr_utils import apply_minimal_isr
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['compute_ctis', 'EperTask', 'EperFpPlotsTask']
@@ -28,6 +30,11 @@ def get_amp_data(repo, collections):
             for field in ('scti', 'pcti'):
                 amp_data[field][row.det_name][row.amp_name] = row[field]
     return {field: dict(data) for field, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('scti_eper_plot', 'pcti_eper_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 def compute_ctis(processed_segment, raw_amp_info, npix=3):
