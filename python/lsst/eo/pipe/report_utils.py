@@ -593,7 +593,7 @@ def write_slot_report(dataid, inputbase, outbase, **kwargs):
     html_node = ElementTree.Element('html')
     stylesheet = kwcopy.pop('stylesheet',
                             os.path.basename(config_info['cssfile']))
-    title = "BOT Results for {run}:{raft}:{slot}".format(**dataid)
+    title = "Results for {run}, {raft}_{slot}".format(**dataid)
     create_report_header(html_node,
                          title=title,
                          stylesheet=stylesheet)
@@ -646,7 +646,7 @@ def write_raft_report(dataid, inputbase, outbase, **kwargs):
     stylesheet = kwcopy.pop('stylesheet',
                             os.path.basename(config_info['cssfile']))
     create_report_header(html_node,
-                         title="Results for {run}:{raft}".format(**dataid),
+                         title="Results for {run}, {raft}".format(**dataid),
                          stylesheet=stylesheet)
 
     body_node = make_child_node(html_node, 'body')
