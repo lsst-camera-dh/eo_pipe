@@ -1,6 +1,6 @@
 description: Make raft-level mosaics of calibration products
 tasks:
-  raftMosaic:
+  raftCalibMosaic:
     class: lsst.eo.pipe.RaftCalibMosaicTask
     config:
       connections.bias: "bias"
