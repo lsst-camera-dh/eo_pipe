@@ -6,7 +6,15 @@ import lsst.afw.math as afwMath
 from lsst.afw.cameraGeom import utils as cgu
 
 
-__all__ = ['cmap_range', 'ImageSource', 'make_mosaic']
+__all__ = ['cmap_range', 'ImageSource', 'make_mosaic', 'append_acq_run']
+
+
+def append_acq_run(cls_instance, title, suffix=None):
+    if cls_instance.config.acq_run != -1:
+        title += f", acq. run {cls_instance.config.acq_run.strip()}"
+    if suffix is not None:
+        title += f", {suffix}"
+    return title
 
 
 def cmap_range(image_array, nsig=5):

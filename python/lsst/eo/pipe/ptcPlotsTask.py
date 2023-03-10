@@ -14,7 +14,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane
+from .plotting import plot_focal_plane, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -95,6 +95,8 @@ class PtcPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 _ptc_func = {'EXPAPPROXIMATION': funcAstier,
@@ -147,7 +149,7 @@ class PtcPlotsTask(pipeBase.PipelineTask):
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         fig.supxlabel('mean signal (ADU)')
         fig.supylabel('variance (ADU^2)')
-        fig.suptitle(f'{det.getName()}')
+        fig.suptitle(append_acq_run(self, f'{det.getName()}'))
 
         return pipeBase.Struct(ptc_plots=fig)
 
@@ -186,6 +188,8 @@ class PtcFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class PtcFpPlotsTask(pipeBase.PipelineTask):
@@ -240,9 +244,8 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
         for field in amp_data:
             plots[field] = plt.figure(figsize=self.figsize)
             ax = plots[field].add_subplot(111)
-            # TODO: figure out how to get the run number into the
-            # plot title.
-            plot_focal_plane(ax, amp_data[field], title=f"{field}",
+            title = append_acq_run(self, field)
+            plot_focal_plane(ax, amp_data[field], title=title,
                              z_range="clipped_autoscale")
 
         return pipeBase.Struct(**plots)
@@ -301,6 +304,8 @@ class RowMeansVarianceTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Mask list to exclude from statistics calculations.",
         dtype=str,
         default=["SUSPECT", "BAD", "NO_DATA", "SAT"])
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class RowMeansVarianceTask(pipeBase.PipelineTask):
@@ -395,7 +400,7 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
         plt.axis((xmin, xmax, ymin, ymax))
         plt.xlabel('2*(flux/(e-/pixel))/num_cols')
         plt.ylabel('var(row_means)')
-        plt.title(det_name)
+        plt.title(append_acq_run(self, det_name))
 
         return pipeBase.Struct(row_means_variance_plot=fig,
                                row_means_variance_stats=pd.DataFrame(data))
@@ -434,6 +439,8 @@ class RowMeansVarianceFpPlotTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class RowMeansVarianceFpPlotTask(pipeBase.PipelineTask):
@@ -465,7 +472,8 @@ class RowMeansVarianceFpPlotTask(pipeBase.PipelineTask):
                 amp_data[row.det_name][row.amp_name] = row.slope
         fig = plt.figure(figsize=self.figsize)
         ax = fig.add_subplot(111)
-        plot_focal_plane(ax, amp_data, title="row means variance slopes",
-                         camera=camera, z_range="clipped_autoscale")
+        title = append_acq_run(self, "Row means variance slopes")
+        plot_focal_plane(ax, amp_data, title=title, camera=camera,
+                         z_range="clipped_autoscale")
 
         return pipeBase.Struct(row_means_variance_slopes=fig)

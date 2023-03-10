@@ -8,7 +8,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane
+from .plotting import plot_focal_plane, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -100,6 +100,8 @@ class DarkCurrentTaskConfig(pipeBase.PipelineTaskConfig,
              "care of automatically when rendering the label in matplotlib."),
         dtype=str,
         default="1")
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class DarkCurrentTask(pipeBase.PipelineTask):
@@ -138,13 +140,14 @@ class DarkCurrentTask(pipeBase.PipelineTask):
         dark_current_stats = pd.DataFrame(data)
         dark_current_percentile_plot = plt.figure(figsize=self.figsize)
         ax = dark_current_percentile_plot.add_subplot(111)
-        title = f"Dark current, {self.percentile} percentile [e-/s]"
+        title = append_acq_run(self, f"Dark current, {self.percentile} "
+                               "percentile [e-/s]")
         plot_focal_plane(ax, amp_data['percentile'], camera=camera,
                          z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
         dark_current_median_plot = plt.figure(figsize=self.figsize)
         ax = dark_current_median_plot.add_subplot(111)
-        title = "Dark current, median [e-/s]"
+        title = append_acq_run(self, "Dark current, median [e-/s]")
         plot_focal_plane(ax, amp_data['median'], camera=camera,
                          z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)

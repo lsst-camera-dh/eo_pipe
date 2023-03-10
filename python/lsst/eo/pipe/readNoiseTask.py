@@ -18,7 +18,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane
+from .plotting import plot_focal_plane, append_acq_run
 from .overscan_analysis import raft_oscan_correlations
 from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 
@@ -90,7 +90,7 @@ class ReadNoiseTaskConfig(pipeBase.PipelineTaskConfig,
                                   dtype=int, default=2)
     nsamp = pexConfig.Field(doc="Number of sub-regions to sample.",
                             dtype=int, default=100)
-    dxy = pexConfig.Field(doc="Size in pixels of sub-regions",
+    dxy = pexConfig.Field(doc="Size in pixels of sub-regions.",
                           dtype=int, default=20)
 
 
@@ -167,6 +167,8 @@ class ReadNoiseFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                          "care of automatically when "
                                          "rendering the label in matplotlib"),
                                     dtype=str, default="1")
+    acq_run = pexConfig.Field(doc="Acquistion run number.",
+                              dtype=str, default="")
 
 
 class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
@@ -194,9 +196,9 @@ class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
                 amp_data[det_name][amp_name] = np.median(df['read_noise'])
         fig = plt.figure(figsize=self.figsize)
         ax = fig.add_subplot(111)
+        title = append_acq_run(self, "Read Noise")
         plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.z_scale_factor,
-                         title='Read Noise')
+                         scale_factor=self.z_scale_factor, title=title)
         return pipeBase.Struct(read_noise_plot=fig)
 
 
@@ -281,7 +283,8 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         ref_map = raft_output_refs_mapper.create(output_refs)
 
         for raft, raws in raft_data.items():
-            title = f"Overscan correlations, {raft}, Run {acq_run}, {exposure}"
+            title = (f"Overscan correlations, {raft}, acq. run {acq_run}, "
+                     f"{exposure}")
             fig, _ = raft_oscan_correlations(raws, camera, buffer=self.buffer,
                                              title=title, cmap=self.cmap,
                                              figsize=self.figsize)

@@ -7,7 +7,7 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .plotting import plot_focal_plane
+from .plotting import plot_focal_plane, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -19,7 +19,7 @@ def get_amp_data(repo, collections):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('linearity_results',
                                                     findFirst=True)))
-    amp_data = defaultdict(lambda : defaultdict(dict))
+    amp_data = defaultdict(lambda: defaultdict(dict))
     fields = 'max_frac_dev max_observed_signal linearity_turnoff'.split()
     for dsref in dsrefs:
         df = butler.getDirect(dsref)
@@ -202,7 +202,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                     = linearity_fit(pd_values, Ne, y_range=self.fit_range,
                                     max_frac_dev=self.max_frac_dev_spec)
                 linearity_turnoff /= gain  # Convert from e- to ADU
-            except (IndexError, ZeroDivisionError) as eobj:
+            except (IndexError, ZeroDivisionError):
                 pass
             else:
                 # Results to include in final data frame:
@@ -226,7 +226,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 xvals = np.logspace(np.log10(xlims[0]), np.log10(xlims[1]), 100)
                 plt.plot(xvals, func(xvals), linestyle='--')
         plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f'linearity curves, run {acq_run}, {det_name}')
+        plt.suptitle(f'Linearity Curves, acq. run {acq_run}, {det_name}')
 
         residual_plots = plt.figure(figsize=self.figsize)
         for i, amp in enumerate(det, 1):
@@ -246,7 +246,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 plt.axhline(0, linestyle='--')
                 plt.ylim(-0.03, 0.03)
         plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f'linearity residuals, run {acq_run}, {det_name}')
+        plt.suptitle(f'Linearity Residuals, acq. run {acq_run}, {det_name}')
 
         linearity_results = pd.DataFrame(amp_data)
 
@@ -302,6 +302,8 @@ class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquistion run number.",
+                              dtype=str, default="")
 
 
 class LinearityFpPlotsTask(pipeBase.PipelineTask):
@@ -355,6 +357,6 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
             plots[column] = plt.figure(figsize=self.figsize)
             ax = plots[column].add_subplot(111)
             plot_focal_plane(ax, amp_data[column], camera=camera,
-                             z_range=None, title=f"{column}")
+                             z_range=None, title=append_acq_run(self, column))
 
         return pipeBase.Struct(**plots)

@@ -12,7 +12,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane
+from .plotting import plot_focal_plane, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -27,7 +27,7 @@ def get_amp_data(repo, collections):
     df = butler.getDirect(dsrefs[0])
     fields = 'bright_columns bright_pixels dark_columns dark_pixels'.split()
 
-    amp_data = defaultdict(lambda : defaultdict(dict))
+    amp_data = defaultdict(lambda: defaultdict(dict))
     for _, row in df.iterrows():
         for field in fields:
             amp_data[field][row.det_name][row.amp_name] = row[field]
@@ -198,7 +198,7 @@ class DefectsPlotsTaskConfig(pipeBase.PipelineTaskConfig,
     dark_colthresh = pexConfig.Field(doc=("Minimum # continguous pixels "
                                           "defining a dark column."),
                                      dtype=int, default=100)
-    acq_run = pexConfig.Field(doc="Run number for camera acquisition.",
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
 
@@ -215,10 +215,6 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.bright_colthresh = self.config.bright_colthresh
         self.dark_colthresh = self.config.dark_colthresh
-        if self.config.acq_run != "":
-            self.acq_run_title = f", run {self.config.acq_run}"
-        else:
-            self.acq_run_title = ""
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -250,10 +246,10 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
 
         outputs['bright_columns_fp_plot'] \
             = self._make_fp_plot(bright_column_data,
-                                 f"bright columns{self.acq_run_title}")
+                                 append_acq_run(self, "Bright Columns"))
         outputs['bright_pixels_fp_plot'] \
             = self._make_fp_plot(bright_pixel_data,
-                                 f"bright pixels{self.acq_run_title}")
+                                 append_acq_run(self, "Bright Pixels"))
 
         dark_column_data = {}
         dark_pixel_data = {}
@@ -268,10 +264,10 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
 
         outputs['dark_columns_fp_plot'] \
             = self._make_fp_plot(dark_column_data,
-                                 f"dark columns{self.acq_run_title}")
+                                 append_acq_run(self, "Dark Columns"))
         outputs['dark_pixels_fp_plot'] \
             = self._make_fp_plot(dark_pixel_data,
-                                 f"dark pixels{self.acq_run_title}")
+                                 append_acq_run(self, "Dark Pixels"))
 
         outputs['defects_results'] = convert_amp_data_to_df(
             {'bright_columns': bright_column_data,
