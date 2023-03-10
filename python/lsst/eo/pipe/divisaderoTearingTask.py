@@ -288,8 +288,7 @@ class DivisaderoRaftPlotsTask(pipeBase.PipelineTask):
 
         # Loop over rafts and create summary plots.
         for raft, data in raft_data.items():
-            title = append_acq_run(self, "Divisadero tearing response",
-                                   f", {raft}")
+            title = append_acq_run(self, f"Divisadero tearing response", raft)
             fig = make_divisadero_summary_plot(data, title=title,
                                                figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
@@ -360,7 +359,8 @@ class DivisaderoFpPlotsTask(pipeBase.PipelineTask):
 
         figure = plt.figure(figsize=self.figsize)
         ax = figure.add_subplot(111)
+        title = append_acq_run(self, "Divisadero maximum deviation")
         plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
-                         title='Divisadero max dev', scale_factor='1')
+                         title=title, scale_factor='1')
 
         return pipeBase.Struct(divisadero_tearing=figure)
