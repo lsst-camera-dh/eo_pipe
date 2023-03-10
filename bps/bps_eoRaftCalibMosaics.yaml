@@ -1,14 +1,14 @@
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftCalibMosaics.yaml
+extraQgraphOptions: "--config raftCalibMosaic:acq_run=' ${B_PROTOCOL_RUN}'"
 
 payload:
-  b_protocol_run: 13162
+  b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/flat_{b_protocol_run}_{weekly}
-  payloadName: raft_calib_mosaics_{b_protocol_run}_{weekly}
+  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  payloadName: eo_raft_calib_mosaics_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='LSSTCam'"
-
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_2
