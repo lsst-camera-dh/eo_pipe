@@ -47,7 +47,7 @@ def get_pd_values(pd_integrals, ptc, amp_name='C10'):
     return np.array(values)
 
 
-def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05):
+def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05, logger=None):
     """
     Fit a line with the y-intercept fixed to zero, using the
     signal counts Ne as the variance in the chi-square, i.e.,
@@ -74,7 +74,13 @@ def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05):
 
     # Compute maximum signal consistent with the linear fit within
     # the specified maximum fractional deviation.
-    linearity_turnoff = np.max(Ne[np.where(np.abs(resids) < max_frac_dev)])
+    try:
+        linearity_turnoff = np.max(Ne[np.where(np.abs(resids) < max_frac_dev)])
+    except ValueError:
+        if logger is not None:
+            logger.info("ValueError from linearity_turnoff calculation. "
+                        "Setting to zero")
+        linearity_turnoff = 0.0
 
     return func, resids, index, linearity_turnoff
 
@@ -200,7 +206,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             try:
                 func, resids[amp_name], index[amp_name], linearity_turnoff \
                     = linearity_fit(pd_values, Ne, y_range=self.fit_range,
-                                    max_frac_dev=self.max_frac_dev_spec)
+                                    max_frac_dev=self.max_frac_dev_spec,
+                                    logger=self.log)
                 linearity_turnoff /= gain  # Convert from e- to ADU
             except (IndexError, ZeroDivisionError):
                 pass

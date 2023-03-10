@@ -384,7 +384,11 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
             index = np.where((self.min_signal < signal)
                              & (signal < self.max_signal)
                              & (row_mean_var == row_mean_var))
-            slope = sum(row_mean_var[index])/sum(2.*signal[index]/numcols)
+            try:
+                slope = sum(row_mean_var[index])/sum(2.*signal[index]/numcols)
+            except ZeroDivisionError:
+                self.log.info("ZeroDivisionError: %s, %s", det_name, amp_name)
+                slope = 0
             data['det_name'].append(det_name)
             data['amp_name'].append(amp_name)
             data['slope'].append(slope)
