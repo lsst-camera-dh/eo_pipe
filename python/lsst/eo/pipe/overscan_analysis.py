@@ -56,15 +56,15 @@ def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
         exp = ref.get()
         det = exp.getDetector()
         raw_det = camera[det.getName()]
-        for amp, raw_amp  in zip(det, raw_det):
+        for amp, raw_amp in zip(det, raw_det):
             bbox = amp.getRawSerialOverscanBBox()
             bbox.grow(-buffer)
             data = exp.getImage()[bbox].array.copy()
             # Put the overscan data in readout order.
             if raw_amp.getRawFlipX():
-                data = data[:,::-1]
+                data = data[:, ::-1]
             if raw_amp.getRawFlipY():
-                data = data[::-1,:]
+                data = data[::-1, :]
             overscans.append(data)
     namps = len(overscans)
     data = np.array([np.corrcoef(overscans[i[0]].ravel(),

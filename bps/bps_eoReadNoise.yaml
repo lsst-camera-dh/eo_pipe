@@ -1,15 +1,17 @@
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoise.yaml
-instrument: lsst.obs.lsst.LsstCam
+extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
+
+instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  b_protocol_run: 13162
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
-  inCollection: LSSTCam/raw/all
-  payloadName: read_noise_{b_protocol_run}_{weekly}
+  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  payloadName: eo_read_noise_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias'"
-
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_32
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_reason='bias' and exposure.science_program='{b_protocol_run}'"

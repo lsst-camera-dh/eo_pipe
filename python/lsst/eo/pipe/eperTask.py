@@ -5,12 +5,13 @@ import pandas as pd
 import lsst.afw.math as afw_math
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
-import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane
+
+from .plotting import plot_focal_plane, append_acq_run
 from .isr_utils import apply_minimal_isr
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['compute_ctis', 'EperTask', 'EperFpPlotsTask']
@@ -21,13 +22,18 @@ def get_amp_data(repo, collections):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('eper_stats',
                                                     findFirst=True)))
-    amp_data = defaultdict(lambda : defaultdict(dict))
+    amp_data = defaultdict(lambda: defaultdict(dict))
     for dsref in dsrefs:
         df = butler.getDirect(dsref)
         for _, row in df.iterrows():
             for field in ('scti', 'pcti'):
                 amp_data[field][row.det_name][row.amp_name] = row[field]
     return {field: dict(data) for field, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('scti_eper_plot', 'pcti_eper_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 def compute_ctis(processed_segment, raw_amp_info, npix=3):
@@ -209,6 +215,8 @@ class EperFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                          "care of automatically when "
                                          "rendering the label in matplotlib"),
                                     dtype=str, default="1e-6")
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class EperFpPlotsTask(pipeBase.PipelineTask):
@@ -239,15 +247,15 @@ class EperFpPlotsTask(pipeBase.PipelineTask):
 
         scti_eper_plot = plt.figure(figsize=self.figsize)
         ax = scti_eper_plot.add_subplot(111)
+        title = append_acq_run(self, "Serial CTI")
         plot_focal_plane(ax, scti_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.zscale_factor,
-                         title='Serial CTI', )
+                         scale_factor=self.zscale_factor, title=title)
 
         pcti_eper_plot = plt.figure(figsize=self.figsize)
         ax = pcti_eper_plot.add_subplot(111)
+        title = append_acq_run(self, "Parallel CTI")
         plot_focal_plane(ax, pcti_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.zscale_factor,
-                         title='Parallel CTI', )
+                         scale_factor=self.zscale_factor, title=title)
 
         return pipeBase.Struct(scti_eper_plot=scti_eper_plot,
                                pcti_eper_plot=pcti_eper_plot)

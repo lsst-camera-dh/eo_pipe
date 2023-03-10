@@ -4,10 +4,17 @@ from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane
+
+from .plotting import plot_focal_plane
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ["CtiFpPlotsTask"]
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('serial_cti',)
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class CtiFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,

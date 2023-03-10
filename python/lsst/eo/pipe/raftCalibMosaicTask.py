@@ -4,11 +4,16 @@ from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .dsref_utils import RaftOutputRefsMapper
-from .plotting import make_mosaic
+from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
+from .plotting import make_mosaic, append_acq_run
 
 
 __all__ = ['RaftCalibMosaicTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('eoBiasRaftMosaic', 'eoDarkRaftMosaic', 'eoFlatRaftMosaic')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class RaftCalibMosaicTaskConnections(pipeBase.PipelineTaskConnections,
@@ -82,6 +87,8 @@ class RaftCalibMosaicTaskConfig(pipeBase.PipelineTaskConfig,
     binSize = pexConfig.Field(doc="Bin size in pixels for rebinning.",
                               dtype=int, default=2)
     cmap = pexConfig.Field(doc="Matplotlib color map", dtype=str, default='hot')
+    acq_run = pexConfig.Field(doc="Acquistion run number.",
+                              dtype=str, default="")
 
 
 class RaftCalibMosaicTask(pipeBase.PipelineTask):
@@ -141,9 +148,10 @@ class RaftCalibMosaicTask(pipeBase.PipelineTask):
             ref_map = raft_output_refs_mapper.create(output_refs[calib_type])
             # Loop over rafts and create mosaics
             for raft, refs in exp_refs.items():
+                title = append_acq_run(self, calib_type, raft)
                 raft_plot = make_mosaic(refs, camera, self.binSize,
                                         self.figsize, self.cmap, self.nsig,
-                                        title=f'{calib_type}, {raft}')
+                                        title=title)
                 butlerQC.put(raft_plot, ref_map[raft])
                 plt.close()
         # Loop over physical_filter for flats.
@@ -151,8 +159,9 @@ class RaftCalibMosaicTask(pipeBase.PipelineTask):
             ref_map = raft_output_refs_mapper.create(
                 flat_output_refs[physical_filter])
             for raft, refs in exp_refs.items():
+                title = append_acq_run(self, f'flat, {physical_filter}', raft)
                 raft_plot = make_mosaic(refs, camera, self.binSize,
                                         self.figsize, self.cmap, self.nsig,
-                                        title=f'flat, {physical_filter}, {raft}')
+                                        title=title)
                 butlerQC.put(raft_plot, ref_map[raft])
                 plt.close()

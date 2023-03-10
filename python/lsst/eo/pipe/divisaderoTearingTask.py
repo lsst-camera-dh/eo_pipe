@@ -8,7 +8,10 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane, make_divisadero_summary_plot
+
+from .plotting import plot_focal_plane, make_divisadero_summary_plot, \
+    append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['DivisaderoTearingTask', 'DivisaderoRaftPlotsTask',
@@ -27,6 +30,11 @@ def get_amp_data(repo, collections):
         for _, row in df.iterrows():
             amp_data[row.det_name][row.amp_name] = row[field]
     return {field: dict(amp_data)}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('divisadero_raft_plot', 'divisadero_tearing_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class DivisaderoTearingTaskConnections(pipeBase.PipelineTaskConnections,
@@ -230,6 +238,8 @@ class DivisaderoRaftPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=20)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=20)
+    acq_run = pexConfig.Field(doc="Acquistion run number.",
+                              dtype=str, default="")
 
 
 class DivisaderoRaftPlotsTask(pipeBase.PipelineTask):
@@ -278,7 +288,8 @@ class DivisaderoRaftPlotsTask(pipeBase.PipelineTask):
 
         # Loop over rafts and create summary plots.
         for raft, data in raft_data.items():
-            title = f"Divisadero tearing response, {raft}"
+            title = append_acq_run(self, "Divisadero tearing response",
+                                   f", {raft}")
             fig = make_divisadero_summary_plot(data, title=title,
                                                figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
@@ -320,6 +331,8 @@ class DivisaderoFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                            dtype=float, default=0)
     zmax = pexConfig.Field(doc="Maximum of color bar range.",
                            dtype=float, default=0.05)
+    acq_run = pexConfig.Field(doc="Acquistion run number.",
+                              dtype=str, default="")
 
 
 class DivisaderoFpPlotsTask(pipeBase.PipelineTask):

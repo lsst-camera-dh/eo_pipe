@@ -4,11 +4,16 @@ from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .dsref_utils import RaftOutputRefsMapper
+from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 from .plotting import make_mosaic
 
 
 __all__ = ['RaftMosaicTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('eoRaftMosaic',)
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class RaftMosaicTaskConnections(pipeBase.PipelineTaskConnections,
@@ -67,7 +72,10 @@ class RaftMosaicTask(pipeBase.PipelineTask):
         inputs = butlerQC.get(inputRefs)
         camera = inputs['camera']
         raft_data = defaultdict(lambda: defaultdict(dict))
+        acq_run = None
         for ref in inputs['exposures']:
+            if acq_run is None:
+                acq_run = ref.dataId.records['exposure'].science_program
             physical_filter = ref.dataId['physical_filter']
             raft = ref.dataId.records['detector'].raft
             detector = ref.dataId['detector']
@@ -77,9 +85,9 @@ class RaftMosaicTask(pipeBase.PipelineTask):
         for ref in outputRefs.raft_mosaic_plot:
             output_refs[ref.dataId['physical_filter']].append(ref)
 
-        self.run(raft_data, camera, butlerQC, output_refs)
+        self.run(acq_run, raft_data, camera, butlerQC, output_refs)
 
-    def run(self, raft_data, camera, butlerQC, output_refs):
+    def run(self, acq_run, raft_data, camera, butlerQC, output_refs):
         # Map the output references for each raft.
         raft_output_refs_mapper = RaftOutputRefsMapper(camera)
         for physical_filter in raft_data:
@@ -90,7 +98,8 @@ class RaftMosaicTask(pipeBase.PipelineTask):
                 if raft not in ref_map:
                     continue
                 exposure = list(exposure_refs.values())[0].dataId['exposure']
-                title = f'{exposure}, {physical_filter}, {raft}'
+                title = (f'{physical_filter}, {raft}, acq. run {acq_run}, '
+                         f'{exposure}')
                 raft_plot = make_mosaic(exposure_refs, camera, self.binSize,
                                         self.figsize, self.cmap, self.nsig,
                                         title=title)
