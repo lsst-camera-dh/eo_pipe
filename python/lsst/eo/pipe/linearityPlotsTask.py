@@ -232,8 +232,11 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 xlims = ax.get_xlim()
                 xvals = np.logspace(np.log10(xlims[0]), np.log10(xlims[1]), 100)
                 plt.plot(xvals, func(xvals), linestyle='--')
-        plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f'Linearity Curves, acq. run {acq_run}, {det_name}')
+        plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
+        linearity_plots.supxlabel('photodiode current integral')
+        linearity_plots.supylabel('e-/pixel')
+        linearity_plots.suptitle(f'Linearity Curves, acq. run {acq_run}, '
+                                 f'{det_name}')
 
         residual_plots = plt.figure(figsize=self.figsize)
         for i, amp in enumerate(det, 1):
@@ -252,8 +255,11 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 plt.axhline(-0.02, linestyle=':')
                 plt.axhline(0, linestyle='--')
                 plt.ylim(-0.03, 0.03)
-        plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f'Linearity Residuals, acq. run {acq_run}, {det_name}')
+        plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
+        residual_plots.supxlabel('photodiode current integral')
+        residual_plots.supylabel('e-/pixel')
+        residual_plots.suptitle(f'Linearity Residuals, acq. run {acq_run}, '
+                                f'{det_name}')
 
         linearity_results = pd.DataFrame(amp_data)
 
