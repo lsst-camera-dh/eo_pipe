@@ -2,7 +2,7 @@ import numpy as np
 import lsst.geom
 
 
-__all__ = ['apply_minimal_isr']
+__all__ = ['apply_minimal_isr', 'apply_overscan_correction']
 
 
 def get_overscan_region(amp_info, dx):
