@@ -315,7 +315,7 @@ class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
-    acq_run = pexConfig.Field(doc="Acquistion run number.",
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
 
