@@ -1,0 +1,16 @@
+description: Pipeline to gather and plot bias frame stability stats.
+tasks:
+  biasStability:
+    class: lsst.eo.pipe.BiasStabilityTask
+    config:
+      connections.raw_frames: 'raw'
+      connections.camera: 'camera'
+      connections.bias_stability_stats: 'bias_stability_stats'
+  biasStabilityPlots:
+    class: lsst.eo.pipe.BiasStabilityPlotsTask
+    config:
+      connections.bias_stability_stats: 'bias_stability_stats'
+      connections.camera: 'camera'
+      connections.bias_mean_vs_time_plot: 'bias_mean_vs_time_plot'
+      connections.bias_stdev_vs_time_plot: 'bias_stdev_vs_time_plot'
+      connections.bias_rc_mean_vs_time_plot: 'bias_rc_mean_vs_time_plot'
