@@ -65,6 +65,16 @@ raft_plot_tables:
          figure: "{run}/eoDarkRaftMosaic_*_{raft}_*.png"
        - text: "Combined Flat"
          figure: "{run}/eoFlatRaftMosaic_*_{raft}_*.png"
+  bias_stability:
+    header_text: "Bias stability"
+    rows:
+      - text : "Bias frame amp-wise mean vs time"
+        figure : "{run}/bias_mean_vs_time_plot_*_{raft}_*.png"
+      - text : "Bias frame amp-wise stdev vs time"
+        figure : "{run}/bias_stdev_vs_time_plot_*_{raft}_*.png"
+      - text : "Bias frame amp-wise mean vs time for region covering the readout corner"
+        figure : "{run}/bias_rc_mean_vs_time_plot_*_{raft}_*.png"
+
   divisadero_tearing:
      header_text: "Divisadero Tearing Profiles"
      rows:

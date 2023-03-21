@@ -20,14 +20,15 @@ import lsst.utils
 from lsst.obs.lsst import LsstCam
 from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
-    eperTask, linearityPlotsTask, bfAnalysisTask
+    eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask
 
 
 def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
     plot_locations = {}
     for task in (readNoiseTask, raftCalibMosaicTask, raftMosaicTask,
                  defectsTask, darkCurrentTask, divisaderoTearingTask,
-                 ptcPlotsTask, eperTask, linearityPlotsTask, bfAnalysisTask):
+                 ptcPlotsTask, eperTask, linearityPlotsTask, bfAnalysisTask,
+                 biasStabilityTask):
         try:
             locations = task.get_plot_locations(repo, collections)
         except Exception as eobj:

@@ -9,11 +9,17 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 from .isr_utils import apply_overscan_correction
-from .dsref_utils import RaftOutputRefsMapper
+from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 from .plotting import append_acq_run
 
 
 __all__ = ['BiasStabilityTask', 'BiasStabilityPlotsTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('bias_mean_vs_time_plot', 'bias_stdev_vs_time_plot',
+               'bias_rc_mean_vs_time_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 def image_stats(image, nsigma=10):
