@@ -132,7 +132,7 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 rc_mean, rc_stdev = image_stats(rc_image, nsigma=self.nsigma)
                 data['rc_mean'].append(rc_mean)
                 data['rc_stdev'].append(rc_stdev)
-        return pipeBase.Struct(bias_stats=pd.DataFrame(data))
+        return pipeBase.Struct(bias_stability_stats=pd.DataFrame(data))
 
 
 class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
@@ -140,7 +140,9 @@ class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
     bias_stability_stats = cT.Input(name="bias_stability_stats",
                                     doc="bias stability statistics",
                                     storageClass="DataFrame",
-                                    dimensions=("instrument", "detector"))
+                                    dimensions=("instrument", "detector"),
+                                    multiple=True,
+                                    deferLoad=True)
     camera = cT.PrerequisiteInput(name="camera",
                                   doc="Camera used in observations",
                                   storageClass="Camera",
@@ -192,7 +194,7 @@ class BiasStabilityPlotsTask(pipeBase.PipelineTask):
     _plot_title_map = {'bias_mean_vs_time': 'bias stability, mean signal',
                        'bias_stdev_vs_time': 'bias stability, stdev',
                        'bias_rc_mean_vs_time':
-                       'bias stability, %(self.dxy)sx%(self.dxy)s region '
+                       'bias stability, mean of region '
                        'covering the readout corner'}
     _science_raft_slots = 'S20 S21 S22 S10 S11 S12 S00 S01 S02'.split()
     _corner_raft_slots = 'SG0 SW1 SW0 SG1'.split()
@@ -228,9 +230,9 @@ class BiasStabilityPlotsTask(pipeBase.PipelineTask):
                 mjd0 = int(min(df0['mjd']))
                 fig = plt.figure(figsize=self.figsize)
                 for i, slot in enumerate(slots, 1):
-                    df = df0.query(f"slot=='{slot}'")
-                    fig.add_subplot(3, 3, i)
                     det_name = '_'.join((raft, slot))
+                    df = df0.query(f"det_name=='{det_name}'")
+                    fig.add_subplot(3, 3, i)
                     det = camera[det_name]
                     for amp in det:
                         amp_name = amp.getName()
@@ -244,7 +246,7 @@ class BiasStabilityPlotsTask(pipeBase.PipelineTask):
                     plt.ylabel(self._plot_ylabel_map[plot_type])
                     plt.title(slot)
                 plt.tight_layout(rect=(0, 0, 1, 0.95))
-                suptitle = self._plot_title_map[plot_type] % locals()
+                suptitle = self._plot_title_map[plot_type]
                 plt.suptitle(append_acq_run(self, suptitle, raft))
                 butlerQC.put(fig, ref_map[raft])
                 plt.close()
