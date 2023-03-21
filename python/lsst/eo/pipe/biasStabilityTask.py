@@ -113,10 +113,14 @@ class BiasStabilityTask(pipeBase.PipelineTask):
             det = exp.getDetector()
             det_name = det.getName()
             raft, slot = det_name.split('_')
+            # Apply overscan corrections over all segments.
             for amp in det:
                 amp_name = amp.getName()
                 apply_overscan_correction(exp, amp_name, dx=self.ncol_skip,
                                           method=self.oscan_method)
+            # Loop over segments and extract statistics
+            for amp in det:
+                amp_name = amp.getName()
                 data['run'].append(obs_info.science_program)
                 data['exposure_id'].append(obs_info.exposure_id)
                 data['mjd'].append(obs_info.datetime_begin.value)
@@ -170,9 +174,9 @@ class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
 class BiasStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                    pipelineConnections=BiasStabilityPlotsTaskConnections):
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
-                               dtype=float, default=9)
+                               dtype=float, default=12)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
-                               dtype=float, default=9)
+                               dtype=float, default=12)
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
