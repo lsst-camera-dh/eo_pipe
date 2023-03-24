@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,7 +7,6 @@ import pandas as pd
 from astro_metadata_translator import ObservationInfo
 
 from lsst.afw.cameraGeom import utils as cgu
-import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
@@ -77,6 +75,12 @@ class ReadNoiseTaskConnections(pipeBase.PipelineTaskConnections,
                           multiple=True,
                           deferLoad=True)
 
+    ptc_results = cT.Input(name="ptc_results",
+                           doc="PTC fit results",
+                           storageClass="PhotonTransferCurveDataset",
+                           dimensions=("instrument", "detector"),
+                           isCalibration=True)
+
     read_noise = cT.Output(name="eo_read_noise",
                            doc="read noise statistics",
                            storageClass="DataFrame",
@@ -105,17 +109,19 @@ class ReadNoiseTask(pipeBase.PipelineTask):
         self.nsamp = self.config.nsamp
         self.dxy = self.config.dxy
 
-    def run(self, raw_frames: List[afwImage.Exposure]) -> pipeBase.Struct:
+    def run(self, raw_frames, ptc_results):
         data = defaultdict(list)
         for ds_handle in raw_frames:
             exposure = ds_handle.get()
             obs_info = ObservationInfo(exposure.getMetadata())
             det = exposure.getDetector()
             for amp in det:
+                amp_name = amp.getName()
+                gain = ptc_results.gain[amp_name]
                 data['run'].append(obs_info.science_program)
                 data['exposure_id'].append(obs_info.exposure_id)
                 data['det_name'].append(det.getName())
-                data['amp_name'].append(amp.getName())
+                data['amp_name'].append(amp_name)
 
                 bbox = amp.getRawSerialOverscanBBox()
                 bbox.grow(-self.edge_buffer)
@@ -124,8 +130,8 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                 stdevs = [
                     afwMath.makeStatistics(subregion, afwMath.STDEV).getValue()
                     for _, subregion in zip(range(self.nsamp), sampler)]
-                data['read_noise'].append(float(np.median(stdevs)))
-                data['median'].append(float(np.median(overscan.array)))
+                data['read_noise'].append(gain*float(np.median(stdevs)))
+                data['median'].append(gain*float(np.median(overscan.array)))
         return pipeBase.Struct(read_noise=pd.DataFrame(data))
 
 
@@ -196,7 +202,7 @@ class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
                 amp_data[det_name][amp_name] = np.median(df['read_noise'])
         fig = plt.figure(figsize=self.figsize)
         ax = fig.add_subplot(111)
-        title = append_acq_run(self, "Read Noise")
+        title = append_acq_run(self, "Read Noise (e-)")
         plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.z_scale_factor, title=title)
         return pipeBase.Struct(read_noise_plot=fig)
