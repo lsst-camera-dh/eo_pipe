@@ -4,6 +4,7 @@ tasks:
     class: lsst.eo.pipe.ReadNoiseTask
     config:
       connections.raw_frames: 'raw'
+      connections.ptc_results: 'ptc'
       connections.read_noise: 'eo_read_noise'
       edge_buffer: 2
   readNoiseFpPlots:
