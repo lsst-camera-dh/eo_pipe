@@ -1,7 +1,6 @@
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
-from astro_metadata_translator import ObservationInfo
 import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.geom
@@ -65,12 +64,12 @@ def get_readout_corner(image, amp, raw_amp, dxy):
 
 class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                                    dimensions=("instrument", "detector")):
-    raw_frames = cT.Input(name="raw_frames",
-                          doc="Raw input frames",
-                          storageClass="Exposure",
-                          dimensions=("instrument", "exposure", "detector"),
-                          multiple=True,
-                          deferLoad=True)
+    exposures = cT.Input(name="postISRCCD",
+                         doc="CCDs with desired level of ISR applied.",
+                         storageClass="Exposure",
+                         dimensions=("instrument", "exposure", "detector"),
+                         multiple=True,
+                         deferLoad=True)
     camera = cT.PrerequisiteInput(name="camera",
                                   doc="Camera used in observations",
                                   storageClass="Camera",
@@ -109,27 +108,22 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         self.readout_size = self.config.readout_corner_size
         self.nsigma = self.config.nsigma
 
-    def run(self, raw_frames, camera):
-        raw_det = camera[raw_frames[0].dataId['detector']]
+    def run(self, exposures, camera):
+        raw_det = camera[exposures[0].dataId['detector']]
         data = defaultdict(list)
-        for handle in raw_frames:
+        for handle in exposures:
             exp = handle.get()
             image = exp.getImage()
-            obs_info = ObservationInfo(exp.getMetadata())
+            md = exp.getMetadata()
             det = exp.getDetector()
             det_name = det.getName()
             raft, slot = det_name.split('_')
-            # Apply overscan corrections over all segments.
-            for amp in det:
-                amp_name = amp.getName()
-                apply_overscan_correction(exp, amp_name, dx=self.ncol_skip,
-                                          method=self.oscan_method)
             # Loop over segments and extract statistics
             for amp in det:
                 amp_name = amp.getName()
-                data['run'].append(obs_info.science_program)
-                data['exposure_id'].append(obs_info.exposure_id)
-                data['mjd'].append(obs_info.datetime_begin.value)
+                data['run'].append(md['RUNNUM'])
+                data['exposure_id'].append(handle.dataId['exposure'])
+                data['mjd'].append(md['MJD'])
                 data['det_name'].append(det_name)
                 data['amp_name'].append(amp_name)
                 bbox = amp.getBBox()

@@ -1,9 +1,28 @@
 description: Pipeline to gather and plot bias frame stability stats.
 tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.outputExposure: 'postISRCCD'
+      doWrite: true
+      doBrighterFatter: false
+      doBias: false
+      doDark: false
+      doFlat: false
+      doApplyGains: false
+      usePtcGains: false
+      doLinearize: false
+      doFringe: false
+      doDefect: false
+      overscan.leadingColumnsToSkip: 4
+      overscan.trailingColumnsToSkip: 4
+      overscan.fitType: 'MEDIAN_PER_ROW'
+      overscan.doParallelOverscan: false
   biasStability:
     class: lsst.eo.pipe.BiasStabilityTask
     config:
-      connections.raw_frames: 'raw'
+      connections.exposures: 'postISRCCD'
       connections.camera: 'camera'
       connections.bias_stability_stats: 'bias_stability_stats'
   biasStabilityPlots:
