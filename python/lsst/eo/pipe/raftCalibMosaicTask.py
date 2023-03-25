@@ -87,7 +87,7 @@ class RaftCalibMosaicTaskConfig(pipeBase.PipelineTaskConfig,
     binSize = pexConfig.Field(doc="Bin size in pixels for rebinning.",
                               dtype=int, default=2)
     cmap = pexConfig.Field(doc="Matplotlib color map", dtype=str, default='hot')
-    acq_run = pexConfig.Field(doc="Acquistion run number.",
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
 

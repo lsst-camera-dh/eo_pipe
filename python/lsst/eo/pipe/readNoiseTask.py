@@ -173,7 +173,7 @@ class ReadNoiseFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                          "care of automatically when "
                                          "rendering the label in matplotlib"),
                                     dtype=str, default="1")
-    acq_run = pexConfig.Field(doc="Acquistion run number.",
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
 

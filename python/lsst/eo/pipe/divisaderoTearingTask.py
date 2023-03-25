@@ -238,7 +238,7 @@ class DivisaderoRaftPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=20)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=20)
-    acq_run = pexConfig.Field(doc="Acquistion run number.",
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
 
@@ -330,7 +330,7 @@ class DivisaderoFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                            dtype=float, default=0)
     zmax = pexConfig.Field(doc="Maximum of color bar range.",
                            dtype=float, default=0.05)
-    acq_run = pexConfig.Field(doc="Acquistion run number.",
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
 
