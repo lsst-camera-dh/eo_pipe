@@ -74,7 +74,6 @@ raft_plot_tables:
         figure : "{run}/bias_stdev_vs_time_plot_*_{raft}_*.png"
       - text : "Bias frame amp-wise mean vs time for region covering the readout corner"
         figure : "{run}/bias_rc_mean_vs_time_plot_*_{raft}_*.png"
-
   divisadero_tearing:
      header_text: "Divisadero Tearing Profiles"
      rows:
@@ -84,7 +83,9 @@ run_plot_tables:
   mosaics:
     header_text : "Summary Mosaics"
     rows :
-      - text : "Read Noise"
+      - text : "LSSTCam focal plane layout"
+        figure : "{run}/LSSTCam_fp_layout.png"
+      - text : "Read noise"
         figure : "{run}/read_noise_plot_*.png"
       - text : "Bright columns"
         figure : "{run}/brightColumnsFpPlot_*.png"
