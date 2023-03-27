@@ -45,6 +45,12 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
             dest = os.path.join(staging_dir, os.path.basename(file_path))
             os.symlink(file_path, dest)
 
+    # Symlink the focal plane layout figure.
+    fp_layout = os.path.join(lsst.utils.getPackageDir('eo_pipe'),
+                             'data', 'LSSTCam_fp_layout.png')
+    dest = os.path.join(staging_dir, os.path.basename(fp_layout))
+    os.symlink(fp_layout, dest)
+
 
 RAFT_SLOT_MAP = defaultdict(list)
 for det in LsstCam.getCamera():
