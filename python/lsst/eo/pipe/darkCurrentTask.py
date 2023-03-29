@@ -8,7 +8,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -65,9 +65,21 @@ class DarkCurrentTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
+    dark_current_percentile_hist = cT.Output(
+        name="dark_current_percentile_hist",
+        doc="Histogram of per-amp percentile dark current values",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
     dark_current_median_plot = cT.Output(
         name="dark_current_median_plot",
         doc="Focal plane mosaic of per-amp median dark current values",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    dark_current_median_hist = cT.Output(
+        name="dark_current_median_hist",
+        doc="Histogram of per-amp median dark current values",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -145,12 +157,23 @@ class DarkCurrentTask(pipeBase.PipelineTask):
         plot_focal_plane(ax, amp_data['percentile'], camera=camera,
                          z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
+        dark_current_percentile_hist = plt.figure()
+        hist_amp_data(amp_data['percentile'], "Dark current [e-/s]",
+                      hist_range=self.z_range, scale_factor=self.zscale_factor,
+                      title=title)
+
         dark_current_median_plot = plt.figure(figsize=self.figsize)
         ax = dark_current_median_plot.add_subplot(111)
         title = append_acq_run(self, "Dark current, median [e-/s]")
         plot_focal_plane(ax, amp_data['median'], camera=camera,
                          z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
+        dark_current_median_hist = plt.figure()
+        hist_amp_data(amp_data['median'], "Dark current [e-/s]",
+                      hist_range=self.z_range, scale_factor=self.zscale_factor,
+                      title=title)
         return pipeBase.Struct(dark_current_stats=dark_current_stats,
                                dark_current_percentile_plot=dark_current_percentile_plot,
-                               dark_current_median_plot=dark_current_median_plot)
+                               dark_current_percentile_hist=dark_current_percentile_hist,
+                               dark_current_median_plot=dark_current_median_plot,
+                               dark_current_median_hist=dark_current_median_hist)

@@ -9,8 +9,8 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane, make_divisadero_summary_plot, \
-    append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run, \
+    make_divisadero_summary_plot
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -288,7 +288,7 @@ class DivisaderoRaftPlotsTask(pipeBase.PipelineTask):
 
         # Loop over rafts and create summary plots.
         for raft, data in raft_data.items():
-            title = append_acq_run(self, f"Divisadero tearing response", raft)
+            title = append_acq_run(self, "Divisadero tearing response", raft)
             fig = make_divisadero_summary_plot(data, title=title,
                                                figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
@@ -316,6 +316,12 @@ class DivisaderoFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
     divisadero_tearing = cT.Output(
         name="divisadero_tearing_plot",
         doc="Focal plane mosaic of divisadero tearing results",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    divisadero_tearing_hist = cT.Output(
+        name="divisadero_tearing_hist",
+        doc="Histogram of divisadero tearing results",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -357,10 +363,14 @@ class DivisaderoFpPlotsTask(pipeBase.PipelineTask):
                 amp_name = row['amp_name']
                 amp_data[det_name][amp_name] = row['divisadero_tearing']
 
-        figure = plt.figure(figsize=self.figsize)
-        ax = figure.add_subplot(111)
+        divisadero_tearing = plt.figure(figsize=self.figsize)
+        ax = divisadero_tearing.add_subplot(111)
         title = append_acq_run(self, "Divisadero maximum deviation")
         plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
                          title=title, scale_factor='1')
+        divisadero_tearing_hist = plt.figure()
+        hist_amp_data(amp_data, "divisadero maximum deviation",
+                      hist_range=self.z_range, title=title)
 
-        return pipeBase.Struct(divisadero_tearing=figure)
+        return pipeBase.Struct(divisadero_tearing=divisadero_tearing,
+                               divisadero_tearing_hist=divisadero_tearing_hist)

@@ -7,7 +7,7 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -293,11 +293,23 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                              storageClass="Plot",
                              dimensions=("instrument",))
 
+    max_frac_dev_hist = cT.Output(name="max_frac_dev_hist",
+                                  doc=("Maximum fractional deviation from "
+                                       "linear fit of signal vs flux"),
+                                  storageClass="Plot",
+                                  dimensions=("instrument",))
+
     max_observed_signal = cT.Output(name="max_observed_signal",
                                     doc=("Maximum observed signal (ADU) "
                                          "from flat pair acquisition."),
                                     storageClass="Plot",
                                     dimensions=("instrument",))
+
+    max_observed_signal_hist = cT.Output(name="max_observed_signal_hist",
+                                         doc=("Maximum observed signal (ADU) "
+                                              "from flat pair acquisition."),
+                                         storageClass="Plot",
+                                         dimensions=("instrument",))
 
     linearity_turnoff = cT.Output(name="linearity_turnoff",
                                   doc=("Maximum signal (ADU) consistent "
@@ -306,6 +318,14 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                        "spec, nominally 0.05."),
                                   storageClass="Plot",
                                   dimensions=("instrument",))
+
+    linearity_turnoff_hist = cT.Output(name="linearity_turnoff_hist",
+                                       doc=("Maximum signal (ADU) consistent "
+                                            "with the linearity fit within "
+                                            "the maximum fractional deviation "
+                                            "spec, nominally 0.05."),
+                                       storageClass="Plot",
+                                       dimensions=("instrument",))
 
 
 class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
@@ -366,10 +386,13 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
                 for column in columns:
                     amp_data[column][row.det_name][row.amp_name] = row[column]
         plots = {}
+        hists = {}
         for column in set(amp_data.keys()):
             plots[column] = plt.figure(figsize=self.figsize)
             ax = plots[column].add_subplot(111)
+            title = append_acq_run(self, column)
             plot_focal_plane(ax, amp_data[column], camera=camera,
-                             z_range=None, title=append_acq_run(self, column))
-
-        return pipeBase.Struct(**plots)
+                             z_range=None, title=title)
+            hists[f"{column}_hist"] = plt.figure()
+            hist_amp_data(amp_data[column], column, title=title)
+        return pipeBase.Struct(**plots, **hists)

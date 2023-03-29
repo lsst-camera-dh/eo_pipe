@@ -8,7 +8,7 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -187,9 +187,21 @@ class BFAnalysisFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
+    bf_xcorr_hist = cT.Output(
+        name="bf_xcorr_hist",
+        doc="Histogram of cov10 values for each amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
     bf_ycorr_plot = cT.Output(
         name="bf_ycorr_plot",
         doc="Focal plane mosaic of cov01 for each amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    bf_ycorr_hist = cT.Output(
+        name="bf_ycorr_hist",
+        doc="Histogram of cov01 values for each amp",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -242,15 +254,23 @@ class BFAnalysisFpPlotsTask(pipeBase.PipelineTask):
 
         bf_xcorr_plot = plt.figure(figsize=self.figsize)
         ax = bf_xcorr_plot.add_subplot(111)
+        title = append_acq_run(self, 'bf_xcorr')
         plot_focal_plane(ax, xcorr_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.zscale_factor,
-                         title=append_acq_run(self, 'bf_xcorr'))
+                         scale_factor=self.zscale_factor, title=title)
+        bf_xcorr_hist = plt.figure()
+        hist_amp_data(xcorr_data, 'bf_xcorr', hist_range=self.z_range,
+                      title=title)
 
         bf_ycorr_plot = plt.figure(figsize=self.figsize)
         ax = bf_ycorr_plot.add_subplot(111)
+        title = append_acq_run(self, 'bf_ycorr')
         plot_focal_plane(ax, ycorr_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.zscale_factor,
-                         title=append_acq_run(self, 'bf_ycorr'))
+                         scale_factor=self.zscale_factor, title=title)
+        bf_ycorr_hist = plt.figure()
+        hist_amp_data(ycorr_data, 'bf_ycorr', hist_range=self.z_range,
+                      title=title)
 
         return pipeBase.Struct(bf_xcorr_plot=bf_xcorr_plot,
-                               bf_ycorr_plot=bf_ycorr_plot)
+                               bf_xcorr_hist=bf_xcorr_hist,
+                               bf_ycorr_plot=bf_ycorr_plot,
+                               bf_ycorr_hist=bf_ycorr_hist)
