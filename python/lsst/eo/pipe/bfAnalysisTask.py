@@ -32,7 +32,8 @@ def get_amp_data(repo, collections):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('bf_covariance_plots', 'bf_xcorr_plot', 'bf_ycorr_plot')
+    dstypes = ('bf_covariance_plots', 'bf_xcorr_plot', 'bf_ycorr_plot',
+               'bf_xcorr_hist', 'bf_ycorr_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 

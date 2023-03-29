@@ -43,7 +43,8 @@ def get_amp_data(repo, collections, camera=None):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('read_noise_plot', 'overscan_correlation_plot')
+    dstypes = ('read_noise_plot', 'read_noise_hist',
+               'overscan_correlation_plot')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 

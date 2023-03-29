@@ -33,7 +33,8 @@ def get_amp_data(repo, collections):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('divisadero_raft_plot', 'divisadero_tearing_plot')
+    dstypes = ('divisadero_raft_plot', 'divisadero_tearing_plot',
+               'divisadero_tearing_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 

@@ -32,7 +32,8 @@ def get_amp_data(repo, collections):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('scti_eper_plot', 'pcti_eper_plot')
+    dstypes = ('scti_eper_plot', 'pcti_eper_plot',
+               'scti_eper_hist', 'pcti_eper_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 

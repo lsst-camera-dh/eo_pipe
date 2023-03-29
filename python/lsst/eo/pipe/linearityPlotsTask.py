@@ -31,7 +31,9 @@ def get_amp_data(repo, collections):
 
 def get_plot_locations(repo, collections):
     dstypes = ('linearity_fit_plot', 'linearity_residuals_plot',
-               'max_frac_dev', 'max_observed_signal', 'linearity_turnoff')
+               'max_frac_dev', 'max_observed_signal', 'linearity_turnoff',
+               'max_frac_dev_hist', 'max_observed_signal_hist',
+               'linearity_turnoff_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -345,6 +347,10 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
     ConfigClass = LinearityFpPlotsTaskConfig
     _DefaultName = "linearityFpPlotsTask"
 
+    _z_range = {'max_frac_dev': (0, 0.05),
+                'max_observed_signal': (5e4, 2e5),
+                'linearity_turnoff': (5e4, 2e5)}
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.figsize = (self.config.yfigsize, self.config.xfigsize)
@@ -391,8 +397,10 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
             plots[column] = plt.figure(figsize=self.figsize)
             ax = plots[column].add_subplot(111)
             title = append_acq_run(self, column)
+            z_range = self._z_range.get(column, None)
             plot_focal_plane(ax, amp_data[column], camera=camera,
-                             z_range=None, title=title)
+                             z_range=z_range, title=title)
             hists[f"{column}_hist"] = plt.figure()
-            hist_amp_data(amp_data[column], column, title=title)
+            hist_amp_data(amp_data[column], column, hist_range=z_range,
+                          title=title)
         return pipeBase.Struct(**plots, **hists)

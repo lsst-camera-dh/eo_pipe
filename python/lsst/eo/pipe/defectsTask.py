@@ -36,7 +36,9 @@ def get_amp_data(repo, collections):
 
 def get_plot_locations(repo, collections):
     dstypes = ('brightColumnsFpPlot', 'brightPixelsFpPlot',
-               'darkColumnsFpPlot', 'darkPixelsFpPlot')
+               'darkColumnsFpPlot', 'darkPixelsFpPlot',
+               'bright_columns_fp_hist', 'bright_pixels_fp_hist',
+               'dark_columns_fp_hist', 'dark_pixels_fp_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 

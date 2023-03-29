@@ -13,7 +13,7 @@ __all__ = ["CtiFpPlotsTask"]
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('serial_cti',)
+    dstypes = ('serial_cti', 'serial_cti_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 

@@ -30,7 +30,8 @@ def get_amp_data(repo, collections):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('dark_current_percentile_plot', 'dark_current_median_plot')
+    dstypes = ('dark_current_percentile_plot', 'dark_current_median_plot',
+               'dark_current_percentile_hist', 'dark_current_median_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
