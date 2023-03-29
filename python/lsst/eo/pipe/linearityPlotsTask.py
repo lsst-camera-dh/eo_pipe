@@ -7,7 +7,7 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -31,7 +31,9 @@ def get_amp_data(repo, collections):
 
 def get_plot_locations(repo, collections):
     dstypes = ('linearity_fit_plot', 'linearity_residuals_plot',
-               'max_frac_dev', 'max_observed_signal', 'linearity_turnoff')
+               'max_frac_dev', 'max_observed_signal', 'linearity_turnoff',
+               'max_frac_dev_hist', 'max_observed_signal_hist',
+               'linearity_turnoff_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -293,11 +295,23 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                              storageClass="Plot",
                              dimensions=("instrument",))
 
+    max_frac_dev_hist = cT.Output(name="max_frac_dev_hist",
+                                  doc=("Maximum fractional deviation from "
+                                       "linear fit of signal vs flux"),
+                                  storageClass="Plot",
+                                  dimensions=("instrument",))
+
     max_observed_signal = cT.Output(name="max_observed_signal",
                                     doc=("Maximum observed signal (ADU) "
                                          "from flat pair acquisition."),
                                     storageClass="Plot",
                                     dimensions=("instrument",))
+
+    max_observed_signal_hist = cT.Output(name="max_observed_signal_hist",
+                                         doc=("Maximum observed signal (ADU) "
+                                              "from flat pair acquisition."),
+                                         storageClass="Plot",
+                                         dimensions=("instrument",))
 
     linearity_turnoff = cT.Output(name="linearity_turnoff",
                                   doc=("Maximum signal (ADU) consistent "
@@ -306,6 +320,14 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                        "spec, nominally 0.05."),
                                   storageClass="Plot",
                                   dimensions=("instrument",))
+
+    linearity_turnoff_hist = cT.Output(name="linearity_turnoff_hist",
+                                       doc=("Maximum signal (ADU) consistent "
+                                            "with the linearity fit within "
+                                            "the maximum fractional deviation "
+                                            "spec, nominally 0.05."),
+                                       storageClass="Plot",
+                                       dimensions=("instrument",))
 
 
 class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
@@ -324,6 +346,10 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
     full focal plane."""
     ConfigClass = LinearityFpPlotsTaskConfig
     _DefaultName = "linearityFpPlotsTask"
+
+    _z_range = {'max_frac_dev': (0, 0.05),
+                'max_observed_signal': (5e4, 2e5),
+                'linearity_turnoff': (5e4, 2e5)}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -366,10 +392,15 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
                 for column in columns:
                     amp_data[column][row.det_name][row.amp_name] = row[column]
         plots = {}
+        hists = {}
         for column in set(amp_data.keys()):
             plots[column] = plt.figure(figsize=self.figsize)
             ax = plots[column].add_subplot(111)
+            title = append_acq_run(self, column)
+            z_range = self._z_range.get(column, None)
             plot_focal_plane(ax, amp_data[column], camera=camera,
-                             z_range=None, title=append_acq_run(self, column))
-
-        return pipeBase.Struct(**plots)
+                             z_range=z_range, title=title)
+            hists[f"{column}_hist"] = plt.figure()
+            hist_amp_data(amp_data[column], column, hist_range=z_range,
+                          title=title)
+        return pipeBase.Struct(**plots, **hists)

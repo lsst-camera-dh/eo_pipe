@@ -14,7 +14,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -63,7 +63,9 @@ def get_amp_data(repo, collections, camera=None):
 def get_plot_locations(repo, collections):
     dstypes = ('ptc_plots', 'ptc_a00_plot', 'ptc_gain_plot', 'ptc_noise_plot',
                'ptc_turnoff_plot', 'row_means_variance_plot',
-               'row_means_variance_slopes_plot')
+               'row_means_variance_slopes_plot',
+               'ptc_a00_hist', 'ptc_gain_hist', 'ptc_noise_hist',
+               'ptc_turnoff_hist', 'row_means_variance_slopes_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -167,16 +169,32 @@ class PtcFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                         doc="Focal plane map of PTC a00",
                         storageClass="Plot",
                         dimensions=("instrument",))
+    ptc_a00_hist = cT.Output(name="ptc_a00_hist",
+                             doc="Histogram of PTC a00 per-amp values",
+                             storageClass="Plot",
+                             dimensions=("instrument",))
     ptc_gain = cT.Output(name="ptc_gain_plot",
                          doc="Focal plane map of PTC gain",
                          storageClass="Plot",
                          dimensions=("instrument",))
+    ptc_gain_hist = cT.Output(name="ptc_gain_hist",
+                              doc="Histogram of PTC gain per-amp values",
+                              storageClass="Plot",
+                              dimensions=("instrument",))
     ptc_noise = cT.Output(name="ptc_noise_plot",
                           doc="Focal plane map of PTC noise",
                           storageClass="Plot",
                           dimensions=("instrument",))
+    ptc_noise_hist = cT.Output(name="ptc_noise_hist",
+                               doc="Histogram of PTC noise per-amp values",
+                               storageClass="Plot",
+                               dimensions=("instrument",))
     ptc_turnoff = cT.Output(name="ptc_turnoff_plot",
                             doc="Focal plane map of PTC turnoff",
+                            storageClass="Plot",
+                            dimensions=("instrument",))
+    ptc_turnoff_hist = cT.Output(name="ptc_turnoff_hist",
+                            doc="Histogram of PTC turnoff per-amp values",
                             storageClass="Plot",
                             dimensions=("instrument",))
 
@@ -196,6 +214,11 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
     """Create summary plots of the PTC results for the full focal plane."""
     ConfigClass = PtcFpPlotsTaskConfig
     _DefaultName = "ptcFpPlotsTask"
+
+    _z_range = {'ptc_gain': 'clipped_autoscale',
+                'ptc_a00': (0, 5e-6),
+                'ptc_turnoff': (5e4, 2e5),
+                'ptc_noise': (0, 20)}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -241,14 +264,18 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                     = np.max(ptc.finalMeans[amp]) if ptc.finalMeans[amp] else -1
 
         plots = {}
+        hists = {}
         for field in amp_data:
             plots[field] = plt.figure(figsize=self.figsize)
             ax = plots[field].add_subplot(111)
             title = append_acq_run(self, field)
-            plot_focal_plane(ax, amp_data[field], title=title,
-                             z_range="clipped_autoscale")
+            z_range = self._z_range.get(field, None)
+            plot_focal_plane(ax, amp_data[field], title=title, z_range=z_range)
+            hists[f'{field}_hist'] = plt.figure()
+            hist_amp_data(amp_data[field], field, hist_range=z_range,
+                          title=title)
 
-        return pipeBase.Struct(**plots)
+        return pipeBase.Struct(**plots, **hists)
 
 
 class RowMeansVarianceTaskConnections(pipeBase.PipelineTaskConnections,
@@ -431,7 +458,13 @@ class RowMeansVarianceFpPlotTaskConnections(pipeBase.PipelineTaskConnections,
 
     row_means_variance_slopes = cT.Output(
         name="row_means_variance_slopes_plot",
-        doc="Focal plan map of slope of row means variance.",
+        doc="Focal plane map of slopes of row means variance.",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    row_means_variance_slopes_hist = cT.Output(
+        name="row_means_variance_slopes_hist",
+        doc="Histogram of slopes of row means variance.",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -451,6 +484,8 @@ class RowMeansVarianceFpPlotTask(pipeBase.PipelineTask):
     """Create focal plane mosaic of slope of row means variance."""
     ConfigClass = RowMeansVarianceFpPlotTaskConfig
     _DefaultName = "rowMeansVarianceFpPlotTask"
+
+    _z_range = (0, 2)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -474,10 +509,15 @@ class RowMeansVarianceFpPlotTask(pipeBase.PipelineTask):
             df = ref.get()
             for _, row in df.iterrows():
                 amp_data[row.det_name][row.amp_name] = row.slope
-        fig = plt.figure(figsize=self.figsize)
-        ax = fig.add_subplot(111)
-        title = append_acq_run(self, "Row means variance slopes")
+        row_means_variance_slopes = plt.figure(figsize=self.figsize)
+        ax = row_means_variance_slopes.add_subplot(111)
+        xlabel = "Row means variance slopes"
+        title = append_acq_run(self, xlabel)
         plot_focal_plane(ax, amp_data, title=title, camera=camera,
-                         z_range="clipped_autoscale")
+                         z_range=self._z_range)
 
-        return pipeBase.Struct(row_means_variance_slopes=fig)
+        row_means_variance_slopes_hist = plt.figure()
+        hist_amp_data(amp_data, xlabel, hist_range=self._z_range, title=title)
+
+        return pipeBase.Struct(row_means_variance_slopes=row_means_variance_slopes,
+                               row_means_variance_slopes_hist=row_means_variance_slopes_hist)

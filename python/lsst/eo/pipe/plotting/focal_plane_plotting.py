@@ -276,7 +276,7 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
 
 def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
                   label=None, use_log10=False, yscale='log',
-                  scale_factor='1'):
+                  scale_factor='1', title=None):
     """Histogram focal plane results from per amp data.
 
     amp_data: dict of dict of floats
@@ -288,7 +288,8 @@ def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
     bins: int [50]
         Number of histogram bins.
     hist_range: (float, float) [None]
-        Histogram min and max values.  If None, then used plt.hist default.
+        Histogram min and max values.  If None or "clipped_autoscale",
+        then use the plt.hist default.
     color: str [None]
         Histogram color.  If None, then used plt.hist default.
     label: str [None]
@@ -298,7 +299,14 @@ def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
         non-positive amp_value, don't render the amp color.
     yscale: str ['log']
         Argument to pass to plt.yscale(...).  The options are 'linear', 'log'.
+    scale_factor: str ['1']
+        Scale factor to apply to the data. This is not used if
+        use_log10 == True.
+    title: str [None]
+        Plot title.
     """
+    if hist_range == 'clipped_autoscale':
+        hist_range = None
     amp_values = []
     for _ in amp_data.values():
         amp_values.extend(_.values())
@@ -309,7 +317,7 @@ def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
     plt.xlabel(x_label)
     plt.ylabel('entries / bin')
     plt.yscale(yscale)
-    ax = plt.axes()
+    ax = plt.gca()
     if use_log10:
         ticks = sorted(list(set([int(_) for _ in
                                  np.log10(np.logspace(0, max(amp_values)))])))
@@ -323,3 +331,5 @@ def hist_amp_data(amp_data, x_label, bins=50, hist_range=None, color=None,
         ticklabels = ['{:.1f}'.format(_/float(scale_factor)) for _ in ticks]
         ticklabels[-1] += f'\nx {scale_factor}'
         ax.set_xticklabels(ticklabels)
+    if title is not None:
+        plt.title(title)

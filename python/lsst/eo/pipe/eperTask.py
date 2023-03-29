@@ -9,7 +9,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .isr_utils import apply_minimal_isr
 from .dsref_utils import get_plot_locations_by_dstype
 
@@ -32,7 +32,8 @@ def get_amp_data(repo, collections):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('scti_eper_plot', 'pcti_eper_plot')
+    dstypes = ('scti_eper_plot', 'pcti_eper_plot',
+               'scti_eper_hist', 'pcti_eper_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -192,9 +193,21 @@ class EperFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
+    scti_eper_hist = cT.Output(
+        name="scti_eper_hist",
+        doc="Histogram of serial CTI for each amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
     pcti_eper_plot = cT.Output(
         name="pcti_eper_plot",
         doc="Focal plane mosaic of parallel CTI for each amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    pcti_eper_hist = cT.Output(
+        name="pcti_eper_hist",
+        doc="Histogram of parallel CTI for each amp",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -247,15 +260,25 @@ class EperFpPlotsTask(pipeBase.PipelineTask):
 
         scti_eper_plot = plt.figure(figsize=self.figsize)
         ax = scti_eper_plot.add_subplot(111)
-        title = append_acq_run(self, "Serial CTI")
+        xlabel = "Serial CTI"
+        title = append_acq_run(self, xlabel)
         plot_focal_plane(ax, scti_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
+        scti_eper_hist = plt.figure()
+        hist_amp_data(scti_data, xlabel, hist_range=self.z_range,
+                      scale_factor=self.zscale_factor, title=title)
 
         pcti_eper_plot = plt.figure(figsize=self.figsize)
         ax = pcti_eper_plot.add_subplot(111)
-        title = append_acq_run(self, "Parallel CTI")
+        xlabel = "Parallel CTI"
+        title = append_acq_run(self, xlabel)
         plot_focal_plane(ax, pcti_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
+        pcti_eper_hist = plt.figure()
+        hist_amp_data(pcti_data, xlabel, hist_range=self.z_range,
+                      scale_factor=self.zscale_factor, title=title)
 
         return pipeBase.Struct(scti_eper_plot=scti_eper_plot,
-                               pcti_eper_plot=pcti_eper_plot)
+                               scti_eper_hist=scti_eper_hist,
+                               pcti_eper_plot=pcti_eper_plot,
+                               pcti_eper_hist=pcti_eper_hist)

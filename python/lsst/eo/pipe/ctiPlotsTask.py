@@ -5,7 +5,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -13,7 +13,7 @@ __all__ = ["CtiFpPlotsTask"]
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('serial_cti',)
+    dstypes = ('serial_cti', 'serial_cti_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -39,6 +39,12 @@ class CtiFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
     serial_cti = cT.Output(
         name="serial_cti",
         doc="Serial CTI per amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    serial_cti_hist = cT.Output(
+        name="serial_cti_hist",
+        doc="Histogram of serial CTI values per amp",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -87,9 +93,15 @@ class CtiFpPlotsTask(pipeBase.PipelineTask):
                 except KeyError:
                     pass
 
-        figure = plt.figure(figsize=self.figsize)
+        serial_cti = plt.figure(figsize=self.figsize)
         ax = plt.subplot(111)
+        title = append_acq_run(self, 'SCTI from deferredCharge task')
         plot_focal_plane(ax, scti, camera=camera, z_range=self.zrange,
-                         scale_factor=self.zscale_factor)
+                         scale_factor=self.zscale_factor, title=title)
 
-        return pipeBase.Struct(serial_cti=figure)
+        serial_cti_hist = plt.figure()
+        hist_amp_data(scti, 'serial CTI', hist_range=self.zrange,
+                      scale_factor=self.zscale_factor, title=title)
+
+        return pipeBase.Struct(serial_cti=serial_cti,
+                               serial_cti_hist=serial_cti_hist)

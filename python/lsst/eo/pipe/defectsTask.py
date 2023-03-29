@@ -12,7 +12,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
@@ -36,7 +36,9 @@ def get_amp_data(repo, collections):
 
 def get_plot_locations(repo, collections):
     dstypes = ('brightColumnsFpPlot', 'brightPixelsFpPlot',
-               'darkColumnsFpPlot', 'darkPixelsFpPlot')
+               'darkColumnsFpPlot', 'darkPixelsFpPlot',
+               'bright_columns_fp_hist', 'bright_pixels_fp_hist',
+               'dark_columns_fp_hist', 'dark_pixels_fp_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -160,9 +162,21 @@ class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
+    bright_columns_fp_hist = cT.Output(
+        name="bright_columns_fp_hist",
+        doc="Bright columns focal plane histogram",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
     bright_pixels_fp_plot = cT.Output(
         name="bright_pixels_fp_plot",
         doc="Bright pixels focal plane mosaic",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    bright_pixels_fp_hist = cT.Output(
+        name="bright_pixels_fp_hist",
+        doc="Bright pixels focal plane histogram",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -172,9 +186,21 @@ class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
+    dark_columns_fp_hist = cT.Output(
+        name="dark_columns_fp_hist",
+        doc="Dark columns focal plane histogram",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
     dark_pixels_fp_plot = cT.Output(
         name="dark_pixels_fp_plot",
         doc="Dark pixels focal plane mosaic",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    dark_pixels_fp_hist = cT.Output(
+        name="dark_pixels_fp_hist",
+        doc="Dark pixels focal plane histogram",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -244,12 +270,14 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
             bright_column_data[det_name] = columns
             bright_pixel_data[det_name] = pixels
 
-        outputs['bright_columns_fp_plot'] \
+        outputs['bright_columns_fp_plot'], outputs['bright_columns_fp_hist'] \
             = self._make_fp_plot(bright_column_data,
-                                 append_acq_run(self, "Bright Columns"))
-        outputs['bright_pixels_fp_plot'] \
+                                 append_acq_run(self, "Bright Columns"),
+                                 "bright columns")
+        outputs['bright_pixels_fp_plot'], outputs['bright_pixels_fp_hist'] \
             = self._make_fp_plot(bright_pixel_data,
-                                 append_acq_run(self, "Bright Pixels"))
+                                 append_acq_run(self, "Bright Pixels"),
+                                 "bright pixels")
 
         dark_column_data = {}
         dark_pixel_data = {}
@@ -262,12 +290,14 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
             dark_column_data[det_name] = columns
             dark_pixel_data[det_name] = pixels
 
-        outputs['dark_columns_fp_plot'] \
+        outputs['dark_columns_fp_plot'], outputs['dark_columns_fp_hist'] \
             = self._make_fp_plot(dark_column_data,
-                                 append_acq_run(self, "Dark Columns"))
-        outputs['dark_pixels_fp_plot'] \
+                                 append_acq_run(self, "Dark Columns"),
+                                 "dark columns")
+        outputs['dark_pixels_fp_plot'], outputs['dark_pixels_fp_hist']  \
             = self._make_fp_plot(dark_pixel_data,
-                                 append_acq_run(self, "Dark Pixels"))
+                                 append_acq_run(self, "Dark Pixels"),
+                                 "dark pixels")
 
         outputs['defects_results'] = convert_amp_data_to_df(
             {'bright_columns': bright_column_data,
@@ -277,9 +307,12 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
 
         return pipeBase.Struct(**outputs)
 
-    def _make_fp_plot(self, amp_data, title, z_range=None):
-        fig = plt.figure(figsize=self.figsize)
-        ax = fig.add_subplot(111)
+    def _make_fp_plot(self, amp_data, title, xlabel, z_range=None):
+        mosaic = plt.figure(figsize=self.figsize)
+        ax = mosaic.add_subplot(111)
         plot_focal_plane(ax, amp_data, title=title, z_range=z_range,
                          use_log10=True)
-        return fig
+        hist = plt.figure()
+        hist_amp_data(amp_data, xlabel, hist_range=z_range, use_log10=True,
+                      title=title)
+        return mosaic, hist

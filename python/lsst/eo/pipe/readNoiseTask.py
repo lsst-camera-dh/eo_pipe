@@ -16,7 +16,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .overscan_analysis import raft_oscan_correlations
 from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 
@@ -43,7 +43,8 @@ def get_amp_data(repo, collections, camera=None):
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('read_noise_plot', 'overscan_correlation_plot')
+    dstypes = ('read_noise_plot', 'read_noise_hist',
+               'overscan_correlation_plot')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -156,6 +157,11 @@ class ReadNoiseFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                 storageClass="Plot",
                                 dimensions=("instrument",))
 
+    read_noise_hist = cT.Output(name="read_noise_hist",
+                                doc="Histogram of read noise values",
+                                storageClass="Plot",
+                                dimensions=("instrument",))
+
 
 class ReadNoiseFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                  pipelineConnections=ReadNoiseFpPlotsTaskConnections):
@@ -200,12 +206,16 @@ class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
                 amp_name = amp.getName()
                 df = df0.query(f"amp_name == '{amp_name}'")
                 amp_data[det_name][amp_name] = np.median(df['read_noise'])
-        fig = plt.figure(figsize=self.figsize)
-        ax = fig.add_subplot(111)
+        read_noise_plot = plt.figure(figsize=self.figsize)
+        ax = read_noise_plot.add_subplot(111)
         title = append_acq_run(self, "Read Noise (e-)")
         plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.z_scale_factor, title=title)
-        return pipeBase.Struct(read_noise_plot=fig)
+        read_noise_hist = plt.figure()
+        hist_amp_data(amp_data, "read noise (e-)", hist_range=self.z_range,
+                      scale_factor=self.z_scale_factor, title=title)
+        return pipeBase.Struct(read_noise_plot=read_noise_plot,
+                               read_noise_hist=read_noise_hist)
 
 
 class OverscanCorrelationsTaskConnections(pipeBase.PipelineTaskConnections,
