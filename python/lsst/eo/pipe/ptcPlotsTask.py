@@ -218,7 +218,7 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
     _z_range = {'ptc_gain': 'clipped_autoscale',
                 'ptc_a00': (0, 5e-6),
                 'ptc_turnoff': (5e4, 2e5),
-                'ptc_noise': 'clipped_autoscale'}
+                'ptc_noise': (0, 20)}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
