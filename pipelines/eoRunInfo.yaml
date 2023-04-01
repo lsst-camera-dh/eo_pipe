@@ -1,0 +1,4 @@
+description:
+  Pipeline to extract run info from raw file exposure records.
+tasks:
+  runInfoTask: lsst.eo.pipe.RunInfoTask
