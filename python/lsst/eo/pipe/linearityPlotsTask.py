@@ -40,12 +40,11 @@ def get_plot_locations(repo, collections):
 def get_pd_values(pd_integrals, ptc, amp_name='C10'):
     values = []
     for pair in ptc.inputExpIdPairs[amp_name]:
-        if pair[0][0] not in pd_integrals or pair[0][1] not in pd_integrals:
+        if pair[0] not in pd_integrals or pair[1] not in pd_integrals:
             # Use sentinel value of -1 to enable this entry to be deselected.
             values.append(-1)
         else:
-            values.append((pd_integrals[pair[0][0]] +
-                           pd_integrals[pair[0][1]])/2.)
+            values.append((pd_integrals[pair[0]] + pd_integrals[pair[1]])/2.)
     return np.array(values)
 
 

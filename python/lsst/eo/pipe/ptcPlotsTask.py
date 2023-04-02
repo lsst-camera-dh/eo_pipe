@@ -353,12 +353,10 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
         inputs = butlerQC.get(inputRefs)
         ptc_frames = {ref.dataId['exposure']: ref for
                       ref in inputs['ptc_frames']}
-        # The expId pairs should be the same for all amps, so just get
-        # them from one of the amps and strip out the extra layer of
-        # Python list.
+        # The input expId pairs should be the same for all amps, so
+        # just get them from one of the amps.
         ptc_results = inputs['ptc_results']
-        expId_pairs = [_[0] for _ in
-                       list(ptc_results.inputExpIdPairs.values())[0]]
+        expId_pairs = list(ptc_results.inputExpIdPairs.values())[0]
         outputs = self.run(ptc_frames, expId_pairs, ptc_results.gain)
         butlerQC.put(outputs, outputRefs)
 
