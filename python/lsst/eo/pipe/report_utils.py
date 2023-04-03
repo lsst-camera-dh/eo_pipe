@@ -16,6 +16,7 @@ import logging
 from xml.etree import ElementTree
 from xml.dom import minidom
 import yaml
+import lsst.daf.butler as daf_butler
 import lsst.utils
 from lsst.obs.lsst import LsstCam
 from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
@@ -23,16 +24,33 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask
 
 
+logging.basicConfig(format="%(message)s", stream=sys.stdout)
+logger = logging.getLogger()
+logger.setLevel(logging.WARNING)
+
+
+def check_chained_collections(repo, collections):
+    butler = daf_butler.Butler(repo)
+    existing = set(butler.registry.queryCollections(
+        ..., collectionTypes=(daf_butler.CollectionType.CHAINED)))
+    found = [_ for _ in collections if _ in existing]
+    missing = set(collections).difference(found)
+    if missing:
+        logger.warn("missing collections: %s", missing)
+    return found
+
+
 def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
+    found_collections = check_chained_collections(repo, collections)
     plot_locations = {}
     for task in (readNoiseTask, raftCalibMosaicTask, raftMosaicTask,
                  defectsTask, darkCurrentTask, divisaderoTearingTask,
                  ptcPlotsTask, eperTask, linearityPlotsTask, bfAnalysisTask,
                  biasStabilityTask):
         try:
-            locations = task.get_plot_locations(repo, collections)
+            locations = task.get_plot_locations(repo, found_collections)
         except Exception as eobj:
-            print(task, eobj)
+            logger.warn("%s: %s", task, eobj)
         else:
             plot_locations.update(locations)
 
@@ -40,7 +58,7 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
     os.makedirs(staging_dir, exist_ok=True)
 
     for dstype, locations in plot_locations.items():
-        print("symlinking plots for", dstype)
+        logger.info("symlinking plots for %s", dstype)
         for file_path in locations:
             dest = os.path.join(staging_dir, os.path.basename(file_path))
             os.symlink(file_path, dest)
@@ -58,11 +76,6 @@ for det in LsstCam.getCamera():
     RAFT_SLOT_MAP[raft].append(slot)
 
 CAMERA_RAFTS = sorted(list(RAFT_SLOT_MAP.keys()))
-
-
-logging.basicConfig(format="%(message)s", stream=sys.stdout)
-logger = logging.getLogger()
-logger.setLevel(logging.WARNING)
 
 
 def get_report_config_info(table_tag, **kwargs):
