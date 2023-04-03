@@ -46,8 +46,7 @@ def get_amp_data(repo, collections, camera=None):
             if ptc_var > 0:
                 amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
             amp_data['ptc_turnoff'][det_name][amp_name] \
-                = (np.max(ptc.finalMeans[amp_name])
-                   if ptc.finalMeans[amp_name] else -1)
+                = ptc.ptcTurnoff[amp_name]
 
     # Extract row means variance slopes
     dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
@@ -260,10 +259,7 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                 amp_data['ptc_gain'][detector][amp] = ptc_gain
                 if ptc_var > 0:
                     amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
-                amp_data['ptc_turnoff'][detector][amp] \
-                    = (np.max(ptc.finalMeans[amp])
-                       if len(ptc.finalMeans[amp]) > 0 else -1)
-
+                amp_data['ptc_turnoff'][detector][amp] = ptc.ptcTurnoff[amp]
         plots = {}
         hists = {}
         for field in amp_data:
