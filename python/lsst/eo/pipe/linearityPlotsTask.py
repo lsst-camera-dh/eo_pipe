@@ -40,12 +40,11 @@ def get_plot_locations(repo, collections):
 def get_pd_values(pd_integrals, ptc, amp_name='C10'):
     values = []
     for pair in ptc.inputExpIdPairs[amp_name]:
-        if pair[0][0] not in pd_integrals or pair[0][1] not in pd_integrals:
+        if pair[0] not in pd_integrals or pair[1] not in pd_integrals:
             # Use sentinel value of -1 to enable this entry to be deselected.
             values.append(-1)
         else:
-            values.append((pd_integrals[pair[0][0]] +
-                           pd_integrals[pair[0][1]])/2.)
+            values.append((pd_integrals[pair[0]] + pd_integrals[pair[1]])/2.)
     return np.array(values)
 
 
@@ -229,8 +228,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                             s=2, color='red')
                 plt.xscale('log')
                 plt.yscale('log')
-                plt.axhline(1e3, linestyle=':')
-                plt.axhline(9e4, linestyle=':')
+                plt.axhline(self.fit_range[0], linestyle=':')
+                plt.axhline(self.fit_range[1], linestyle=':')
                 xlims = ax.get_xlim()
                 xvals = np.logspace(np.log10(xlims[0]), np.log10(xlims[1]), 100)
                 plt.plot(xvals, func(xvals), linestyle='--')

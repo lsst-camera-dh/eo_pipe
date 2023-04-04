@@ -46,8 +46,7 @@ def get_amp_data(repo, collections, camera=None):
             if ptc_var > 0:
                 amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
             amp_data['ptc_turnoff'][det_name][amp_name] \
-                = (np.max(ptc.finalMeans[amp_name])
-                   if ptc.finalMeans[amp_name] else -1)
+                = ptc.ptcTurnoff[amp_name]
 
     # Extract row means variance slopes
     dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
@@ -260,9 +259,7 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                 amp_data['ptc_gain'][detector][amp] = ptc_gain
                 if ptc_var > 0:
                     amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
-                amp_data['ptc_turnoff'][detector][amp] \
-                    = np.max(ptc.finalMeans[amp]) if ptc.finalMeans[amp] else -1
-
+                amp_data['ptc_turnoff'][detector][amp] = ptc.ptcTurnoff[amp]
         plots = {}
         hists = {}
         for field in amp_data:
@@ -353,12 +350,10 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
         inputs = butlerQC.get(inputRefs)
         ptc_frames = {ref.dataId['exposure']: ref for
                       ref in inputs['ptc_frames']}
-        # The expId pairs should be the same for all amps, so just get
-        # them from one of the amps and strip out the extra layer of
-        # Python list.
+        # The input expId pairs should be the same for all amps, so
+        # just get them from one of the amps.
         ptc_results = inputs['ptc_results']
-        expId_pairs = [_[0] for _ in
-                       list(ptc_results.inputExpIdPairs.values())[0]]
+        expId_pairs = list(ptc_results.inputExpIdPairs.values())[0]
         outputs = self.run(ptc_frames, expId_pairs, ptc_results.gain)
         butlerQC.put(outputs, outputRefs)
 
