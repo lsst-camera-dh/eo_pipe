@@ -25,7 +25,9 @@ class RunInfoTaskConnections(pipeBase.PipelineTaskConnections,
 
 class RunInfoTaskConfig(pipeBase.PipelineTaskConfig,
                         pipelineConnections=RunInfoTaskConnections):
-    pass
+    metadata_fields = pexConfig.ListField(
+        doc="Keyword names of values to extract from raw exposure metadata.",
+        dtype=str, default=[])
 
 
 class RunInfoTask(pipeBase.PipelineTask):
@@ -38,10 +40,13 @@ class RunInfoTask(pipeBase.PipelineTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.keys = self.config.metadata_fields
 
     def run(self, raws):
         data = defaultdict(list)
-        for handle in raws:
+        self.log.info("Found %d raw files", len(raws))
+        for i, handle in enumerate(raws):
+            self.log.info("processing %d: %s", i, handle.dataId['exposure'])
             data['detector'].append(handle.dataId['detector'])
             exp_dict = handle.dataId.records['exposure'].toDict()
             for field in self._exposure_fields:
@@ -49,5 +54,9 @@ class RunInfoTask(pipeBase.PipelineTask):
             timespan = exp_dict['timespan']
             data['mjd_begin'].append(timespan.begin.mjd)
             data['mjd_end'].append(timespan.end.mjd)
+            if self.keys:
+                md = handle.get().getMetadata()
+                for key in self.keys:
+                    data[key].append(md.get(key, None))
         df = pd.DataFrame(data).sort_values(by=['detector', 'mjd_begin'])
         return pipeBase.Struct(run_info=df)

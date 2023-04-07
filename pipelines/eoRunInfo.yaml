@@ -1,4 +1,7 @@
 description:
   Pipeline to extract run info from raw file exposure records.
 tasks:
-  runInfoTask: lsst.eo.pipe.RunInfoTask
+  runInfoTask:
+    class: lsst.eo.pipe.RunInfoTask
+    config:
+      metadata_fields: "['BOTX', 'BOTY', 'MJD-TRG', 'TEMP10', 'CCDTEMP']"
