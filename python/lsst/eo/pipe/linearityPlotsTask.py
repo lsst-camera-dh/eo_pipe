@@ -1,16 +1,14 @@
 from collections import defaultdict
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-
-from lsst.eo.pipe.plotting import plot_focal_plane
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['LinearityPlotsTask', 'LinearityFpPlotsTask']
@@ -21,8 +19,8 @@ def get_amp_data(repo, collections):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('linearity_results',
                                                     findFirst=True)))
-    amp_data = defaultdict(lambda : defaultdict(dict))
-    fields = 'max_frac_dev max_observed_signal'.split()
+    amp_data = defaultdict(lambda: defaultdict(dict))
+    fields = 'max_frac_dev max_observed_signal linearity_turnoff'.split()
     for dsref in dsrefs:
         df = butler.getDirect(dsref)
         for _, row in df.iterrows():
@@ -31,29 +29,61 @@ def get_amp_data(repo, collections):
     return {field: dict(data) for field, data in amp_data.items()}
 
 
+def get_plot_locations(repo, collections):
+    dstypes = ('linearity_fit_plot', 'linearity_residuals_plot',
+               'max_frac_dev', 'max_observed_signal', 'linearity_turnoff',
+               'max_frac_dev_hist', 'max_observed_signal_hist',
+               'linearity_turnoff_hist')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
+
+
 def get_pd_values(pd_integrals, ptc, amp_name='C10'):
     values = []
     for pair in ptc.inputExpIdPairs[amp_name]:
-        if pair[0][0] not in pd_integrals or pair[0][1] not in pd_integrals:
+        if pair[0] not in pd_integrals or pair[1] not in pd_integrals:
             # Use sentinel value of -1 to enable this entry to be deselected.
             values.append(-1)
         else:
-            values.append((pd_integrals[pair[0][0]] +
-                           pd_integrals[pair[0][1]])/2.)
+            values.append((pd_integrals[pair[0]] + pd_integrals[pair[1]])/2.)
     return np.array(values)
 
 
-def linearity_fit(flux, Ne, y_range=(1e3, 9e4)):
+def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05, logger=None):
+    """
+    Fit a line with the y-intercept fixed to zero, using the
+    signal counts Ne as the variance in the chi-square, i.e.,
+
+    chi2 = sum( (Ne - aa*flux)**2/Ne )
+
+    Minimizing chi2 wrt aa, gives
+
+    aa = sum(flux) / sum(flux**2/Ne)
+
+    Also apply the y_range selection to the signal counts, Ne,
+    and omit any flux values above the Ne peak and any non-positive
+    flux values.
+    """
     max_index = np.where(Ne == max(Ne))[0][0]
     index = np.where((y_range[0] < Ne) & (Ne < y_range[1])
                      & (flux <= flux[max_index]) & (flux > 0))
-    aa = sum(flux[index]*Ne[index])/sum(flux[index]**2)
+    aa = sum(flux[index])/sum(flux[index]**2/Ne[index])
 
     def func(x):
         return aa*x
 
     resids = (Ne - func(flux))/Ne
-    return func, resids, index
+
+    # Compute maximum signal consistent with the linear fit within
+    # the specified maximum fractional deviation.
+    try:
+        linearity_turnoff = np.max(Ne[np.where(np.abs(resids) < max_frac_dev)])
+    except ValueError:
+        if logger is not None:
+            logger.info("ValueError from linearity_turnoff calculation. "
+                        "Setting to zero")
+        linearity_turnoff = 0.0
+
+    return func, resids, index, linearity_turnoff
 
 
 class LinearityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
@@ -108,6 +138,10 @@ class LinearityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                     dtype=float, default=1e3)
     fit_range_max = pexConfig.Field(doc="Fit range upper bound in e-",
                                     dtype=float, default=9e4)
+    max_frac_dev_spec = pexConfig.Field(doc=("Maximum fractional deviation "
+                                             "specification to use for "
+                                             "linearity turnoff calculation."),
+                                        dtype=float, default=0.05)
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
@@ -122,6 +156,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.fit_range = self.config.fit_range_min, self.config.fit_range_max
+        self.max_frac_dev_spec = self.config.max_frac_dev_spec
         self.figsize = self.config.yfigsize, self.config.xfigsize
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
@@ -167,12 +202,15 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         amp_data = defaultdict(list)
         for i, amp in enumerate(det, 1):
             amp_name = amp.getName()
-            gain = amp.getGain()
+            gain = ptc.gain[amp_name]
             Ne = np.array(ptc.rawMeans[amp_name])*gain
             try:
-                func, resids[amp_name], index[amp_name] \
-                    = linearity_fit(pd_values, Ne, y_range=self.fit_range)
-            except (IndexError, ZeroDivisionError) as eobj:
+                func, resids[amp_name], index[amp_name], linearity_turnoff \
+                    = linearity_fit(pd_values, Ne, y_range=self.fit_range,
+                                    max_frac_dev=self.max_frac_dev_spec,
+                                    logger=self.log)
+                linearity_turnoff /= gain  # Convert from e- to ADU
+            except (IndexError, ZeroDivisionError):
                 pass
             else:
                 # Results to include in final data frame:
@@ -182,6 +220,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                     max(np.abs(resids[amp_name][index[amp_name]])))
                 amp_data['max_observed_signal'].append(
                     max(ptc.rawMeans[amp_name]))
+                amp_data['linearity_turnoff'].append(linearity_turnoff)
                 # plot for current amp
                 ax = plt.subplot(4, 4, i)
                 plt.scatter(pd_values, Ne, s=2)
@@ -189,13 +228,16 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                             s=2, color='red')
                 plt.xscale('log')
                 plt.yscale('log')
-                plt.axhline(1e3, linestyle=':')
-                plt.axhline(9e4, linestyle=':')
+                plt.axhline(self.fit_range[0], linestyle=':')
+                plt.axhline(self.fit_range[1], linestyle=':')
                 xlims = ax.get_xlim()
                 xvals = np.logspace(np.log10(xlims[0]), np.log10(xlims[1]), 100)
                 plt.plot(xvals, func(xvals), linestyle='--')
-        plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f'linearity curves, run {acq_run}, {det_name}')
+        plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
+        linearity_plots.supxlabel('photodiode current integral')
+        linearity_plots.supylabel('e-/pixel')
+        linearity_plots.suptitle(f'Linearity Curves, acq. run {acq_run}, '
+                                 f'{det_name}')
 
         residual_plots = plt.figure(figsize=self.figsize)
         for i, amp in enumerate(det, 1):
@@ -214,8 +256,11 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 plt.axhline(-0.02, linestyle=':')
                 plt.axhline(0, linestyle='--')
                 plt.ylim(-0.03, 0.03)
-        plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f'linearity residuals, run {acq_run}, {det_name}')
+        plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
+        residual_plots.supxlabel('photodiode current integral')
+        residual_plots.supylabel('e-/pixel')
+        residual_plots.suptitle(f'Linearity Residuals, acq. run {acq_run}, '
+                                f'{det_name}')
 
         linearity_results = pd.DataFrame(amp_data)
 
@@ -249,11 +294,39 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                              storageClass="Plot",
                              dimensions=("instrument",))
 
+    max_frac_dev_hist = cT.Output(name="max_frac_dev_hist",
+                                  doc=("Maximum fractional deviation from "
+                                       "linear fit of signal vs flux"),
+                                  storageClass="Plot",
+                                  dimensions=("instrument",))
+
     max_observed_signal = cT.Output(name="max_observed_signal",
                                     doc=("Maximum observed signal (ADU) "
                                          "from flat pair acquisition."),
                                     storageClass="Plot",
                                     dimensions=("instrument",))
+
+    max_observed_signal_hist = cT.Output(name="max_observed_signal_hist",
+                                         doc=("Maximum observed signal (ADU) "
+                                              "from flat pair acquisition."),
+                                         storageClass="Plot",
+                                         dimensions=("instrument",))
+
+    linearity_turnoff = cT.Output(name="linearity_turnoff",
+                                  doc=("Maximum signal (ADU) consistent "
+                                       "with the linearity fit within "
+                                       "the maximum fractional deviation "
+                                       "spec, nominally 0.05."),
+                                  storageClass="Plot",
+                                  dimensions=("instrument",))
+
+    linearity_turnoff_hist = cT.Output(name="linearity_turnoff_hist",
+                                       doc=("Maximum signal (ADU) consistent "
+                                            "with the linearity fit within "
+                                            "the maximum fractional deviation "
+                                            "spec, nominally 0.05."),
+                                       storageClass="Plot",
+                                       dimensions=("instrument",))
 
 
 class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
@@ -263,6 +336,8 @@ class LinearityFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class LinearityFpPlotsTask(pipeBase.PipelineTask):
@@ -270,6 +345,10 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
     full focal plane."""
     ConfigClass = LinearityFpPlotsTaskConfig
     _DefaultName = "linearityFpPlotsTask"
+
+    _z_range = {'max_frac_dev': (0, 0.05),
+                'max_observed_signal': (5e4, 2e5),
+                'linearity_turnoff': (5e4, 2e5)}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -312,10 +391,15 @@ class LinearityFpPlotsTask(pipeBase.PipelineTask):
                 for column in columns:
                     amp_data[column][row.det_name][row.amp_name] = row[column]
         plots = {}
+        hists = {}
         for column in set(amp_data.keys()):
             plots[column] = plt.figure(figsize=self.figsize)
             ax = plots[column].add_subplot(111)
+            title = append_acq_run(self, column)
+            z_range = self._z_range.get(column, None)
             plot_focal_plane(ax, amp_data[column], camera=camera,
-                             z_range=None, title=f"{column}")
-
-        return pipeBase.Struct(**plots)
+                             z_range=z_range, title=title)
+            hists[f"{column}_hist"] = plt.figure()
+            hist_amp_data(amp_data[column], column, hist_range=z_range,
+                          title=title)
+        return pipeBase.Struct(**plots, **hists)

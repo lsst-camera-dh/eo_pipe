@@ -8,7 +8,8 @@ import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from lsst.eo.pipe.plotting import plot_focal_plane
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['BFAnalysisTask', 'BFAnalysisFpPlotsTask']
@@ -19,7 +20,7 @@ def get_amp_data(repo, collections):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('bf_stats',
                                                     findFirst=True)))
-    amp_data = defaultdict(lambda : defaultdict(dict))
+    amp_data = defaultdict(lambda: defaultdict(dict))
     fields = ['bf_xcorr', 'bf_ycorr', 'bf_mean', 'bf_slope_x',
               'bf_slope_x_err', 'bf_slope_y', 'bf_slope_y_err']
     for dsref in dsrefs:
@@ -28,6 +29,12 @@ def get_amp_data(repo, collections):
             for field in fields:
                 amp_data[field][row.det_name][row.amp_name] = row[field]
     return {field: dict(data) for field, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('bf_covariance_plots', 'bf_xcorr_plot', 'bf_ycorr_plot',
+               'bf_xcorr_hist', 'bf_ycorr_hist')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class BFAnalysisTaskConnections(pipeBase.PipelineTaskConnections,
@@ -66,6 +73,8 @@ class BFAnalysisTaskConfig(pipeBase.PipelineTaskConfig,
     meanidx = pexConfig.Field(doc=("Index of covariance array to use for "
                                    "xcorr and ycorr"),
                               dtype=int, default=0)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class BFAnalysisTask(pipeBase.PipelineTask):
@@ -149,7 +158,7 @@ class BFAnalysisTask(pipeBase.PipelineTask):
             plt.title(f"cov{x}{y}")
             plt.legend(fontsize='x-small', ncol=4)
         plt.tight_layout(rect=(0, 0, 1, 0.95))
-        plt.suptitle(f"{det_name}")
+        plt.suptitle(append_acq_run(self, det_name))
 
         return pipeBase.Struct(bf_stats=bf_stats,
                                bf_covariance_plots=bf_covariance_plots)
@@ -179,9 +188,21 @@ class BFAnalysisFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
+    bf_xcorr_hist = cT.Output(
+        name="bf_xcorr_hist",
+        doc="Histogram of cov10 values for each amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
     bf_ycorr_plot = cT.Output(
         name="bf_ycorr_plot",
         doc="Focal plane mosaic of cov01 for each amp",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    bf_ycorr_hist = cT.Output(
+        name="bf_ycorr_hist",
+        doc="Histogram of cov01 values for each amp",
         storageClass="Plot",
         dimensions=("instrument",))
 
@@ -202,6 +223,8 @@ class BFAnalysisFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                          "care of automatically when "
                                          "rendering the label in matplotlib"),
                                     dtype=str, default="1")
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class BFAnalysisFpPlotsTask(pipeBase.PipelineTask):
@@ -232,13 +255,23 @@ class BFAnalysisFpPlotsTask(pipeBase.PipelineTask):
 
         bf_xcorr_plot = plt.figure(figsize=self.figsize)
         ax = bf_xcorr_plot.add_subplot(111)
+        title = append_acq_run(self, 'bf_xcorr')
         plot_focal_plane(ax, xcorr_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.zscale_factor, title='bf_xcorr')
+                         scale_factor=self.zscale_factor, title=title)
+        bf_xcorr_hist = plt.figure()
+        hist_amp_data(xcorr_data, 'bf_xcorr', hist_range=self.z_range,
+                      title=title)
 
         bf_ycorr_plot = plt.figure(figsize=self.figsize)
         ax = bf_ycorr_plot.add_subplot(111)
+        title = append_acq_run(self, 'bf_ycorr')
         plot_focal_plane(ax, ycorr_data, camera=camera, z_range=self.z_range,
-                         scale_factor=self.zscale_factor, title='bf_ycorr')
+                         scale_factor=self.zscale_factor, title=title)
+        bf_ycorr_hist = plt.figure()
+        hist_amp_data(ycorr_data, 'bf_ycorr', hist_range=self.z_range,
+                      title=title)
 
         return pipeBase.Struct(bf_xcorr_plot=bf_xcorr_plot,
-                               bf_ycorr_plot=bf_ycorr_plot)
+                               bf_xcorr_hist=bf_xcorr_hist,
+                               bf_ycorr_plot=bf_ycorr_plot,
+                               bf_ycorr_hist=bf_ycorr_hist)

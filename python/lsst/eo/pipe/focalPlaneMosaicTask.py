@@ -1,26 +1,12 @@
-import lsst.afw.math as afwMath
 from lsst.afw.cameraGeom import utils as cgu
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
+from .plotting import ImageSource
 
 
 __all__ = ['FocalPlaneMosaicTask']
-
-
-class ImageSource:
-    isTrimmed = True
-    background = 0.0
-
-    def __init__(self, exposure_handles):
-        self.exposure_handles = exposure_handles
-
-    def getCcdImage(self, det, imageFactory, binSize=1, *args, **kwargs):
-        ccdImage = self.exposure_handles[det.getId()].get().getImage()
-        ccdImage = afwMath.binImage(ccdImage, binSize)
-        return afwMath.rotateImageBy90(ccdImage,
-                                       det.getOrientation().getNQuarter()), det
 
 
 class FocalPlaneMosaicTaskConnections(pipeBase.PipelineTaskConnections,

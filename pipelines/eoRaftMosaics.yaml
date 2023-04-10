@@ -1,0 +1,25 @@
+description: Make raft-level mosaics of ISR'd raw exposures
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.outputExposure: 'postISRCCD'
+      doWrite: true
+      doBrighterFatter: false
+      doBias: true
+      doDark: true
+      doFlat: false
+      doApplyGains: true
+      usePtcGains: true
+      doLinearize: false
+      doFringe: false
+      doDefect: false
+      overscan.fitType: 'MEDIAN_PER_ROW'
+      overscan.doParallelOverscan: true
+  raftMosaic:
+    class: lsst.eo.pipe.RaftMosaicTask
+    config:
+      connections.exposures: 'postISRCCD'
+      connections.raft_mosaic_plot: 'eoRaftMosaic'
+      binSize: 2

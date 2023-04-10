@@ -1,17 +1,14 @@
-pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
 
-wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
-project: "{outputRun}"
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
+extraQgraphOptions: "--config divisaderoRaftPlots:acq_run=' ${B_PROTOCOL_RUN}' --config divisaderoFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
 
 payload:
-  b_protocol_run: 13162
+  b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/flat_13162_w_2022_39
-  payloadName: divisadero_tearing_{b_protocol_run}_{weekly}
+  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  payloadName: eo_divisadero_tearing_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and physical_filter='SDSSi'"
-
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_16
+  dataQuery: "instrument='LSSTCam' and physical_filter='SDSSi'"

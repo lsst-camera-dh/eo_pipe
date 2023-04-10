@@ -2,7 +2,7 @@ import numpy as np
 import lsst.geom
 
 
-__all__ = ['apply_minimal_isr']
+__all__ = ['apply_minimal_isr', 'apply_overscan_correction']
 
 
 def get_overscan_region(amp_info, dx):
@@ -28,8 +28,8 @@ def apply_overscan_correction(raw, amp, dx=4, method='1d_poly', deg=2):
     raw_image = raw.getImage()
     det = raw.getDetector()
     amp_info = det[amp]
-    full_segment = raw_image.Factory(raw_image, amp_info.getRawBBox())
-    overscan = raw_image.Factory(raw_image, get_overscan_region(amp_info, dx))
+    full_segment = raw_image[amp_info.getRawBBox()]
+    overscan = raw_image[get_overscan_region(amp_info, dx)]
     if method == 'median':
         full_segment -= np.median(overscan.array)
     elif method == 'mean':

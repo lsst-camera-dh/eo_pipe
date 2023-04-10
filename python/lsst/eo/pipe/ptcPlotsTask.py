@@ -2,19 +2,24 @@ from collections import defaultdict
 
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
+import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe.utils import funcAstier, funcPolynomial
 import lsst.daf.butler as daf_butler
+import lsst.geom
 from lsst.obs.lsst import LsstCam
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from lsst.eo.pipe.plotting import plot_focal_plane
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
 
 
-__all__ = ['PtcPlotsTask', 'PtcFpPlotsTask']
+__all__ = ['PtcPlotsTask', 'PtcFpPlotsTask', 'RowMeansVarianceTask',
+           'RowMeansVarianceFpPlotTask']
 
 
 def get_amp_data(repo, collections, camera=None):
@@ -23,9 +28,11 @@ def get_amp_data(repo, collections, camera=None):
         camera = LsstCam.getCamera()
 
     butler = daf_butler.Butler(repo, collections=collections)
-    dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
 
-    amp_data = defaultdict(lambda : defaultdict(dict))
+    amp_data = defaultdict(lambda: defaultdict(dict))
+
+    # Extra PTC results.
+    dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
     for dsref in dsrefs:
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
@@ -39,9 +46,26 @@ def get_amp_data(repo, collections, camera=None):
             if ptc_var > 0:
                 amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
             amp_data['ptc_turnoff'][det_name][amp_name] \
-                = (np.max(ptc.finalMeans[amp_name])
-                   if ptc.finalMeans[amp_name] else -1)
+                = ptc.ptcTurnoff[amp_name]
+
+    # Extract row means variance slopes
+    dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
+    for ref in dsrefs:
+        df = butler.getDirect(ref)
+        for _, row in df.iterrows():
+            amp_data['row_mean_var_slope'][row.det_name][row.amp_name] \
+                = row.slope
+
     return {field: dict(data) for field, data in amp_data.items()}
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('ptc_plots', 'ptc_a00_plot', 'ptc_gain_plot', 'ptc_noise_plot',
+               'ptc_turnoff_plot', 'row_means_variance_plot',
+               'row_means_variance_slopes_plot',
+               'ptc_a00_hist', 'ptc_gain_hist', 'ptc_noise_hist',
+               'ptc_turnoff_hist', 'row_means_variance_slopes_hist')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class PtcPlotsTaskConnections(pipeBase.PipelineTaskConnections,
@@ -72,6 +96,8 @@ class PtcPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 _ptc_func = {'EXPAPPROXIMATION': funcAstier,
@@ -124,7 +150,7 @@ class PtcPlotsTask(pipeBase.PipelineTask):
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         fig.supxlabel('mean signal (ADU)')
         fig.supylabel('variance (ADU^2)')
-        fig.suptitle(f'{det.getName()}')
+        fig.suptitle(append_acq_run(self, f'{det.getName()}'))
 
         return pipeBase.Struct(ptc_plots=fig)
 
@@ -142,16 +168,32 @@ class PtcFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                         doc="Focal plane map of PTC a00",
                         storageClass="Plot",
                         dimensions=("instrument",))
+    ptc_a00_hist = cT.Output(name="ptc_a00_hist",
+                             doc="Histogram of PTC a00 per-amp values",
+                             storageClass="Plot",
+                             dimensions=("instrument",))
     ptc_gain = cT.Output(name="ptc_gain_plot",
                          doc="Focal plane map of PTC gain",
                          storageClass="Plot",
                          dimensions=("instrument",))
+    ptc_gain_hist = cT.Output(name="ptc_gain_hist",
+                              doc="Histogram of PTC gain per-amp values",
+                              storageClass="Plot",
+                              dimensions=("instrument",))
     ptc_noise = cT.Output(name="ptc_noise_plot",
                           doc="Focal plane map of PTC noise",
                           storageClass="Plot",
                           dimensions=("instrument",))
+    ptc_noise_hist = cT.Output(name="ptc_noise_hist",
+                               doc="Histogram of PTC noise per-amp values",
+                               storageClass="Plot",
+                               dimensions=("instrument",))
     ptc_turnoff = cT.Output(name="ptc_turnoff_plot",
                             doc="Focal plane map of PTC turnoff",
+                            storageClass="Plot",
+                            dimensions=("instrument",))
+    ptc_turnoff_hist = cT.Output(name="ptc_turnoff_hist",
+                            doc="Histogram of PTC turnoff per-amp values",
                             storageClass="Plot",
                             dimensions=("instrument",))
 
@@ -160,15 +202,22 @@ class PtcFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                            pipelineConnections=PtcFpPlotsTaskConnections):
     """Configuration for PtcFpPlotsTask."""
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
-                               dtype=float, default=10)
+                               dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
-                               dtype=float, default=12)
+                               dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class PtcFpPlotsTask(pipeBase.PipelineTask):
     """Create summary plots of the PTC results for the full focal plane."""
     ConfigClass = PtcFpPlotsTaskConfig
     _DefaultName = "ptcFpPlotsTask"
+
+    _z_range = {'ptc_gain': 'clipped_autoscale',
+                'ptc_a00': (0, 5e-6),
+                'ptc_turnoff': (5e4, 2e5),
+                'ptc_noise': (0, 20)}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -210,16 +259,260 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                 amp_data['ptc_gain'][detector][amp] = ptc_gain
                 if ptc_var > 0:
                     amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
-                amp_data['ptc_turnoff'][detector][amp] \
-                    = np.max(ptc.finalMeans[amp]) if ptc.finalMeans[amp] else -1
-
+                amp_data['ptc_turnoff'][detector][amp] = ptc.ptcTurnoff[amp]
         plots = {}
+        hists = {}
         for field in amp_data:
             plots[field] = plt.figure(figsize=self.figsize)
             ax = plots[field].add_subplot(111)
-            # TODO: figure out how to get the run number into the
-            # plot title.
-            plot_focal_plane(ax, amp_data[field], title=f"{field}",
-                             z_range="clipped_autoscale")
+            title = append_acq_run(self, field)
+            z_range = self._z_range.get(field, None)
+            plot_focal_plane(ax, amp_data[field], title=title, z_range=z_range)
+            hists[f'{field}_hist'] = plt.figure()
+            hist_amp_data(amp_data[field], field, hist_range=z_range,
+                          title=title)
 
-        return pipeBase.Struct(**plots)
+        return pipeBase.Struct(**plots, **hists)
+
+
+class RowMeansVarianceTaskConnections(pipeBase.PipelineTaskConnections,
+                                      dimensions=("instrument", "detector")):
+
+    ptc_results = cT.Input(
+        name="ptc_results",
+        doc="Photon Transfer Curve dataset",
+        storageClass="PhotonTransferCurveDataset",
+        dimensions=("instrument", "detector"),
+        isCalibration=True)
+
+    ptc_frames = cT.Input(
+        name="ptc_frames",
+        doc="The ISR'd flat pairs used in the PTC analysis",
+        storageClass="Exposure",
+        dimensions=("instrument", "exposure", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    row_means_variance_plot = cT.Output(
+        name="row_means_variance_plot",
+        doc=("Plots of row_means_variance vs expected Poisson signal "
+             "for each amp in a CCD for a PTC dataset"),
+        storageClass="Plot",
+        dimensions=("instrument", "detector"))
+
+    row_means_variance_stats = cT.Output(
+        name="row_means_variance_stats",
+        doc=("Slopes of row_means_variance vs expected Poisson signal "
+             "for each amp in a CCD for a PTC dataset"),
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector"))
+
+
+class RowMeansVarianceTaskConfig(pipeBase.PipelineTaskConfig,
+                                 pipelineConnections=RowMeansVarianceTaskConnections):
+    """Configuration for RowMeansVarianceTask"""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    nsig = pexConfig.Field(doc="Number of stdevs for variance clip",
+                           dtype=float, default=10.0)
+    niterclip = pexConfig.Field(doc="Number of iterations to use for "
+                                "variance clip",
+                                dtype=int, default=3)
+    min_signal = pexConfig.Field(doc="Minimum signal (e-/pixel) for fitting.",
+                                 dtype=float, default=3000)
+    max_signal = pexConfig.Field(doc="Maximum signal (e-/pixel) for fitting.",
+                                 dtype=float, default=1e5)
+    maskNameList = pexConfig.ListField(
+        doc="Mask list to exclude from statistics calculations.",
+        dtype=str,
+        default=["SUSPECT", "BAD", "NO_DATA", "SAT"])
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
+
+
+class RowMeansVarianceTask(pipeBase.PipelineTask):
+    """Task to compute row means variance for at PTC dataset."""
+    ConfigClass = RowMeansVarianceTaskConfig
+    _DefaultName = "rowMeansVarianceTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.nsig = self.config.nsig
+        self.niter = self.config.niterclip
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+        self.min_signal = self.config.min_signal
+        self.max_signal = self.config.max_signal
+        self.masks = self.config.maskNameList
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        ptc_frames = {ref.dataId['exposure']: ref for
+                      ref in inputs['ptc_frames']}
+        # The input expId pairs should be the same for all amps, so
+        # just get them from one of the amps.
+        ptc_results = inputs['ptc_results']
+        expId_pairs = list(ptc_results.inputExpIdPairs.values())[0]
+        outputs = self.run(ptc_frames, expId_pairs, ptc_results.gain)
+        butlerQC.put(outputs, outputRefs)
+
+    def run(self, ptc_frames, expId_pairs, gains):
+        data = defaultdict(list)
+        for expIds in expId_pairs:
+            frame1 = ptc_frames[expIds[0]].get()
+            mask_val = frame1.getMask().getPlaneBitMask(self.masks)
+            sctrl = afwMath.StatisticsControl(self.nsig, self.niter, mask_val)
+            sctrl.setAndMask(mask_val)
+            det = frame1.getDetector()
+            flat1 = frame1.getMaskedImage()
+            flat2 = ptc_frames[expIds[1]].get().getMaskedImage()
+            diff = flat1.Factory(flat1, deep=True)
+            diff -= flat2
+            det_name = det.getName()
+            for amp in det:
+                amp_name = amp.getName()
+                bbox = amp.getBBox()
+                stats1 = afwMath.makeStatistics(flat1[bbox], afwMath.MEAN,
+                                                sctrl)
+                stats2 = afwMath.makeStatistics(flat2[bbox], afwMath.MEAN,
+                                                sctrl)
+                signal = (stats1.getValue(afwMath.MEAN) +
+                          stats2.getValue(afwMath.MEAN))/2.*gains[amp_name]
+                row_means = []
+                for row in range(bbox.minY, bbox.maxY):
+                    bbox_row = lsst.geom.Box2I(lsst.geom.Point2I(bbox.minX, row),
+                                               lsst.geom.Extent2I(bbox.width, 1))
+                    row_means.append(afwMath.makeStatistics(diff[bbox_row],
+                                                            afwMath.MEAN,
+                                                            sctrl).getValue())
+                row_mean_variance = afwMath.makeStatistics(
+                    np.array(row_means), afwMath.VARIANCECLIP, sctrl).getValue()
+                row_mean_variance *= gains[amp_name]**2
+                data['det_name'].append(det_name)
+                data['amp_name'].append(amp_name)
+                data['signal'].append(signal)
+                data['row_mean_variance'].append(row_mean_variance)
+        df0 = pd.DataFrame(data)
+
+        fig = plt.figure(figsize=self.figsize)
+        data = defaultdict(list)
+        for amp in det:
+            amp_name = amp.getName()
+            numcols = amp.getBBox().width
+            df = df0.query(f"amp_name == '{amp.getName()}'")
+            signal = df['signal'].to_numpy()
+            row_mean_var = df['row_mean_variance'].to_numpy()
+            index = np.where((self.min_signal < signal)
+                             & (signal < self.max_signal)
+                             & (row_mean_var == row_mean_var))
+            try:
+                slope = sum(row_mean_var[index])/sum(2.*signal[index]/numcols)
+            except ZeroDivisionError:
+                self.log.info("ZeroDivisionError: %s, %s", det_name, amp_name)
+                slope = 0
+            data['det_name'].append(det_name)
+            data['amp_name'].append(amp_name)
+            data['slope'].append(slope)
+            plt.scatter(2*signal[index]/numcols, row_mean_var[index], s=2,
+                        label=amp.getName())
+        plt.xscale('log')
+        plt.yscale('log')
+        xmin, xmax, ymin, ymax = plt.axis()
+        xymin = min(xmin, ymin)
+        xymax = max(xmax, ymax)
+        plt.plot([xymin, xymax], [xymin, xymax], linestyle=':')
+        plt.legend(fontsize='x-small', ncol=2, loc=2)
+        plt.axis((xmin, xmax, ymin, ymax))
+        plt.xlabel('2*(flux/(e-/pixel))/num_cols')
+        plt.ylabel('var(row_means)')
+        plt.title(append_acq_run(self, det_name))
+
+        return pipeBase.Struct(row_means_variance_plot=fig,
+                               row_means_variance_stats=pd.DataFrame(data))
+
+
+class RowMeansVarianceFpPlotTaskConnections(pipeBase.PipelineTaskConnections,
+                                            dimensions=("instrument",)):
+    row_means_variance_stats = cT.Input(
+        name="row_means_variance_stats",
+        doc=("Slopes of row_means_variance vs expected Poisson signal "
+             "for each amp in a CCD for a PTC dataset"),
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector"),
+        multiple=True,
+        deferLoad=True)
+
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",),
+        lookupFunction=lookupStaticCalibration)
+
+    row_means_variance_slopes = cT.Output(
+        name="row_means_variance_slopes_plot",
+        doc="Focal plane map of slopes of row means variance.",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    row_means_variance_slopes_hist = cT.Output(
+        name="row_means_variance_slopes_hist",
+        doc="Histogram of slopes of row means variance.",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+
+class RowMeansVarianceFpPlotTaskConfig(pipeBase.PipelineTaskConfig,
+                                       pipelineConnections=RowMeansVarianceFpPlotTaskConnections):
+    """Configuration for RowMeansVarianceFpPlotTask."""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
+
+
+class RowMeansVarianceFpPlotTask(pipeBase.PipelineTask):
+    """Create focal plane mosaic of slope of row means variance."""
+    ConfigClass = RowMeansVarianceFpPlotTaskConfig
+    _DefaultName = "rowMeansVarianceFpPlotTask"
+
+    _z_range = (0, 2)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+
+        camera = inputs['camera']
+
+        rmv_stats = {_.dataId['detector']: _ for _
+                     in inputs['row_means_variance_stats']}
+
+        struct = self.run(rmv_stats, camera)
+        butlerQC.put(struct, outputRefs)
+        plt.close()
+
+    def run(self, rmv_stats, camera):
+        amp_data = defaultdict(dict)
+        for detector, ref in rmv_stats.items():
+            df = ref.get()
+            for _, row in df.iterrows():
+                amp_data[row.det_name][row.amp_name] = row.slope
+        row_means_variance_slopes = plt.figure(figsize=self.figsize)
+        ax = row_means_variance_slopes.add_subplot(111)
+        xlabel = "Row means variance slopes"
+        title = append_acq_run(self, xlabel)
+        plot_focal_plane(ax, amp_data, title=title, camera=camera,
+                         z_range=self._z_range)
+
+        row_means_variance_slopes_hist = plt.figure()
+        hist_amp_data(amp_data, xlabel, hist_range=self._z_range, title=title)
+
+        return pipeBase.Struct(row_means_variance_slopes=row_means_variance_slopes,
+                               row_means_variance_slopes_hist=row_means_variance_slopes_hist)

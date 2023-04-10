@@ -1,14 +1,14 @@
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBFAnalysis.yaml
+extraQgraphOptions: "--config bfAnalysisTask:acq_run=' ${PTC_RUN}' --config bfAnalysisFpPlotsTask:acq_run=' ${PTC_RUN}'"
 
 payload:
-  flat_pair_run: 13144
+  ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2022_39
-  payloadName: bf_analysis_{flat_pair_run}_{weekly}
+  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  payloadName: eo_bf_analysis_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{flat_pair_run}'"
-
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_64
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"

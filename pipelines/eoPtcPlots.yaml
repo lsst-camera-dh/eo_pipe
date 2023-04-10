@@ -6,11 +6,20 @@ tasks:
       connections.ptc_results: "ptc"
       connections.camera: "camera"
       connections.ptc_plots: "ptc_plots"
-      xfigsize: 9
-      yfigsize: 9
   ptcFocalPlanePlots:
     class: lsst.eo.pipe.PtcFpPlotsTask
     config:
       connections.ptc_results: "ptc"
-      xfigsize: 9
-      yfigsize: 9
+  rowMeansVariance:
+    class: lsst.eo.pipe.RowMeansVarianceTask
+    config:
+      connections.ptc_results: "ptc"
+      connections.ptc_frames: "cpPtcProc"
+      connections.row_means_variance_plot: "row_means_variance_plot"
+      connections.row_means_variance_stats: "row_means_variance_stats"
+  rowMeansVarianceFpPlot:
+    class: lsst.eo.pipe.RowMeansVarianceFpPlotTask
+    config:
+      connections.row_means_variance_stats: "row_means_variance_stats"
+      connections.camera: "camera"
+      connections.row_means_variance_slopes: "row_means_variance_slopes_plot"

@@ -8,7 +8,7 @@ from matplotlib import gridspec
 import numpy as np
 
 
-__all__ = ['divisadero_raft_plots', 'make_raft_summary_plot']
+__all__ = ['divisadero_raft_plots', 'make_divisadero_summary_plot']
 
 
 def divisadero_raft_plots(butler, acq_run, instrument='LSSTCam'):
@@ -41,14 +41,15 @@ def divisadero_raft_plots(butler, acq_run, instrument='LSSTCam'):
     # Make a plot for each raft.
     for raft, data in raft_data.items():
         outfile = f"{acq_run}_{raft}_divisadero_tearing.png"
-        make_raft_summary_plot(data, outfile, title=f"Run {acq_run}, {raft}")
+        make_divisadero_summary_plot(data, title=f"Run {acq_run}, {raft}")
+        plt.savefig(outfile)
 
 
-def make_raft_summary_plot(raft_data, outfile, title=None):
+def make_divisadero_summary_plot(raft_data, title=None, figsize=(20, 20)):
     """
     Make summary plot for a single raft.
     """
-    f = plt.figure(figsize=(20, 20))
+    fig = plt.figure(figsize=figsize)
     outer = gridspec.GridSpec(3, 3, wspace=0.3, hspace=0.3)
     nskip_edge = 20
 
@@ -66,7 +67,7 @@ def make_raft_summary_plot(raft_data, outfile, title=None):
                               .to_numpy()[j*7:j*7 + 8])
             plot_range = np.nanmax(max_divisadero)
 
-            ax = plt.Subplot(f, inner[j])
+            ax = plt.Subplot(fig, inner[j])
             ax.plot(xpixval[nskip_edge:ncols - nskip_edge],
                     raft_data[slot][j][nskip_edge:ncols - nskip_edge])
             ax.set_xlabel('Col #')
@@ -84,8 +85,8 @@ def make_raft_summary_plot(raft_data, outfile, title=None):
                 ax.text(0.825, 0.05, 'Seg 10-17', transform=ax.transAxes)
             elif j == 1 or have_wf_sensor:
                 ax.text(0.825, 0.05, 'Seg 00-07', transform=ax.transAxes)
-            f.add_subplot(ax)
+            fig.add_subplot(ax)
 
     if title is not None:
         plt.suptitle(title)
-    plt.savefig(outfile)
+    return fig

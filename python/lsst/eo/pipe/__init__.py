@@ -10,5 +10,11 @@ from .darkCurrentTask import *
 from .bfAnalysisTask import *
 from .flatGainStabilityTask import *
 from .ctiVsFluxTask import *
+from .raftCalibMosaicTask import *
+from .raftMosaicTask import *
+from .biasStabilityTask import *
+from .runInfoTask import *
 from .isr_utils import *
+from .dsref_utils import *
+from .report_utils import *
 from .et_results import *
