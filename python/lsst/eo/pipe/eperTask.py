@@ -41,17 +41,20 @@ def compute_ctis(processed_segment, raw_amp_info, npix=3):
     if raw_amp_info.getRawFlipY():
         imarr[:] = imarr[::-1, :]
     bbox = raw_amp_info.getRawDataBBox()
+    firstcol = bbox.minX
+    lastcol = bbox.maxX
+    firstrow = bbox.minY
+    lastrow = bbox.maxY
     # Serial CTI
     ncol = bbox.width
-    lastcol = bbox.maxX
-    signal = np.sum(imarr[:, lastcol])
-    trailed = np.sum(imarr[:, lastcol + 1:lastcol + 1 + npix])
+    signal = np.sum(imarr[firstrow:lastrow + 1, lastcol])
+    trailed = np.sum(imarr[firstrow:lastrow + 1,
+                           lastcol + 1:lastcol + 1 + npix])
     scti = (trailed/signal)/(ncol + 1)
     # Parallel CTI
     nrow = bbox.height
-    lastrow = bbox.maxY
-    signal = np.sum(imarr[lastrow, :])
-    trailed = np.sum(imarr[lastrow + 1:lastrow + 1 + npix, :])
+    signal = np.sum(imarr[lastrow, firstcol:lastcol+1])
+    trailed = np.sum(imarr[lastrow + 1:lastrow + 1 + npix, firstcol:lastcol+1])
     pcti = (trailed/signal)/(nrow + 1)
     return scti, pcti
 

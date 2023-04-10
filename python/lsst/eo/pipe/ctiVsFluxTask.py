@@ -9,6 +9,7 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 from .isr_utils import apply_minimal_isr
 from .eperTask import compute_ctis
+from .plotting import append_acq_run
 
 
 __all__ = ['CtiVsFluxTask']
@@ -129,6 +130,9 @@ class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
              "for finding image pairs"),
         default="",
         dtype=str)
+    acq_run = pexConfig.Field(
+        doc="Acquisition run number.",
+        dtype=str, default="")
 
 
 class CtiVsFluxTask(pipeBase.PipelineTask):
@@ -186,7 +190,8 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
         plt.ylabel("Serial CTI")
         plt.xscale("log")
         plt.yscale("log")
-        plt.title(f"Serial CTI, {det_name}")
+        title = append_acq_run(self, 'Serial CTI', det_name)
+        plt.title(title)
 
         # Parallel CTI vs flux plot.
         pcti_vs_flux_plot = plt.figure()
@@ -200,7 +205,8 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
         plt.ylabel("Parallel CTI")
         plt.xscale("log")
         plt.yscale("log")
-        plt.title(f"Parallel CTI, {det_name}")
+        title = append_acq_run(self, 'Parallel CTI', det_name)
+        plt.title(title)
 
         return pipeBase.Struct(cti_vs_flux=df0,
                                scti_vs_flux_plot=scti_vs_flux_plot,
