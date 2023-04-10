@@ -1,16 +1,16 @@
-pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoCtiVsFlux.yaml
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
 
-wmsServiceClass: lsst.ctrl.bps.parsl.ParslService
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoCtiVsFlux.yaml
+extraQgraphOptions: "--config ctiVsFluxTask:acq_run=' ${B_PROTOCOL_RUN}'"
+
+instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  b_protocol_run: 13162
+  b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/flat_13162_w_2022_53
-  payloadName: cti_vs_flux_{b_protocol_run}_{weekly}
+  inCollection: u/jchiang/ptc_0_13144_w_2023_13
+  payloadName: eo_cti_vs_flux_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat'"
-
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_16
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat'"
