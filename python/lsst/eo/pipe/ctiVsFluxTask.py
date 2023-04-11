@@ -10,9 +10,15 @@ from lsst.pipe.base import connectionTypes as cT
 from .isr_utils import apply_minimal_isr
 from .eperTask import compute_ctis
 from .plotting import append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['CtiVsFluxTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('scti_vs_flux_plot', 'pcti_vs_flux_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 def find_flat_pairs(raws, flux_keyword=""):
