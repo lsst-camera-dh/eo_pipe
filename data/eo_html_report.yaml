@@ -25,6 +25,16 @@ slot_plot_tables :
     rows:
       - text : "Row means vs variance"
         figure : "{run}/row_means_variance_plot_*_{raft}_{slot}_*.png"
+  scti_eper:
+    header_text : "Serial charge transfer inefficiency"
+    rows:
+      - text : "SCTI vs flux"
+        figure : "{run}/scti_vs_flux_plot_*_{raft}_{slot}_*.png"
+  pcti_eper:
+    header_text : "Parallel charge transfer inefficiency"
+    rows:
+      - text : "PCTI vs flux"
+        figure : "{run}/pcti_vs_flux_plot_*_{raft}_{slot}_*.png"
   ptc:
     header_text : "System Gain and Photon Transfer Curves"
     rows :
