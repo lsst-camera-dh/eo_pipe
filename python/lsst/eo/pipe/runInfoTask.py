@@ -66,7 +66,8 @@ class RunInfoTask(pipeBase.PipelineTask):
                     with fits.open(filepath) as hdus:
                         md = dict(hdus[0].header)
                 else:
-                    md = handle.get().getMetadata()
+                    md = handle.butler.get(
+                        handle.ref.makeComponentRef("metadata"))
                 for key in self.keys:
                     data[key].append(md.get(key, None))
         df = pd.DataFrame(data).sort_values(by=['detector', 'mjd_begin'])
