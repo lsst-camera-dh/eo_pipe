@@ -9,6 +9,7 @@ from .eperTask import *
 from .darkCurrentTask import *
 from .bfAnalysisTask import *
 from .flatGainStabilityTask import *
+from .ctiVsFluxTask import *
 from .raftCalibMosaicTask import *
 from .raftMosaicTask import *
 from .biasStabilityTask import *
