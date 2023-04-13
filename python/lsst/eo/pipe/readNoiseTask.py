@@ -37,7 +37,7 @@ def get_amp_data(repo, collections, camera=None):
         det_name = det.getName()
         for amp in det:
             amp_name = amp.getName()
-            df = butler.getDirect(dsref).query(f"amp_name=='{amp_name}'")
+            df = butler.get(dsref).query(f"amp_name=='{amp_name}'")
             amp_data[det_name][amp_name] = np.median(df['read_noise'])
     return {'read_noise': dict(amp_data)}
 

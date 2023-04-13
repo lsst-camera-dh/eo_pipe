@@ -24,7 +24,7 @@ def get_amp_data(repo, collections):
                                                     findFirst=True)))
     amp_data = defaultdict(lambda: defaultdict(dict))
     for dsref in dsrefs:
-        df = butler.getDirect(dsref)
+        df = butler.get(dsref)
         for _, row in df.iterrows():
             for field in ('scti', 'pcti'):
                 amp_data[field][row.det_name][row.amp_name] = row[field]

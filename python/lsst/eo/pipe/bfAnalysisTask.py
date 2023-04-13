@@ -24,7 +24,7 @@ def get_amp_data(repo, collections):
     fields = ['bf_xcorr', 'bf_ycorr', 'bf_mean', 'bf_slope_x',
               'bf_slope_x_err', 'bf_slope_y', 'bf_slope_y_err']
     for dsref in dsrefs:
-        df = butler.getDirect(dsref)
+        df = butler.get(dsref)
         for _, row in df.iterrows():
             for field in fields:
                 amp_data[field][row.det_name][row.amp_name] = row[field]

@@ -22,7 +22,7 @@ def get_amp_data(repo, collections):
     amp_data = defaultdict(lambda: defaultdict(dict))
     fields = 'max_frac_dev max_observed_signal linearity_turnoff'.split()
     for dsref in dsrefs:
-        df = butler.getDirect(dsref)
+        df = butler.get(dsref)
         for _, row in df.iterrows():
             for field in fields:
                 amp_data[field][row.det_name][row.amp_name] = row[field]
