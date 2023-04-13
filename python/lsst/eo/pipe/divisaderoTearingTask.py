@@ -26,7 +26,7 @@ def get_amp_data(repo, collections):
     field = 'divisadero_tearing'
     amp_data = defaultdict(dict)
     for dsref in dsrefs:
-        df = butler.getDirect(dsref)
+        df = butler.get(dsref)
         for _, row in df.iterrows():
             amp_data[row.det_name][row.amp_name] = row[field]
     return {field: dict(amp_data)}

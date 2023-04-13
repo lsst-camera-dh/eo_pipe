@@ -24,7 +24,7 @@ def get_amp_data(repo, collections):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('defectsResults',
                                                     findFirst=True)))
-    df = butler.getDirect(dsrefs[0])
+    df = butler.get(dsrefs[0])
     fields = 'bright_columns bright_pixels dark_columns dark_pixels'.split()
 
     amp_data = defaultdict(lambda: defaultdict(dict))

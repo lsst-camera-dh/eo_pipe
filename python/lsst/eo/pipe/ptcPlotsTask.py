@@ -36,7 +36,7 @@ def get_amp_data(repo, collections, camera=None):
     for dsref in dsrefs:
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
-        ptc = butler.getDirect(dsref)
+        ptc = butler.get(dsref)
         for amp_name, values in ptc.ptcFitPars.items():
             if len(values) != 3:
                 continue
@@ -51,7 +51,7 @@ def get_amp_data(repo, collections, camera=None):
     # Extract row means variance slopes
     dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
     for ref in dsrefs:
-        df = butler.getDirect(ref)
+        df = butler.get(ref)
         for _, row in df.iterrows():
             amp_data['row_mean_var_slope'][row.det_name][row.amp_name] \
                 = row.slope

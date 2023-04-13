@@ -26,7 +26,7 @@ def divisadero_raft_plots(butler, acq_run, instrument='LSSTCam'):
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
         raft, slot = det.getName().split('_')
-        raft_data[raft][slot] = list(butler.getDirect(dsref).tolist()[det_name])
+        raft_data[raft][slot] = list(butler.get(dsref).tolist()[det_name])
 
     # Append divisadero_stats (the max divisadero tearing value
     # at amp boundaries) to each raft/slot item.
@@ -36,7 +36,7 @@ def divisadero_raft_plots(butler, acq_run, instrument='LSSTCam'):
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
         raft, slot = det.getName().split('_')
-        raft_data[raft][slot].append(butler.getDirect(dsref))
+        raft_data[raft][slot].append(butler.get(dsref))
 
     # Make a plot for each raft.
     for raft, data in raft_data.items():
