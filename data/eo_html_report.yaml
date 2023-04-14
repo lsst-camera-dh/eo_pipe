@@ -8,6 +8,11 @@ defaults :
   col_fig_class : plot_col_fig
   col_img_class : plot
 slot_plot_tables :
+  bias_profiles:
+    header_text: "Median bias profiles"
+    rows:
+      - text: "Median bias profiles in the serial direction"
+        figure: "{run}/bias_profile_plots_*_{raft}_{slot}_*.png"
   ptc:
     header_text: "Photon Transfer Curves"
     rows:

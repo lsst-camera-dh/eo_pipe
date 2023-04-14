@@ -1,5 +1,6 @@
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
@@ -80,6 +81,11 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                            doc="bias stability statistics",
                            storageClass="DataFrame",
                            dimensions=("instrument", "detector"))
+    bias_profile_plots = cT.Output(name="bias_profile_plots",
+                                   doc="profiles of median per-column bias "
+                                   "level as a function of serial pixel",
+                                   storageClass="Plot",
+                                   dimensions=("instrument", "detector"))
 
 
 class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
@@ -94,6 +100,12 @@ class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
                                           dtype=int, default=200)
     nsigma = pexConfig.Field(doc="Number of sigma for [MEAN,STDEV]CLIP",
                              dtype=float, default=10.0)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=16)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=16)
 
 
 class BiasStabilityTask(pipeBase.PipelineTask):
@@ -107,10 +119,15 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         self.oscan_method = self.config.oscan_method
         self.readout_size = self.config.readout_corner_size
         self.nsigma = self.config.nsigma
+        self.figsize = self.config.xfigsize, self.config.yfigsize
 
     def run(self, exposures, camera):
         raw_det = camera[exposures[0].dataId['detector']]
+        namps = len(raw_det)
         data = defaultdict(list)
+        bias_profile_plots = plt.figure(figsize=self.figsize)
+        ax = {amp: bias_profile_plots.add_subplot(4, 4, amp)
+              for amp in range(1, namps+1)}
         for handle in exposures:
             exp = handle.get()
             image = exp.getImage()
@@ -119,7 +136,7 @@ class BiasStabilityTask(pipeBase.PipelineTask):
             det_name = det.getName()
             raft, slot = det_name.split('_')
             # Loop over segments and extract statistics
-            for amp in det:
+            for i, amp in enumerate(det, 1):
                 amp_name = amp.getName()
                 data['run'].append(md['RUNNUM'])
                 data['exposure_id'].append(handle.dataId['exposure'])
@@ -136,7 +153,18 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 rc_mean, rc_stdev = image_stats(rc_image, nsigma=self.nsigma)
                 data['rc_mean'].append(rc_mean)
                 data['rc_stdev'].append(rc_stdev)
-        return pipeBase.Struct(bias_stability_stats=pd.DataFrame(data))
+                # Plot the serial profile, i.e., the column median as a
+                # function of x-pixel coordinate for this amp.
+                imarr = image[bbox].array
+                ax[i].plot(range(imarr.shape[1]), np.median(imarr, axis=0))
+        title = append_acq_run(self, 'median signal (ADU) vs column', det_name)
+        plt.suptitle(title)
+        plt.tight_layout(rect=(0, 0, 1, 0.95))
+        for i, amp in enumerate(det, 1):
+            ax[i].annotate(f"{amp.getName()}", (0.5, 0.95),
+                           xycoords='axes fraction', ha='center')
+        return pipeBase.Struct(bias_stability_stats=pd.DataFrame(data),
+                               bias_profile_plots=bias_profile_plots)
 
 
 class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
