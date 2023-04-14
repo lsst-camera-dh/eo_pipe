@@ -183,3 +183,8 @@ run_plot_tables:
         figure : "{run}/bf_xcorr_hist_*.png"
       - text : "Brighter-Fatter, ycorr slope"
         figure : "{run}/bf_ycorr_hist_*.png"
+  gain_stability:
+    header_text: "Gain stability"
+    rows:
+      - text: "Gain stability from flats"
+        figure: "{run}/flat_gain_stability_*.png"

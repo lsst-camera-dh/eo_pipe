@@ -8,9 +8,16 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 from .isr_utils import apply_minimal_isr
+from .dsref_utils import get_plot_locations_by_dstype
+from .plotting import append_acq_run
 
 
 __all__ = ['FlatGainStabilityTask', 'FlatGainStabilityPlotsTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('flat_gain_stability_plots',)
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
@@ -74,6 +81,8 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
         dtype=int)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class FlatGainStabilityTask(pipeBase.PipelineTask):
@@ -234,4 +243,5 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         fig.supxlabel(f'(MJD - {int(t0)})*24 (hours)')
         fig.supylabel('counts/mean(counts)')
+        fig.suptitle(append_acq_run(self, 'flat gain stability'))
         return pipeBase.Struct(flat_gain_stability_plots=fig)
