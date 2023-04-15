@@ -18,7 +18,7 @@ __all__ = ['BiasStabilityTask', 'BiasStabilityPlotsTask']
 
 def get_plot_locations(repo, collections):
     dstypes = ('bias_mean_vs_time_plot', 'bias_stdev_vs_time_plot',
-               'bias_rc_mean_vs_time_plot')
+               'bias_rc_mean_vs_time_plot', 'bias_profile_plots')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
