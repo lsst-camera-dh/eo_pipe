@@ -5,6 +5,7 @@ import pandas as pd
 import lsst.afw.math as afw_math
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
+from lsst.geom import Box2I, Extent2I, Point2I
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -39,32 +40,43 @@ def get_plot_locations(repo, collections):
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
-def compute_ctis(processed_segment, raw_amp_info, npix=3):
+def compute_ctis(processed_segment, raw_amp_info, npix=3,
+                 subtract_bias_est=False):
     """
     For an ISR-processed amplifier segment, compute the serial and
     parallel CTI using the EPER method.
     """
-    imarr = processed_segment.array
+    imarr0 = processed_segment.array
     if raw_amp_info.getRawFlipX():
-        imarr[:] = imarr[:, ::-1]
+        imarr0[:] = imarr0[:, ::-1]
     if raw_amp_info.getRawFlipY():
-        imarr[:] = imarr[::-1, :]
+        imarr0[:] = imarr0[::-1, :]
     bbox = raw_amp_info.getRawDataBBox()
     firstcol = bbox.minX
     lastcol = bbox.maxX
     firstrow = bbox.minY
     lastrow = bbox.maxY
     # Serial CTI
-    ncol = bbox.width
+    imarr = imarr0.copy()
+    if subtract_bias_est:
+        oscan = raw_amp_info.getRawSerialOverscanBBox()
+        sbbox = Box2I(Point2I(oscan.minX + npix, oscan.minY),
+                      Extent2I(oscan.width - npix, oscan.height))
+        imarr -= np.mean(processed_segment[sbbox].array)
     signal = np.sum(imarr[firstrow:lastrow + 1, lastcol])
     trailed = np.sum(imarr[firstrow:lastrow + 1,
                            lastcol + 1:lastcol + 1 + npix])
-    scti = (trailed/signal)/(ncol + 1)
+    scti = (trailed/signal)/(bbox.width + 1)
     # Parallel CTI
-    nrow = bbox.height
+    imarr = imarr0.copy()
+    if subtract_bias_est:
+        oscan = raw_amp_info.getRawParallelOverscanBBox()
+        pbbox = Box2I(Point2I(oscan.minX, oscan.minY + npix),
+                      Extent2I(oscan.width, oscan.height - npix))
+        imarr -= np.mean(processed_segment[pbbox].array)
     signal = np.sum(imarr[lastrow, firstcol:lastcol+1])
     trailed = np.sum(imarr[lastrow + 1:lastrow + 1 + npix, firstcol:lastcol+1])
-    pcti = (trailed/signal)/(nrow + 1)
+    pcti = (trailed/signal)/(bbox.height + 1)
     return scti, pcti
 
 
@@ -131,6 +143,11 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Maximum number of raw flats to included in the combined flat.",
         default=10,
         dtype=int)
+    no_per_frame_isr = pexConfig.Field(
+        doc="Flag to disable per-frame ISR and instead do a correction "
+        "using the overscan region associated with the transfer direction.",
+        default=False,
+        dtype=bool)
 
 
 class EperTask(pipeBase.PipelineTask):
@@ -145,6 +162,7 @@ class EperTask(pipeBase.PipelineTask):
         self.oscan_method = self.config.oscan_method
         self.deg = self.config.polynomial_degree
         self.max_raws = self.config.max_raws
+        self.no_per_frame_isr = self.config.no_per_frame_isr
 
     def run(self, raws, bias, camera):
         det = camera[raws[0].dataId['detector']]
@@ -155,12 +173,21 @@ class EperTask(pipeBase.PipelineTask):
             images = []
             for handle in raws[:self.max_raws]:
                 raw = handle.get()
-                images.append(apply_minimal_isr(raw, bias, dark, amp,
-                                                dx=self.dx,
-                                                oscan_method=self.oscan_method,
-                                                deg=self.deg))
+                if self.no_per_frame_isr:
+                    # Don't do any ISR
+                    raw_full_segment \
+                        = raw.getImage()[raw.getDetector()[amp].getRawBBox()]
+                    images.append(raw_full_segment)
+                else:
+                    # Apply minimal ISR, i.e., overscan and bias correction
+                    dark = None  # exclude dark correction from ISR.
+                    images.append(
+                        apply_minimal_isr(raw, bias, dark, amp, dx=self.dx,
+                                          oscan_method=self.oscan_method,
+                                          deg=self.deg))
             combined_flat = afw_math.statisticsStack(images, afw_math.MEDIAN)
-            scti, pcti = compute_ctis(combined_flat, det[amp], npix=self.npix)
+            scti, pcti = compute_ctis(combined_flat, det[amp], npix=self.npix,
+                                      subtract_bias_est=self.no_per_frame_isr)
             data['det_name'].append(det_name)
             data['amp_name'].append(amp_name)
             data['scti'].append(scti)
