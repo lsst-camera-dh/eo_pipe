@@ -124,7 +124,7 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
     overscan_pixels = pexConfig.Field(
         doc=("Number of overscan rows or columns to use for "
              "evaluating the trailed signal in the overscan regions."),
-        default=3,
+        default=2,
         dtype=int)
     oscan_method = pexConfig.ChoiceField(
         doc="Overscan modeling method",
