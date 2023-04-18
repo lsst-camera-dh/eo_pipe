@@ -14,4 +14,6 @@ tasks:
       connections.eper_stats: "eper_stats"
       connections.camera: "camera"
       connections.scti_eper_plot: "scti_eper_plot"
+      connections.scti_eper_hist: "scti_eper_hist"
       connections.pcti_eper_plot: "pcti_eper_plot"
+      connections.pcti_eper_hist: "pcti_eper_hist"
