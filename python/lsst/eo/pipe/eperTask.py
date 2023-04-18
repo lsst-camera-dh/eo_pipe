@@ -83,13 +83,6 @@ class EperTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument", "detector"),
         isCalibration=True)
 
-    dark = cT.Input(
-        name="dark_frame",
-        doc="Combined dark frame",
-        storageClass="Exposure",
-        dimensions=("instrument", "detector"),
-        isCalibration=True)
-
     camera = cT.PrerequisiteInput(
         name="camera",
         doc="Camera used in observations",
@@ -150,7 +143,7 @@ class EperTask(pipeBase.PipelineTask):
         self.deg = self.config.polynomial_degree
         self.max_raws = self.config.max_raws
 
-    def run(self, raws, bias, dark, camera):
+    def run(self, raws, bias, camera):
         det = camera[raws[0].dataId['detector']]
         det_name = det.getName()
         data = defaultdict(list)

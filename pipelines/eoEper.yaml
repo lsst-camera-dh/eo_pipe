@@ -6,7 +6,6 @@ tasks:
     config:
       connections.raws: "raw"
       connections.bias: "bias"
-      connections.dark: "dark"
       connections.camera: "camera"
       connections.eper_stats: "eper_stats"
   eperFpPlots:
