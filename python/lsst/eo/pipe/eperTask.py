@@ -20,14 +20,16 @@ __all__ = ['compute_ctis', 'EperTask', 'EperFpPlotsTask']
 def get_amp_data(repo, collections):
     """Get EPER results for each amp in the focal plane."""
     butler = daf_butler.Butler(repo, collections=collections)
-    dsrefs = list(set(butler.registry.queryDatasets('eper_stats',
-                                                    findFirst=True)))
+    refs = list(set(butler.registry.queryDatasets('eper_stats',
+                                                  findFirst=True)))
     amp_data = defaultdict(lambda: defaultdict(dict))
-    for dsref in dsrefs:
-        df = butler.get(dsref)
+    for ref in refs:
+        physical_filter = ref.dataId['physical_filter']
+        df = butler.get(ref)
         for _, row in df.iterrows():
             for field in ('scti', 'pcti'):
-                amp_data[field][row.det_name][row.amp_name] = row[field]
+                amp_data[(field, physical_filter)][row.det_name][row.amp_name] \
+                         = row[field]
     return {field: dict(data) for field, data in amp_data.items()}
 
 
@@ -67,12 +69,13 @@ def compute_ctis(processed_segment, raw_amp_info, npix=3):
 
 
 class EperTaskConnections(pipeBase.PipelineTaskConnections,
-                          dimensions=("instrument", "detector")):
+                          dimensions=("instrument", "detector",
+                                      "physical_filter")):
     raws = cT.Input(
         name="raw",
         doc="Raw pixel data taken for combined flat generation",
         storageClass="Exposure",
-        dimensions=("instrument", "detector", "exposure"),
+        dimensions=("instrument", "detector", "exposure", "physical_filter"),
         multiple=True,
         deferLoad=True)
 
@@ -95,7 +98,7 @@ class EperTaskConnections(pipeBase.PipelineTaskConnections,
         name="eper_stats",
         doc="Serial and parallel CTI values for each amp in a CCD.",
         storageClass="DataFrame",
-        dimensions=("instrument", "detector"))
+        dimensions=("instrument", "detector", "physical_filter"))
 
 
 class EperTaskConfig(pipeBase.PipelineTaskConfig,
@@ -166,12 +169,12 @@ class EperTask(pipeBase.PipelineTask):
 
 
 class EperFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
-                                 dimensions=("instrument",)):
+                                 dimensions=("instrument", "physical_filter")):
     eper_stats = cT.Input(
         name="eper_stats",
         doc="Serial and parallel CTI values obtained using EPER method",
         storageClass="DataFrame",
-        dimensions=("instrument", "detector"),
+        dimensions=("instrument", "detector", "physical_filter"),
         multiple=True,
         deferLoad=True)
 
@@ -187,25 +190,25 @@ class EperFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         name="scti_eper_plot",
         doc="Focal plane mosaic of serial CTI for each amp",
         storageClass="Plot",
-        dimensions=("instrument",))
+        dimensions=("instrument", "physical_filter"))
 
     scti_eper_hist = cT.Output(
         name="scti_eper_hist",
         doc="Histogram of serial CTI for each amp",
         storageClass="Plot",
-        dimensions=("instrument",))
+        dimensions=("instrument", "physical_filter"))
 
     pcti_eper_plot = cT.Output(
         name="pcti_eper_plot",
         doc="Focal plane mosaic of parallel CTI for each amp",
         storageClass="Plot",
-        dimensions=("instrument",))
+        dimensions=("instrument", "physical_filter"))
 
     pcti_eper_hist = cT.Output(
         name="pcti_eper_hist",
         doc="Histogram of parallel CTI for each amp",
         storageClass="Plot",
-        dimensions=("instrument",))
+        dimensions=("instrument", "physical_filter"))
 
 
 class EperFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
@@ -242,7 +245,9 @@ class EperFpPlotsTask(pipeBase.PipelineTask):
         self.zscale_factor = self.config.zscale_factor
 
     def run(self, eper_stats, camera):
-        # Unpack the divisadero data for plotting.
+        # Get the physical filter for the plot title.
+        physical_filter = eper_stats[0].dataId['physical_filter']
+        # Unpack the data for plotting.
         scti_data = defaultdict(dict)
         pcti_data = defaultdict(dict)
         for handle in eper_stats:
@@ -257,7 +262,7 @@ class EperFpPlotsTask(pipeBase.PipelineTask):
         scti_eper_plot = plt.figure(figsize=self.figsize)
         ax = scti_eper_plot.add_subplot(111)
         xlabel = "Serial CTI"
-        title = append_acq_run(self, xlabel)
+        title = append_acq_run(self, xlabel, physical_filter)
         plot_focal_plane(ax, scti_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
         scti_eper_hist = plt.figure()
@@ -267,7 +272,7 @@ class EperFpPlotsTask(pipeBase.PipelineTask):
         pcti_eper_plot = plt.figure(figsize=self.figsize)
         ax = pcti_eper_plot.add_subplot(111)
         xlabel = "Parallel CTI"
-        title = append_acq_run(self, xlabel)
+        title = append_acq_run(self, xlabel, physical_filter)
         plot_focal_plane(ax, pcti_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.zscale_factor, title=title)
         pcti_eper_hist = plt.figure()
