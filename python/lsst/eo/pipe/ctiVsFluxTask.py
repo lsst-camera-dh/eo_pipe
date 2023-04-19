@@ -71,13 +71,6 @@ class CtiVsFluxTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument", "detector"),
         isCalibration=True)
 
-    dark = cT.Input(
-        name="dark_frame",
-        doc="Combined dark frame",
-        storageClass="Exposure",
-        dimensions=("instrument", "detector"),
-        isCalibration=True)
-
     camera = cT.PrerequisiteInput(
         name="camera",
         doc="Camera used in observations",
@@ -131,6 +124,10 @@ class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
         dtype=int)
+    do_parallel_oscan = pexConfig.Field(
+        doc="Flag to do parallel overscan correction in addition to serial",
+        default=False,
+        dtype=bool)
     flux_keyword = pexConfig.Field(
         doc=("FITS header keyword with target flux value "
              "for finding image pairs"),
@@ -153,9 +150,10 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
         self.npix = self.config.overscan_pixels
         self.oscan_method = self.config.oscan_method
         self.deg = self.config.polynomial_degree
+        self.do_parallel = self.config.do_parallel_oscan
         self.flux_keyword = self.config.flux_keyword
 
-    def run(self, raws, bias, dark, camera):
+    def run(self, raws, bias, camera):
         det = camera[raws[0].dataId['detector']]
         det_name = det.getName()
 
@@ -167,9 +165,11 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
             raw1 = flat1.get()
             for amp, amp_info in enumerate(det):
                 amp_name = amp_info.getName()
+                dark = None  # Don't apply dark subtraction for EPER analysis
                 images = [apply_minimal_isr(raw, bias, dark, amp, dx=self.dx,
                                             oscan_method=self.oscan_method,
-                                            deg=self.deg)
+                                            deg=self.deg,
+                                            do_parallel=self.do_parallel)
                           for raw in (raw0, raw1)]
                 median_flat = afw_math.statisticsStack(images, afw_math.MEDIAN)
                 signal = np.median(median_flat.array)
