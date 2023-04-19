@@ -156,6 +156,8 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 # Plot the serial profile, i.e., the column median as a
                 # function of x-pixel coordinate for this amp.
                 imarr = image[bbox].array
+                if raw_amp.getRawFlipX():
+                    imarr[:] = imarr[:, ::-1]
                 ax[i].plot(range(imarr.shape[1]), np.median(imarr, axis=0))
         title = append_acq_run(self, 'median signal (ADU) vs column', det_name)
         plt.suptitle(title)
