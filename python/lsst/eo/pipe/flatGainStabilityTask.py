@@ -81,8 +81,6 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
         dtype=int)
-    acq_run = pexConfig.Field(doc="Acquisition run number.",
-                              dtype=str, default="")
 
 
 class FlatGainStabilityTask(pipeBase.PipelineTask):
@@ -184,6 +182,8 @@ class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
             "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
                             "leading and trailing entries, which are "
                             "nominally at zero baseline level.")})
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
