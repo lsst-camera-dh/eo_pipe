@@ -6,7 +6,18 @@ import lsst.afw.math as afwMath
 from lsst.afw.cameraGeom import utils as cgu
 
 
-__all__ = ['cmap_range', 'ImageSource', 'make_mosaic', 'append_acq_run']
+__all__ = ['cmap_range', 'ImageSource', 'make_mosaic', 'append_acq_run',
+           'nsigma_range']
+
+
+def nsigma_range(data, nsigma=3):
+    stats = afwMath.makeStatistics(data, afwMath.MEDIAN | afwMath.STDEVCLIP
+                                   | afwMath.STDEV)
+    median = stats.getValue(afwMath.MEDIAN)
+    stdev = stats.getValue(afwMath.STDEVCLIP)
+    if not np.isfinite(stdev):
+        return None
+    return (median - nsigma*stdev, median + nsigma*stdev)
 
 
 def append_acq_run(cls_instance, title, suffix=None):

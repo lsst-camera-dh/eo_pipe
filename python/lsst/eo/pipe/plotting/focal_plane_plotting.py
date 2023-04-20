@@ -10,6 +10,7 @@ import lsst.geom as lsstGeom
 from lsst.afw import cameraGeom
 import lsst.afw.math as afwMath
 from lsst.obs.lsst import LsstCam
+from .plotting_utils import nsigma_range
 
 __all__ = ['plot_amp_boundaries', 'plot_det', 'plot_focal_plane',
            'hist_amp_data', 'get_median_nsigma_range']
@@ -169,11 +170,7 @@ def get_median_nsigma_range(amp_data, nsigma=4, use_log10=False):
     amp_values = np.array(amp_values, dtype=np.float64)
     if use_log10:
         amp_values = np.array([np.log10(_) for _ in amp_values if _ > 0])
-    stats = afwMath.makeStatistics(amp_values,
-                                   afwMath.MEDIAN | afwMath.STDEVCLIP)
-    median = stats.getValue(afwMath.MEDIAN)
-    stdev = stats.getValue(afwMath.STDEVCLIP)
-    return (median - nsigma*stdev, median + nsigma*stdev)
+    return nsigma_range(amp_values, nsigma=nsigma)
 
 
 def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,

@@ -25,7 +25,8 @@ tasks:
       connections.exposures: 'postISRCCD'
       connections.camera: 'camera'
       connections.bias_stability_stats: 'bias_stability_stats'
-      connections.bias_profile_plots: 'bias_profile_plots'
+      connections.bias_serial_profile_plots: 'bias_serial_profile_plots'
+      connections.bias_parallel_profile_plots: 'bias_parallel_profile_plots'
   biasStabilityPlots:
     class: lsst.eo.pipe.BiasStabilityPlotsTask
     config:
