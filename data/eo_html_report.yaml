@@ -12,7 +12,9 @@ slot_plot_tables :
     header_text: "Median bias profiles"
     rows:
       - text: "Median bias profiles in the serial direction"
-        figure: "{run}/bias_profile_plots_*_{raft}_{slot}_*.png"
+        figure: "{run}/bias_serial_profile_plots_*_{raft}_{slot}_*.png"
+      - text: "Median bias profiles in the parallel direction"
+        figure: "{run}/bias_parallel_profile_plots_*_{raft}_{slot}_*.png"
   ptc:
     header_text: "Photon Transfer Curves"
     rows:
