@@ -8,9 +8,8 @@ import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
-from .isr_utils import apply_overscan_correction
 from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
-from .plotting import append_acq_run
+from .plotting import append_acq_run, nsigma_range
 
 
 __all__ = ['BiasStabilityTask', 'BiasStabilityPlotsTask']
@@ -81,11 +80,18 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                            doc="bias stability statistics",
                            storageClass="DataFrame",
                            dimensions=("instrument", "detector"))
-    bias_profile_plots = cT.Output(name="bias_profile_plots",
-                                   doc="profiles of median per-column bias "
-                                   "level as a function of serial pixel",
-                                   storageClass="Plot",
-                                   dimensions=("instrument", "detector"))
+    bias_serial_profile_plots = cT.Output(
+        name="bias_serial_profile_plots",
+        doc="profiles of median per-column bias "
+        "level as a function of serial pixel",
+        storageClass="Plot",
+        dimensions=("instrument", "detector"))
+    bias_parallel_profile_plots = cT.Output(
+        name="bias_parallel_profile_plots",
+        doc="profiles of median per-column bias "
+        "level as a function of parallel pixel",
+        storageClass="Plot",
+        dimensions=("instrument", "detector"))
 
 
 class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
@@ -106,6 +112,9 @@ class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=16)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=16)
+    nsigma_y_axis = pexConfig.Field(doc="Number of sigma to use for y-axis "
+                                    "range of profile plots",
+                                    dtype=float, default=10)
 
 
 class BiasStabilityTask(pipeBase.PipelineTask):
@@ -119,15 +128,20 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         self.oscan_method = self.config.oscan_method
         self.readout_size = self.config.readout_corner_size
         self.nsigma = self.config.nsigma
+        self.nsigma_y_axis = self.config.nsigma_y_axis
         self.figsize = self.config.xfigsize, self.config.yfigsize
 
     def run(self, exposures, camera):
         raw_det = camera[exposures[0].dataId['detector']]
         namps = len(raw_det)
         data = defaultdict(list)
-        bias_profile_plots = plt.figure(figsize=self.figsize)
-        ax = {amp: bias_profile_plots.add_subplot(4, 4, amp)
-              for amp in range(1, namps+1)}
+        profile_plots = {'serial': plt.figure(figsize=self.figsize),
+                         'parallel': plt.figure(figsize=self.figsize)}
+        axes = {key: {amp: plot.add_subplot(4, 4, amp)
+                      for amp in range(1, namps+1)}
+                for key, plot in profile_plots.items()}
+        values = {key: {amp: [] for amp in range(1, namps+1)}
+                  for key in profile_plots}
         for handle in exposures:
             exp = handle.get()
             image = exp.getImage()
@@ -153,20 +167,36 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 rc_mean, rc_stdev = image_stats(rc_image, nsigma=self.nsigma)
                 data['rc_mean'].append(rc_mean)
                 data['rc_stdev'].append(rc_stdev)
-                # Plot the serial profile, i.e., the column median as a
-                # function of x-pixel coordinate for this amp.
+                # Plot the profiles, i.e., the column/row median as a
+                # function of x/y-pixel coordinate for this amp.
                 imarr = image[bbox].array
                 if raw_amp.getRawFlipX():
                     imarr[:] = imarr[:, ::-1]
-                ax[i].plot(range(imarr.shape[1]), np.median(imarr, axis=0))
+                y_values = np.median(imarr, axis=0)
+                values['serial'][i].extend(y_values)
+                axes['serial'][i].plot(range(imarr.shape[1]), y_values)
+                if raw_amp.getRawFlipY():
+                    imarr[:] = imarr[::-1, :]
+                y_values = np.median(imarr, axis=1)
+                values['parallel'][i].extend(y_values)
+                axes['parallel'][i].plot(range(imarr.shape[0]), y_values)
         title = append_acq_run(self, 'median signal (ADU) vs column', det_name)
-        plt.suptitle(title)
-        plt.tight_layout(rect=(0, 0, 1, 0.95))
-        for i, amp in enumerate(det, 1):
-            ax[i].annotate(f"{amp.getName()}", (0.5, 0.95),
-                           xycoords='axes fraction', ha='center')
+        profile_plots['serial'].suptitle(title)
+        profile_plots['serial'].tight_layout(rect=(0, 0, 1, 0.95))
+        title = append_acq_run(self, 'median signal (ADU) vs row', det_name)
+        profile_plots['parallel'].suptitle(title)
+        profile_plots['parallel'].tight_layout(rect=(0, 0, 1, 0.95))
+        for key, ax in axes.items():
+            for i, amp in enumerate(det, 1):
+                ax[i].annotate(f"{amp.getName()}", (0.5, 0.95),
+                               xycoords='axes fraction', ha='center')
+                y_range = nsigma_range(values[key][i],
+                                       nsigma=self.nsigma_y_axis)
+                if y_range is not None:
+                    ax[i].set_ylim(*y_range)
         return pipeBase.Struct(bias_stability_stats=pd.DataFrame(data),
-                               bias_profile_plots=bias_profile_plots)
+                               bias_serial_profile_plots=profile_plots['serial'],
+                               bias_parallel_profile_plots=profile_plots['parallel'])
 
 
 class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
