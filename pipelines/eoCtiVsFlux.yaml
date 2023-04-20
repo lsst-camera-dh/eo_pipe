@@ -6,7 +6,6 @@ tasks:
     config:
       connections.raws: "raw"
       connections.bias: "bias"
-      connections.dark: "dark"
       connections.camera: "camera"
       connections.cti_vs_flux: "cti_vs_flux"
       connections.scti_vs_flux_plot: "scti_vs_flux_plot"

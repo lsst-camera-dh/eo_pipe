@@ -128,7 +128,7 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
         dtype=int)
     oscan_method = pexConfig.ChoiceField(
         doc="Overscan modeling method",
-        default="1d_poly",
+        default="median_per_row",
         dtype=str,
         allowed={
             "mean": "Mean of all selected pixels in overscan region",
@@ -139,6 +139,10 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
         dtype=int)
+    do_parallel_oscan = pexConfig.Field(
+        doc="Flag to do parallel overscan correction in addition to serial",
+        default=False,
+        dtype=bool)
     max_raws = pexConfig.Field(
         doc="Maximum number of raw flats to included in the combined flat.",
         default=10,
@@ -161,6 +165,7 @@ class EperTask(pipeBase.PipelineTask):
         self.npix = self.config.overscan_pixels
         self.oscan_method = self.config.oscan_method
         self.deg = self.config.polynomial_degree
+        self.do_parallel = self.config.do_parallel_oscan
         self.max_raws = self.config.max_raws
         self.no_per_frame_isr = self.config.no_per_frame_isr
 
@@ -184,7 +189,8 @@ class EperTask(pipeBase.PipelineTask):
                     images.append(
                         apply_minimal_isr(raw, bias, dark, amp, dx=self.dx,
                                           oscan_method=self.oscan_method,
-                                          deg=self.deg))
+                                          deg=self.deg,
+                                          do_parallel=self.do_parallel))
             combined_flat = afw_math.statisticsStack(images, afw_math.MEDIAN)
             scti, pcti = compute_ctis(combined_flat, det[amp], npix=self.npix,
                                       subtract_bias_est=self.no_per_frame_isr)
