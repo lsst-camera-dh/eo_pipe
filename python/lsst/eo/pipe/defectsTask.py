@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
-from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask
+from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask, \
+    MeasureDefectsTaskConfig, MeasureDefectsTask
+from lsst.cp.pipe.defects import MeasureDefectsConnections
 import lsst.daf.butler as daf_butler
 import lsst.geom
 from lsst.ip.isr import Defects
@@ -16,7 +18,9 @@ from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
-__all__ = ["MergeSelectedDefectsTask", "DefectsPlotsTask"]
+__all__ = ["MergeSelectedDefectsTask", "EoMeasureBrightDefectsTask",
+           "EoMeasureDarkDefectsTask",
+           "BrightDefectsPlotsTask", "DarkDefectsPlotsTask"]
 
 
 def get_amp_data(repo, collections):
@@ -128,24 +132,161 @@ class MergeSelectedDefectsTask(MergeDefectsTask):
         butlerQC.put(outputs, outputRefs)
 
 
+class EoMeasureBrightDefectsConnections(MeasureDefectsConnections,
+                                        dimensions=("instrument", "detector")):
+    inputExp = cT.Input(
+        name="dark",
+        doc="Input ISR-processed combined exposure to measure.",
+        storageClass="ExposureF",
+        dimensions=("instrument", "detector"),
+        multiple=False,
+        isCalibration=True,
+    )
+    camera = cT.PrerequisiteInput(
+        name='camera',
+        doc="Camera associated with this exposure.",
+        storageClass="Camera",
+        dimensions=("instrument", ),
+        isCalibration=True,
+        lookupFunction=lookupStaticCalibration,
+    )
+    outputDefects = cT.Output(
+        name="eoBrightDefects",
+        doc="Output measured bright defects.",
+        storageClass="Defects",
+        dimensions=("instrument", "detector"),
+    )
+
+
+class EoMeasureBrightDefectsTaskConfig(
+        MeasureDefectsTaskConfig,
+        pipelineConnections=EoMeasureBrightDefectsConnections):
+    """
+    Configuration for measuring bright defects from combined dark exposures.
+    """
+    thresholdType = pexConfig.ChoiceField(
+        dtype=str,
+        doc="Defects threshold type: ``STDEV`` or ``VALUE``.",
+        default='VALUE',
+        allowed={'STDEV': "Use a multiple of the image standard deviation "
+                 "to determine the two-sided detection threshold.",
+                 'VALUE': "Use pixel value to determine detection threshold."})
+
+    darkCurrentThreshold = pexConfig.Field(
+        dtype=float,
+        doc=("If thresholdType=``VALUE``, dark current threshold (in e-/sec) "
+             "to define hot/bright pixels in dark images. "
+             "Unused if thresholdType==``STDEV``."),
+        default=5)
+
+    nPixBorderUpDown = pexConfig.Field(
+        dtype=int,
+        doc="Number of pixels to exclude from top & bottom of image when "
+        "looking for defects.",
+        default=0)
+
+    nPixBorderLeftRight = pexConfig.Field(
+        dtype=int,
+        doc="Number of pixels to exclude from left & right of image when "
+        "looking for defects.",
+        default=0)
+
+    badOnAndOffPixelColumnThreshold = pexConfig.Field(
+        dtype=int,
+        doc="Minimum number of bad pixels in a column for marking the smallest "
+        "contiguous set of pixels covering the bad pixels as all bad. "
+        "Set this a number larger than the column size to disable.",
+        default=10000)
+
+
+class EoMeasureBrightDefectsTask(MeasureDefectsTask):
+    """Task to measure defects in combined images."""
+
+    ConfigClass = EoMeasureBrightDefectsTaskConfig
+    _DefaultName = "eoMeasureBrightDefectsTask"
+
+
+class EoMeasureDarkDefectsConnections(MeasureDefectsConnections,
+                                      dimensions=("instrument", "detector")):
+    """Task to measure defects in combined flats under a certain filter."""
+    inputExp = cT.Input(
+        name="flat",
+        doc="Input ISR-processed combined exposure to measure.",
+        storageClass="ExposureF",
+        dimensions=("instrument", "detector", "physical_filter"),
+        multiple=False,
+        isCalibration=True)
+
+    camera = cT.PrerequisiteInput(
+        name='camera',
+        doc="Camera associated with this exposure.",
+        storageClass="Camera",
+        dimensions=("instrument", ),
+        isCalibration=True,
+        lookupFunction=lookupStaticCalibration)
+
+    outputDefects = cT.Output(
+        name="eoDarkDefects",
+        doc="Output measured defects.",
+        storageClass="Defects",
+        dimensions=("instrument", "detector", "physical_filter"))
+
+
+class EoMeasureDarkDefectsTaskConfig(
+        MeasureDefectsTaskConfig,
+        pipelineConnections=EoMeasureDarkDefectsConnections):
+    """
+    Configuration for measuring dark defects from combined flat exposures.
+    """
+    thresholdType = pexConfig.ChoiceField(
+        dtype=str,
+        doc="Defects threshold type: ``STDEV`` or ``VALUE``.",
+        default='VALUE',
+        allowed={'STDEV': "Use a multiple of the image standard deviation "
+                 "to determine the two-sided detection threshold.",
+                 'VALUE': "Use pixel value to determine detection threshold."})
+
+    fracThresholdFlat = pexConfig.Field(
+        dtype=float,
+        doc=("If thresholdType=``VALUE``, fractional threshold to define "
+             "dark pixels in flat images (fraction of the mean value per "
+             "amplifier). Unused if thresholdType==``STDEV``."),
+        default=0.8)
+
+    nPixBorderUpDown = pexConfig.Field(
+        dtype=int,
+        doc="Number of pixels to exclude from top & bottom of image when "
+        "looking for defects.",
+        default=0)
+
+    nPixBorderLeftRight = pexConfig.Field(
+        dtype=int,
+        doc="Number of pixels to exclude from left & right of image when "
+        "looking for defects.",
+        default=0)
+
+    badOnAndOffPixelColumnThreshold = pexConfig.Field(
+        dtype=int,
+        doc="Minimum number of bad pixels in a column for marking the smallest "
+        "contiguous set of pixels covering the bad pixels as all bad. "
+        "Set this a number larger than the column size to disable.",
+        default=10000)
+
+
+class EoMeasureDarkDefectsTask(MeasureDefectsTask):
+    """Task to measure dark defects in combined flats."""
+    ConfigClass = EoMeasureDarkDefectsTaskConfig
+    _DefaultName = "eoMeasureDarkDefectsTask"
+
+
 class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   dimensions=("instrument",)):
-    bright_defects = cT.Input(
-        name="bright_defects",
-        doc="Merged bright defects",
+    defects = cT.Input(
+        name="defects",
+        doc="Defects found by cp_pipe",
         storageClass="Defects",
         dimensions=("instrument", "detector"),
         multiple=True,
-        isCalibration=True,
-        deferLoad=True)
-
-    dark_defects = cT.Input(
-        name="dark_defects",
-        doc="Merged dark defects",
-        storageClass="Defects",
-        dimensions=("instrument", "detector"),
-        multiple=True,
-        isCalibration=True,
         deferLoad=True)
 
     camera = cT.PrerequisiteInput(
@@ -156,6 +297,75 @@ class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument",),
         lookupFunction=lookupStaticCalibration)
 
+
+class DefectsPlotsTaskConfig(pipeBase.PipelineTaskConfig,
+                             pipelineConnections=DefectsPlotsTaskConnections):
+    """Configuration for PixelDefectsPlotsTask"""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
+
+
+class DefectsPlotsTask(pipeBase.PipelineTask):
+    """
+    Base class for creating summary plots of pixel and column defects
+    over the focal plane.
+    """
+    ConfigClass = DefectsPlotsTaskConfig
+    _DefaultName = "defectsPlotsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.yfigsize, self.config.xfigsize
+        self.colthresh = self.config.colthresh
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        defects = {_.dataId['detector']: _ for _ in inputs['defects']}
+        camera = inputs['camera']
+        outputs = self.run(defects, camera)
+        butlerQC.put(outputs, outputRefs)
+
+    def run(self, defects, camera):
+        return ()
+
+    def make_defects_focalplane_plots(self, defects, camera, defect_type):
+        outputs = {}
+        column_data = {}
+        pixel_data = {}
+        for detector, handle in defects.items():
+            defects = handle.get()
+            det = camera[detector]
+            det_name = det.getName()
+            column_data[det_name], pixel_data[det_name] \
+                = tabulate_defects(det, defects, colthresh=self.colthresh)
+        outputs['column_data'] = column_data
+        outputs['pixel_data'] = pixel_data
+        xlabel = f"{defect_type} columns".lower()
+        title = append_acq_run(self, xlabel.title())
+        outputs['columns_fp_plot'], outputs['columns_fp_hist'] \
+            = self._make_fp_plot(column_data, title, xlabel)
+        xlabel = f"{defect_type} pixels".lower()
+        title = append_acq_run(self, xlabel.title())
+        outputs['pixels_fp_plot'], outputs['pixels_fp_hist'] \
+            = self._make_fp_plot(pixel_data, title, xlabel)
+        return outputs
+
+    def _make_fp_plot(self, amp_data, title, xlabel, z_range=None):
+        mosaic = plt.figure(figsize=self.figsize)
+        ax = mosaic.add_subplot(111)
+        plot_focal_plane(ax, amp_data, title=title, z_range=z_range,
+                         use_log10=True)
+        hist = plt.figure()
+        hist_amp_data(amp_data, xlabel, hist_range=z_range, use_log10=True,
+                      title=title)
+        return mosaic, hist
+
+
+class BrightDefectsPlotsTaskConnections(DefectsPlotsTaskConnections):
     bright_columns_fp_plot = cT.Output(
         name="bright_columns_fp_plot",
         doc="Bright columns focal plane mosaic",
@@ -179,6 +389,54 @@ class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Bright pixels focal plane histogram",
         storageClass="Plot",
         dimensions=("instrument",))
+
+    bright_defects_results = cT.Output(
+        name="bright_defects_results",
+        doc="Data frame of bright column and pixel defects results",
+        storageClass="DataFrame",
+        dimensions=("instrument",))
+
+
+class BrightDefectsPlotsTaskConfig(
+        DefectsPlotsTaskConfig,
+        pipelineConnections=BrightDefectsPlotsTaskConnections):
+    colthresh = pexConfig.Field(doc=("Minimum # continguous pixels "
+                                     "defining a bright column."),
+                                dtype=int, default=20)
+
+
+class BrightDefectsPlotsTask(DefectsPlotsTask):
+    """
+    Class for creating summary plots of bright column and pixel defects.
+    """
+    ConfigClass = BrightDefectsPlotsTaskConfig
+    _DefaultName = "brightDefectsPlotsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def run(self, defects, camera):
+        defect_type = "bright"
+        outputs = self.make_defects_focalplane_plots(defects, camera,
+                                                     defect_type)
+        return pipeBase.Struct(
+            bright_defects_results=convert_amp_data_to_df(
+                {'bright_columns': outputs['column_data'],
+                 'bright_pixels': outputs['pixel_data']}),
+            bright_columns_fp_plot=outputs['columns_fp_plot'],
+            bright_columns_fp_hist=outputs['columns_fp_hist'],
+            bright_pixels_fp_plot=outputs['pixels_fp_plot'],
+            bright_pixels_fp_hist=outputs['pixels_fp_hist'])
+
+
+class DarkDefectsPlotsTaskConnections(DefectsPlotsTaskConnections):
+    defects = cT.Input(
+        name="defects",
+        doc="Defects found by cp_pipe",
+        storageClass="Defects",
+        dimensions=("instrument", "detector", "physical_filter"),
+        multiple=True,
+        deferLoad=True)
 
     dark_columns_fp_plot = cT.Output(
         name="dark_columns_fp_plot",
@@ -204,115 +462,40 @@ class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument",))
 
-    defects_results = cT.Output(
-        name="defects_results",
-        doc="Data frame of column and pixel defects results",
+    dark_defects_results = cT.Output(
+        name="dark_defects_results",
+        doc="Data frame of dark column and pixel defects results",
         storageClass="DataFrame",
         dimensions=("instrument",))
 
 
-class DefectsPlotsTaskConfig(pipeBase.PipelineTaskConfig,
-                             pipelineConnections=DefectsPlotsTaskConnections):
-    """Configuration for PixelDefectsPlotsTask"""
-    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
-                               dtype=float, default=9)
-    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
-                               dtype=float, default=9)
-    bright_colthresh = pexConfig.Field(doc=("Minimum # continguous pixels "
-                                            "defining a bright column."),
-                                       dtype=int, default=20)
-    dark_colthresh = pexConfig.Field(doc=("Minimum # continguous pixels "
-                                          "defining a dark column."),
-                                     dtype=int, default=100)
-    acq_run = pexConfig.Field(doc="Acquisition run number.",
-                              dtype=str, default="")
+class DarkDefectsPlotsTaskConfig(
+        DefectsPlotsTaskConfig,
+        pipelineConnections=DarkDefectsPlotsTaskConnections):
+    colthresh = pexConfig.Field(doc=("Minimum # continguous pixels "
+                                     "defining a dark column."),
+                                dtype=int, default=100)
 
 
-class DefectsPlotsTask(pipeBase.PipelineTask):
+class DarkDefectsPlotsTask(DefectsPlotsTask):
     """
-    Summary plots of bright and dark pixel and column defects
-    over the focal plane.
+    Class for creating summary plots of dark column and pixel defects.
     """
-    ConfigClass = DefectsPlotsTaskConfig
-    _DefaultName = "defectsPlotsTask"
+    ConfigClass = DarkDefectsPlotsTaskConfig
+    _DefaultName = "darkDefectsPlotsTask"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.figsize = self.config.yfigsize, self.config.xfigsize
-        self.bright_colthresh = self.config.bright_colthresh
-        self.dark_colthresh = self.config.dark_colthresh
 
-    def runQuantum(self, butlerQC, inputRefs, outputRefs):
-        inputs = butlerQC.get(inputRefs)
-
-        bright_defects = {_.dataId['detector']: _ for
-                          _ in inputs['bright_defects']}
-
-        dark_defects = {_.dataId['detector']: _ for
-                        _ in inputs['dark_defects']}
-
-        camera = inputs['camera']
-
-        outputs = self.run(bright_defects, dark_defects, camera)
-        butlerQC.put(outputs, outputRefs)
-
-    def run(self, bright_defects, dark_defects, camera):
-        outputs = {}
-
-        bright_column_data = {}
-        bright_pixel_data = {}
-        for detector, handle in bright_defects.items():
-            defects = handle.get()
-            det = camera[detector]
-            det_name = det.getName()
-            columns, pixels = tabulate_defects(det, defects,
-                                               colthresh=self.bright_colthresh)
-            bright_column_data[det_name] = columns
-            bright_pixel_data[det_name] = pixels
-
-        outputs['bright_columns_fp_plot'], outputs['bright_columns_fp_hist'] \
-            = self._make_fp_plot(bright_column_data,
-                                 append_acq_run(self, "Bright Columns"),
-                                 "bright columns")
-        outputs['bright_pixels_fp_plot'], outputs['bright_pixels_fp_hist'] \
-            = self._make_fp_plot(bright_pixel_data,
-                                 append_acq_run(self, "Bright Pixels"),
-                                 "bright pixels")
-
-        dark_column_data = {}
-        dark_pixel_data = {}
-        for detector, handle in dark_defects.items():
-            defects = handle.get()
-            det = camera[detector]
-            det_name = det.getName()
-            columns, pixels = tabulate_defects(det, defects,
-                                               colthresh=self.dark_colthresh)
-            dark_column_data[det_name] = columns
-            dark_pixel_data[det_name] = pixels
-
-        outputs['dark_columns_fp_plot'], outputs['dark_columns_fp_hist'] \
-            = self._make_fp_plot(dark_column_data,
-                                 append_acq_run(self, "Dark Columns"),
-                                 "dark columns")
-        outputs['dark_pixels_fp_plot'], outputs['dark_pixels_fp_hist']  \
-            = self._make_fp_plot(dark_pixel_data,
-                                 append_acq_run(self, "Dark Pixels"),
-                                 "dark pixels")
-
-        outputs['defects_results'] = convert_amp_data_to_df(
-            {'bright_columns': bright_column_data,
-             'bright_pixels': bright_pixel_data,
-             'dark_columns': dark_column_data,
-             'dark_pixels': dark_pixel_data})
-
-        return pipeBase.Struct(**outputs)
-
-    def _make_fp_plot(self, amp_data, title, xlabel, z_range=None):
-        mosaic = plt.figure(figsize=self.figsize)
-        ax = mosaic.add_subplot(111)
-        plot_focal_plane(ax, amp_data, title=title, z_range=z_range,
-                         use_log10=True)
-        hist = plt.figure()
-        hist_amp_data(amp_data, xlabel, hist_range=z_range, use_log10=True,
-                      title=title)
-        return mosaic, hist
+    def run(self, defects, camera):
+        defect_type = "dark"
+        outputs = self.make_defects_focalplane_plots(defects, camera,
+                                                     defect_type)
+        return pipeBase.Struct(
+            dark_defects_results=convert_amp_data_to_df(
+                {'dark_columns': outputs['column_data'],
+                 'dark_pixels': outputs['pixel_data']}),
+            dark_columns_fp_plot=outputs['columns_fp_plot'],
+            dark_columns_fp_hist=outputs['columns_fp_hist'],
+            dark_pixels_fp_plot=outputs['pixels_fp_plot'],
+            dark_pixels_fp_hist=outputs['pixels_fp_hist'])

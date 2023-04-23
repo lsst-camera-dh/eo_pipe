@@ -1,0 +1,14 @@
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
+
+pipelineYaml: "${EO_PIPE_DIR}/pipelines/eoDarkDefects.yaml"
+extraQgraphOptions: "--config darkDefectsPlots:acq_run=' ${B_PROTOCOL_RUN}'"
+
+payload:
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  weekly: ${WEEKLY}
+  inCollection: u/jchiang/ptc_0_13144_w_2023_13
+  payloadName: eo_dark_defects_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason='sflat' and physical_filter='SDSSi'"

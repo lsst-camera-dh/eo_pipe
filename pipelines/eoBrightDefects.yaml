@@ -1,0 +1,36 @@
+description: Extract bright pixel defects from a set of dark exposures.
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.outputExposure: 'eoDarkIsr'
+      doWrite: true
+      doBrighterFatter: false
+      doDark: false
+      doFlat: false
+      doApplyGains: false
+      doFringe: false
+      doDefect: false
+  eoDarkTask:
+    class: lsst.cp.pipe.cpDarkTask.CpDarkTask
+    config:
+      connections.inputExp: 'eoDarkIsr'
+      connections.outputExp: 'eoDarkProc'
+      repair.doCosmicRay: false
+  eoDarkCombine:
+    class: lsst.cp.pipe.cpCombine.CalibCombineTask
+    config:
+      connections.inputExpHandles: 'eoDarkProc'
+      connections.outputData: 'eo_dark'
+      calibrationType: 'dark'
+      exposureScaling: "DarkTime"
+  eoMeasureBrightDefects:
+    class: lsst.eo.pipe.EoMeasureBrightDefectsTask
+    config:
+      connections.inputExp: 'eo_dark'
+      connections.outputDefects: 'eoBrightDefects'
+  brightDefectsPlots:
+    class: lsst.eo.pipe.BrightDefectsPlotsTask
+    config:
+      connections.defects: 'eoBrightDefects'
