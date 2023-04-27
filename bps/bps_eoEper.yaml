@@ -8,7 +8,7 @@ extraQgraphOptions: "--config eperFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  inCollection: ${EO_INCOLLECTION}
   payloadName: eo_eper_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason='sflat' and exposure.exposure_time < 100."
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason='sflat'"

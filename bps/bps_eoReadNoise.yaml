@@ -11,7 +11,7 @@ payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_read_noise_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_reason='bias' and exposure.science_program='{b_protocol_run}'"

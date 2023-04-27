@@ -141,7 +141,7 @@ class EperTaskConfig(pipeBase.PipelineTaskConfig,
         dtype=int)
     do_parallel_oscan = pexConfig.Field(
         doc="Flag to do parallel overscan correction in addition to serial",
-        default=False,
+        default=True,
         dtype=bool)
     max_raws = pexConfig.Field(
         doc="Maximum number of raw flats to included in the combined flat.",

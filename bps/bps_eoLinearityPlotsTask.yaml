@@ -8,7 +8,7 @@ extraQgraphOptions: "--config linearityFocalPlanePlots:acq_run=' ${PTC_RUN}'"
 payload:
   ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09,LSSTCam/photodiode
-  payloadName: eo_linearity_plots_{ptc_run}_{weekly}
+  inCollection: ${EO_PIPE_INCOLLECTION},${INSTRUMENT_NAME}/photodiode
+  payloadName: eo_linearity_plots_{ptc_run}_{weekly}_eotest
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{ptc_run}'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}'"

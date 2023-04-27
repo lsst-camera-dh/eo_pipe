@@ -8,7 +8,7 @@ extraQgraphOptions: "--config darkCurrentTask:acq_run=' ${B_PROTOCOL_RUN}'"
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_dark_current_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"

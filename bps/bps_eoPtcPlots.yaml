@@ -8,7 +8,7 @@ extraQgraphOptions: "--config ptcPlots:acq_run=' ${PTC_RUN}' --config ptcFocalPl
 payload:
   ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_ptc_plots_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"

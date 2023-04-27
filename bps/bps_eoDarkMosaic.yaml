@@ -1,14 +1,13 @@
+includeConfigs:
+  - ${PWD}/bps_htcondor_configs.yaml
+  - ${PWD}/bps_qgraph_options.yaml
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDarkMosaic.yaml
 
 payload:
-  b_protocol_run: 13162
+  b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/bias_0_13162_w_2022_39
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: dark_mosaic_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure=3021121200214 and detector in (0..188)"
-
-includeConfigs:
-  - ${CP_PIPE_PROCESSING_DIR}/bps/ctrl_bps_parsl_config.yaml
-
-computeSite: slurm_wq_32
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure=${EXPOSURE_ID}"
