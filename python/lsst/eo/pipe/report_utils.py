@@ -18,11 +18,15 @@ from xml.dom import minidom
 import yaml
 import lsst.daf.butler as daf_butler
 import lsst.utils
-from lsst.obs.lsst import LsstCam
+from lsst.obs.lsst import LsstCam, LsstTS8
 from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask, \
     ctiVsFluxTask, flatGainStabilityTask
+
+
+INSTRUMENTS = {'LSSTCam': LsstCam,
+               'LSST-TS8': LsstTS8}
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
@@ -72,7 +76,7 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
 
 
 RAFT_SLOT_MAP = defaultdict(list)
-for det in LsstCam.getCamera():
+for det in INSTRUMENTS[os.environ['INSTRUMENT_NAME']].getCamera():
     raft, slot = det.getName().split('_')
     RAFT_SLOT_MAP[raft].append(slot)
 
