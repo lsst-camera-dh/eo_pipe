@@ -10,6 +10,7 @@ tasks:
       doDark: false
       doFlat: false
       doApplyGains: false
+      doSaturation: false
       doFringe: false
       doDefect: false
   eoFlatMeasure:
