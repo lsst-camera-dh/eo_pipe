@@ -26,10 +26,15 @@ tasks:
       calibrationType: 'dark'
       exposureScaling: "DarkTime"
   eoMeasureBrightDefects:
-    class: lsst.eo.pipe.EoMeasureBrightDefectsTask
+    class: lsst.cp.pipe.defects.MeasureDefectsCombinedTask
     config:
       connections.inputExp: 'eo_dark'
       connections.outputDefects: 'eoBrightDefects'
+      thresholdType: 'VALUE'
+      darkCurrentThreshold: 5
+      nPixBorderUpDown: 0
+      nPixBorderLeftRight: 0
+      badOnAndOffPixelColumnThreshold: 10000
   brightDefectsPlots:
     class: lsst.eo.pipe.BrightDefectsPlotsTask
     config:

@@ -32,10 +32,15 @@ tasks:
       exposureScaling: 'Unity'
       scalingLevel: AMP
   eoMeasureDarkDefects:
-    class: lsst.eo.pipe.EoMeasureDarkDefectsTask
+    class: lsst.cp.pipe.defects.MeasureDefectsCombinedWithFilterTask
     config:
       connections.inputExp: 'eo_flat'
       connections.outputDefects: 'eoDarkDefects'
+      thresholdType: 'VALUE'
+      fracThresholdFlat: 0.8
+      nPixBorderUpDown: 0
+      nPixBorderLeftRight: 0
+      badOnAndOffPixelColumnThreshold: 10000
   darkDefectsPlots:
     class: lsst.eo.pipe.DarkDefectsPlotsTask
     config:
