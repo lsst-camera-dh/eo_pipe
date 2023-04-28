@@ -1,0 +1,7 @@
+#wcsServiceClass: lsst.ctrl.bps.htcondor.HTCondorService
+computeSite:
+site:
+  s3df:
+    profile:
+      condor:
+        +Walltime: 7200

@@ -1,6 +1,6 @@
 includeConfigs:
-  - ${PWD}/bps_htcondor_configs.yaml
-  - ${PWD}/bps_qgraph_options.yaml
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBFAnalysis.yaml
 extraQgraphOptions: "--config bfAnalysisTask:acq_run=' ${PTC_RUN}' --config bfAnalysisFpPlotsTask:acq_run=' ${PTC_RUN}'"
@@ -8,7 +8,7 @@ extraQgraphOptions: "--config bfAnalysisTask:acq_run=' ${PTC_RUN}' --config bfAn
 payload:
   ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_bf_analysis_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}'"

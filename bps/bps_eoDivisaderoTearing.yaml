@@ -1,6 +1,6 @@
 includeConfigs:
-  - ${PWD}/bps_htcondor_configs.yaml
-  - ${PWD}/bps_qgraph_options.yaml
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
 extraQgraphOptions: "--config divisaderoRaftPlots:acq_run=' ${B_PROTOCOL_RUN}' --config divisaderoFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
@@ -8,7 +8,7 @@ extraQgraphOptions: "--config divisaderoRaftPlots:acq_run=' ${B_PROTOCOL_RUN}' -
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/jchiang/ptc_0_13144_w_2023_09
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_divisadero_tearing_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and physical_filter='SDSSi'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"
