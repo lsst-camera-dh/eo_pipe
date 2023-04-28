@@ -75,8 +75,10 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
     os.symlink(fp_layout, dest)
 
 
+instrument_name = os.environ.get('INSTRUMENT_NAME', 'LSSTCam')
+
 RAFT_SLOT_MAP = defaultdict(list)
-for det in INSTRUMENTS[os.environ['INSTRUMENT_NAME']].getCamera():
+for det in INSTRUMENTS[instrument_name].getCamera():
     raft, slot = det.getName().split('_')
     RAFT_SLOT_MAP[raft].append(slot)
 
