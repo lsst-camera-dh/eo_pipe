@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
-from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask, \
-    MeasureDefectsTaskConfig, MeasureDefectsTask
-from lsst.cp.pipe.defects import MeasureDefectsConnections
+from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask
 import lsst.daf.butler as daf_butler
 import lsst.geom
 from lsst.ip.isr import Defects
@@ -18,9 +16,8 @@ from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
 
-__all__ = ["MergeSelectedDefectsTask", "EoMeasureBrightDefectsTask",
-           "EoMeasureDarkDefectsTask",
-           "BrightDefectsPlotsTask", "DarkDefectsPlotsTask"]
+__all__ = ["MergeSelectedDefectsTask", "BrightDefectsPlotsTask",
+           "DarkDefectsPlotsTask"]
 
 
 def get_amp_data(repo, collections):
@@ -130,153 +127,6 @@ class MergeSelectedDefectsTask(MergeDefectsTask):
         else:
             outputs = self.run(inputDefects, camera)
         butlerQC.put(outputs, outputRefs)
-
-
-class EoMeasureBrightDefectsConnections(MeasureDefectsConnections,
-                                        dimensions=("instrument", "detector")):
-    inputExp = cT.Input(
-        name="dark",
-        doc="Input ISR-processed combined exposure to measure.",
-        storageClass="ExposureF",
-        dimensions=("instrument", "detector"),
-        multiple=False,
-        isCalibration=True,
-    )
-    camera = cT.PrerequisiteInput(
-        name='camera',
-        doc="Camera associated with this exposure.",
-        storageClass="Camera",
-        dimensions=("instrument", ),
-        isCalibration=True,
-        lookupFunction=lookupStaticCalibration,
-    )
-    outputDefects = cT.Output(
-        name="eoBrightDefects",
-        doc="Output measured bright defects.",
-        storageClass="Defects",
-        dimensions=("instrument", "detector"),
-    )
-
-
-class EoMeasureBrightDefectsTaskConfig(
-        MeasureDefectsTaskConfig,
-        pipelineConnections=EoMeasureBrightDefectsConnections):
-    """
-    Configuration for measuring bright defects from combined dark exposures.
-    """
-    thresholdType = pexConfig.ChoiceField(
-        dtype=str,
-        doc="Defects threshold type: ``STDEV`` or ``VALUE``.",
-        default='VALUE',
-        allowed={'STDEV': "Use a multiple of the image standard deviation "
-                 "to determine the two-sided detection threshold.",
-                 'VALUE': "Use pixel value to determine detection threshold."})
-
-    darkCurrentThreshold = pexConfig.Field(
-        dtype=float,
-        doc=("If thresholdType=``VALUE``, dark current threshold (in e-/sec) "
-             "to define hot/bright pixels in dark images. "
-             "Unused if thresholdType==``STDEV``."),
-        default=5)
-
-    nPixBorderUpDown = pexConfig.Field(
-        dtype=int,
-        doc="Number of pixels to exclude from top & bottom of image when "
-        "looking for defects.",
-        default=0)
-
-    nPixBorderLeftRight = pexConfig.Field(
-        dtype=int,
-        doc="Number of pixels to exclude from left & right of image when "
-        "looking for defects.",
-        default=0)
-
-    badOnAndOffPixelColumnThreshold = pexConfig.Field(
-        dtype=int,
-        doc="Minimum number of bad pixels in a column for marking the smallest "
-        "contiguous set of pixels covering the bad pixels as all bad. "
-        "Set this a number larger than the column size to disable.",
-        default=10000)
-
-
-class EoMeasureBrightDefectsTask(MeasureDefectsTask):
-    """Task to measure defects in combined images."""
-
-    ConfigClass = EoMeasureBrightDefectsTaskConfig
-    _DefaultName = "eoMeasureBrightDefectsTask"
-
-
-class EoMeasureDarkDefectsConnections(MeasureDefectsConnections,
-                                      dimensions=("instrument", "detector")):
-    """Task to measure defects in combined flats under a certain filter."""
-    inputExp = cT.Input(
-        name="flat",
-        doc="Input ISR-processed combined exposure to measure.",
-        storageClass="ExposureF",
-        dimensions=("instrument", "detector", "physical_filter"),
-        multiple=False,
-        isCalibration=True)
-
-    camera = cT.PrerequisiteInput(
-        name='camera',
-        doc="Camera associated with this exposure.",
-        storageClass="Camera",
-        dimensions=("instrument", ),
-        isCalibration=True,
-        lookupFunction=lookupStaticCalibration)
-
-    outputDefects = cT.Output(
-        name="eoDarkDefects",
-        doc="Output measured defects.",
-        storageClass="Defects",
-        dimensions=("instrument", "detector", "physical_filter"))
-
-
-class EoMeasureDarkDefectsTaskConfig(
-        MeasureDefectsTaskConfig,
-        pipelineConnections=EoMeasureDarkDefectsConnections):
-    """
-    Configuration for measuring dark defects from combined flat exposures.
-    """
-    thresholdType = pexConfig.ChoiceField(
-        dtype=str,
-        doc="Defects threshold type: ``STDEV`` or ``VALUE``.",
-        default='VALUE',
-        allowed={'STDEV': "Use a multiple of the image standard deviation "
-                 "to determine the two-sided detection threshold.",
-                 'VALUE': "Use pixel value to determine detection threshold."})
-
-    fracThresholdFlat = pexConfig.Field(
-        dtype=float,
-        doc=("If thresholdType=``VALUE``, fractional threshold to define "
-             "dark pixels in flat images (fraction of the mean value per "
-             "amplifier). Unused if thresholdType==``STDEV``."),
-        default=0.8)
-
-    nPixBorderUpDown = pexConfig.Field(
-        dtype=int,
-        doc="Number of pixels to exclude from top & bottom of image when "
-        "looking for defects.",
-        default=0)
-
-    nPixBorderLeftRight = pexConfig.Field(
-        dtype=int,
-        doc="Number of pixels to exclude from left & right of image when "
-        "looking for defects.",
-        default=0)
-
-    badOnAndOffPixelColumnThreshold = pexConfig.Field(
-        dtype=int,
-        doc="Minimum number of bad pixels in a column for marking the smallest "
-        "contiguous set of pixels covering the bad pixels as all bad. "
-        "Set this a number larger than the column size to disable.",
-        default=10000)
-
-
-class EoMeasureDarkDefectsTask(MeasureDefectsTask):
-    """Task to measure dark defects in combined flats."""
-    ConfigClass = EoMeasureDarkDefectsTaskConfig
-    _DefaultName = "eoMeasureDarkDefectsTask"
 
 
 class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
