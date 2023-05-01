@@ -1,0 +1,51 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - EO_PIPE_INCOLLECTION
+
+b_protocol:
+  pipelines:
+    - bps_eoReadNoise.yaml
+    - bps_eoBrightDefects.yaml
+    - bps_eoDarkDefects.yaml
+    - bps_eoDarkCurrent.yaml
+    - bps_eoEper.yaml
+    - bps_eoPtcPLots.yaml
+    - bps_eoRaftCalibMosaics.yaml
+    - bps_eoRaftLambdaMosaics.yaml
+    - bps_eoLinearityPlots.yaml
+    - bps_eoDivisaderoTearing.yaml
+    - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
+  env_vars:
+    - B_PROTOCOL
+    - PTC_RUN
+    - HIGH_FLUX_FILTER
+    - LOW_FLUX_FILTER
+
+ptc:
+  pipelines:
+    - bps_eoPtc.yaml
+  env_vars:
+    - PTC_RUN
+
+flat_gain_stability:
+  pipelines:
+    - bps_eoFlatGainStability.yaml
+  env_vars:
+    - GAIN_STABILITY_RUN
+
+dark_mosaic:
+  pipelines:
+    - bps_eoDarkMosaic.yaml
+  env_vars:
+    - EXPOSURE_ID
+
+run_info:
+  pipelines:
+    - bps_eoRunInfo.yaml
+  env_vars:
+    - ACQ_RUN
