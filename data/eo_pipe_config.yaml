@@ -13,7 +13,7 @@ b_protocol:
     - bps_eoDarkDefects.yaml
     - bps_eoDarkCurrent.yaml
     - bps_eoEper.yaml
-    - bps_eoPtcPLots.yaml
+    - bps_eoPtcPlots.yaml
     - bps_eoRaftCalibMosaics.yaml
     - bps_eoRaftLambdaMosaics.yaml
     - bps_eoLinearityPlots.yaml

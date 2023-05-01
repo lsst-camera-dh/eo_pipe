@@ -47,6 +47,7 @@ class EoPipelines:
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
                        os.path.join(eo_pipe_dir, 'bps', pipeline)]
+            print('\n*****')
             print(' '.join(command))
             try:
                 subprocess.check_call(command)

@@ -11,4 +11,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_divisadero_tearing_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run} and exposure.observation_type='flat' and exposure.observation reason in ('sflat', 'sflat_lo') and physical_filter='${LOW_FLUX_FILTER}'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"
