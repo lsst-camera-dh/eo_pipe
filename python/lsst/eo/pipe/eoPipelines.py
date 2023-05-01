@@ -16,7 +16,6 @@ class EoPipelines:
         """
         Parameters
         ----------
-
         eo_pipeline_config : str
             Configuration file containing the lists of pipelines and
             environment variables for the various run types.
@@ -43,9 +42,9 @@ class EoPipelines:
             Type of run, e.g., b_protocol or ptc.
         """
         self._check_env_vars(run_type)
-        eo_pipe_dir = os.path.environ['EO_PIPE_DIR']
+        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         failed = []
-        for pipeline in self.configs[run_type]['pipelines']:
+        for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
                        os.path.join(eo_pipe_dir, 'bps', pipeline)]
             print(' '.join(command))

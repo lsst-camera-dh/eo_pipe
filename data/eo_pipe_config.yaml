@@ -21,7 +21,7 @@ b_protocol:
     - bps_eoBFAnalysis.yaml
     - bps_eoCtiVsFlux.yaml
   env_vars:
-    - B_PROTOCOL
+    - B_PROTOCOL_RUN
     - PTC_RUN
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
