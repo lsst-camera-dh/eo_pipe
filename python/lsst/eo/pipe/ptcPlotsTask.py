@@ -113,6 +113,19 @@ class PtcPlotsTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.figsize = (self.config.yfigsize, self.config.xfigsize)
 
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        ptc_results = inputs['ptc_results']
+        camera = inputs['camera']
+        try:
+            struct = self.run(ptc_results, camera)
+        except ValueError as eobj:
+            # Handle case where input ptc data have nans
+            self.log.info("ValueError raised:\n%s\nraising NoWorkFound", eobj)
+            raise pipeBase.NoWorkFound("Input ptc data raised ValueError")
+        else:
+            butlerQC.put(struct, outputRefs)
+
     def run(self, ptc_results, camera):
         detector = ptc_results.dataId['detector']
         det = camera[detector]
