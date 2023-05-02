@@ -23,21 +23,28 @@ __all__ = ["MergeSelectedDefectsTask", "BrightDefectsPlotsTask",
 def get_amp_data(repo, collections):
     """Return amp-level pixel defects data."""
     butler = daf_butler.Butler(repo, collections=collections)
-    dsrefs = list(set(butler.registry.queryDatasets('defectsResults',
-                                                    findFirst=True)))
-    df = butler.get(dsrefs[0])
-    fields = 'bright_columns bright_pixels dark_columns dark_pixels'.split()
 
     amp_data = defaultdict(lambda: defaultdict(dict))
-    for _, row in df.iterrows():
-        for field in fields:
-            amp_data[field][row.det_name][row.amp_name] = row[field]
+    defect_fields = {
+        'bright_defects_results': ('bright_columns', 'bright_pixels'),
+        'dark_defects_results': ('dark_columns', 'dark_pixels')
+    }
+    for dstype, fields in defect_fields.items():
+        dsrefs = list(set(butler.registry.queryDatasets(dstype,
+                                                        findFirst=True)))
+        if not dsrefs:
+            continue
+        df = butler.get(dsrefs[0])
+
+        for _, row in df.iterrows():
+            for field in fields:
+                amp_data[field][row.det_name][row.amp_name] = row[field]
     return {field: dict(data) for field, data in amp_data.items()}
 
 
 def get_plot_locations(repo, collections):
-    dstypes = ('brightColumnsFpPlot', 'brightPixelsFpPlot',
-               'darkColumnsFpPlot', 'darkPixelsFpPlot',
+    dstypes = ('bright_columns_fp_plot', 'bright_pixels_fp_plot',
+               'dark_columns_fp_plot', 'dark_pixels_fp_plot',
                'bright_columns_fp_hist', 'bright_pixels_fp_hist',
                'dark_columns_fp_hist', 'dark_pixels_fp_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
