@@ -37,7 +37,7 @@ def get_plot_locations(repo, collections):
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
-def get_pd_values(pd_integrals, ptc, amp_name='C10'):
+def get_pd_values(pd_integrals, ptc, amp_name):
     values = []
     for pair in ptc.inputExpIdPairs[amp_name]:
         if pair[0] not in pd_integrals or pair[1] not in pd_integrals:
@@ -193,7 +193,6 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         # Fit linear model to each amp.
         detector = ptc_ref.dataId['detector']
         ptc = ptc_ref.get()
-        pd_values = get_pd_values(pd_integrals, ptc)
         det = camera[detector]
         det_name = det.getName()
         resids = {}
@@ -202,6 +201,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         amp_data = defaultdict(list)
         for i, amp in enumerate(det, 1):
             amp_name = amp.getName()
+            pd_values = get_pd_values(pd_integrals, ptc, amp_name)
             gain = ptc.gain[amp_name]
             Ne = np.array(ptc.rawMeans[amp_name])*gain
             try:
