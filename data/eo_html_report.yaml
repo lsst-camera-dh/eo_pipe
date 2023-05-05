@@ -75,6 +75,18 @@ raft_plot_tables:
         figure : "{run}/eoRaftMosaic_*_SDSSz_*_{raft}_*.png"
       - text : "SDSSY"
         figure : "{run}/eoRaftMosaic_*_SDSSY_*_{raft}_*.png"
+      - text : "uv"
+        figure : "{run}/eoRaftMosaic_*_uv_*_{raft}_*.png"
+      - text : "blue"
+        figure : "{run}/eoRaftMosaic_*_blue_*_{raft}_*.png"
+      - text : "red"
+        figure : "{run}/eoRaftMosaic_*_red_*_{raft}_*.png"
+      - text : "nm750"
+        figure : "{run}/eoRaftMosaic_*_nm750_*_{raft}_*.png"
+      - text : "nm850"
+        figure : "{run}/eoRaftMosaic_*_nm850_*_{raft}_*.png"
+      - text : "nm960"
+        figure : "{run}/eoRaftMosaic_*_nm960_*_{raft}_*.png"
   calibration_frames:
      header_text: "Calibration Frames"
      rows:

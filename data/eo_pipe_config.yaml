@@ -10,6 +10,7 @@ b_protocol:
   pipelines:
     - bps_eoReadNoise.yaml
     - bps_eoRaftAmpCorrelations.yaml
+    - bps_eoBiasStability.yaml
     - bps_eoBrightDefects.yaml
     - bps_eoDarkDefects.yaml
     - bps_eoDarkCurrent.yaml
