@@ -1,0 +1,16 @@
+includeConfigs:
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftAmpCorrelations.yaml
+
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  ptc_run: ${PTC_RUN}
+  weekly: ${WEEKLY}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_raft_amp_correlations_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and ((exposure.observation_type='bias' and exposure.observation_reason='bias') or (exposure.observation_type='flat' and exposure.observation_reason='sflat' and physical_filter='${HIGH_FLUX_FILTER}'))"

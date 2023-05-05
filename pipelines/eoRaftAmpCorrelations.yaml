@@ -1,0 +1,14 @@
+description: Pipeline to compute raft-level correlations between amps.
+tasks:
+  raftOverscanCorrelations:
+    class: lsst.eo.pipe.OverscanCorrelationsTask
+    config:
+      connections.raw_frames: 'raw'
+      connections.camera: 'camera'
+      connections.overscan_correlation_plot: 'overscan_correlation_plot'
+  raftImagingCorrelations:
+    class: lsst.eo.pipe.ImagingCorrelationsTask
+    config:
+      connections.raw_frames: 'raw'
+      connections.camera: 'camera'
+      connections.imaging_correlation_plot: 'imaging_correlation_plot'
