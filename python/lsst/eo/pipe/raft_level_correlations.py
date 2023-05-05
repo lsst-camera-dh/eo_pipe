@@ -11,6 +11,13 @@ from .isr_utils import apply_minimal_isr
 __all__ = ('raft_oscan_correlations', 'raft_imaging_correlations')
 
 
+def pearson_r(x, y):
+    """
+    Compute Pearson correlation coefficient between two arrays.
+    """
+    return (np.mean(x*y) - np.mean(x)*np.mean(y))/np.std(x)/np.std(y)
+
+
 def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
                             vrange=None, stretch=viz.LinearStretch,
                             cmap='jet', figsize=(8, 8)):
@@ -158,8 +165,7 @@ def raft_imaging_correlations(flat1_refs, flat2_refs, camera,
                 data = data[::-1, :]
             segments.append(data)
     namps = len(segments)
-    data = np.array([np.corrcoef(segments[i[0]].ravel(),
-                                 segments[i[1]].ravel())[0, 1]
+    data = np.array([pearson_r(segments[i[0]].ravel(), segments[i[1]].ravel())
                      for i in itertools.product(range(namps), range(namps))])
     data = data.reshape((namps, namps))
     fig = plt.figure(figsize=figsize)
