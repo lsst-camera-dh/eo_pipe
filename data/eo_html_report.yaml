@@ -53,11 +53,13 @@ slot_plot_tables :
       - text: "Brighter-Fatter Covariances vs flux"
         figure: "{run}/bf_covariance_plots_*_{raft}_{slot}_*.png"
 raft_plot_tables:
-  noise:
-    header_text : "Electronic noise"
+  correlations:
+    header_text : "Correlations between amps"
     rows :
       - text : "Overscan Correlations"
         figure : "{run}/overscan_correlation_plot_*_{raft}_*.png"
+      - text : "Imaging Region Correlations"
+        figure : "{run}/imaging_correlation_plot_*_{raft}_*.png"
   flats_by_filter:
     header_text : "Flats by Filter"
     rows:
