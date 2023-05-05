@@ -8,12 +8,17 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from .dsref_utils import RaftOutputRefsMapper
+from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 from .raft_level_correlations import raft_oscan_correlations, \
     raft_imaging_correlations
 
 
 __all__ = ['ImagingCorrelationsTask', 'OverscanCorrelationsTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('overscan_correlation_plot', 'imaging_correlation_plot')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class ImagingCorrelationsTaskConnections(pipeBase.PipelineTaskConnections,
