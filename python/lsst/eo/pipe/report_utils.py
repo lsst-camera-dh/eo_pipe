@@ -4,7 +4,8 @@ This module contains functions make run reports for EO test data.
 The original version of this code was copied from
 https://github.com/lsst-camera-dh/EO-utilities/blob/master/python/lsst/eo_utils/base/report_utils.py
 """
-__all__ = ['write_run_report', 'link_eo_pipe_plots']
+
+__all__ = ['generate_report', 'write_run_report', 'link_eo_pipe_plots']
 
 
 import sys
@@ -13,6 +14,7 @@ import os
 from collections import defaultdict
 import shutil
 import logging
+import subprocess
 from xml.etree import ElementTree
 from xml.dom import minidom
 import yaml
@@ -32,6 +34,27 @@ INSTRUMENTS = {'LSSTCam': LsstCam,
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
 logger = logging.getLogger()
 logger.setLevel(logging.WARNING)
+
+
+def eo_pipe_data_dir(filename):
+    return os.path.join(os.environ['EO_PIPE_DIR'], 'data', filename)
+
+
+def generate_report(repo, pattern, acq_run, staging_dir='./eo_report_staging',
+                    htmldir='/sdf/group/rubin/web_data/lsstcam',
+                    collections=None):
+    butler = daf_butler.Butler(repo)
+    collections = [] if collections is None else list(collections)
+    collections.extend(butler.registry.queryCollections(pattern))
+
+    template_file = eo_pipe_data_dir('eo_html_report.yaml')
+    css_file = eo_pipe_data_dir('style.css')
+    kwargs = dict(template_file=template_file, css_file=css_file,
+                  plot_report_action='copy', overwrite=None)
+
+    subprocess.check_call(f"rm -rf {staging_dir}/*", shell=True)
+    link_eo_pipe_plots(repo, collections, staging_dir, acq_run)
+    write_run_report(acq_run, staging_dir, htmldir, **kwargs)
 
 
 def check_chained_collections(repo, collections):
