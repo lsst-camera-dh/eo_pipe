@@ -12,6 +12,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
+from .dh_utils import convert_amp_data_to_df
 from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
@@ -85,19 +86,6 @@ def tabulate_defects(det, defects, colthresh=100):
                                 + bbox.height*len(bad_cols))
     assert total_area == total_region_area
     return bad_columns, bad_pixels
-
-
-def convert_amp_data_to_df(amp_data_dict):
-    data = defaultdict(list)
-    for column, amp_data in amp_data_dict.items():
-        if not data:
-            for det_name in amp_data:
-                for amp_name in amp_data[det_name]:
-                    data['det_name'].append(det_name)
-                    data['amp_name'].append(amp_name)
-        for det_name, amp_name in zip(data['det_name'], data['amp_name']):
-            data[column].append(amp_data[det_name][amp_name])
-    return pd.DataFrame(data)
 
 
 class MergeSelectedDefectsTaskConfig(MergeDefectsTaskConfig):
