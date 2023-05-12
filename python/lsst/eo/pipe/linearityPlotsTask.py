@@ -295,7 +295,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 plt.ylim(-0.03, 0.03)
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         residual_plots.supxlabel('photodiode current integral')
-        residual_plots.supylabel('e-/pixel')
+        residual_plots.supylabel('fractional residuals')
         residual_plots.suptitle(f'Linearity Residuals, acq. run {acq_run}, '
                                 f'{det_name}')
 
