@@ -19,6 +19,7 @@ def convert_amp_data_to_df(amp_data_dict, camera=None):
     pandas.DataFrame
     """
     data = defaultdict(list)
+    detectors = []
     for column, amp_data in amp_data_dict.items():
         if not data:
             for detector in amp_data:
@@ -29,6 +30,9 @@ def convert_amp_data_to_df(amp_data_dict, camera=None):
                 for amp_name in amp_data[detector]:
                     data['det_name'].append(det_name)
                     data['amp_name'].append(amp_name)
-        for det_name, amp_name in zip(data['det_name'], data['amp_name']):
+                    detectors.append(detector)
+        for det_name, amp_name, detector in zip(data['det_name'],
+                                                data['amp_name'],
+                                                detectors):
             data[column].append(amp_data[detector][amp_name])
     return pd.DataFrame(data)
