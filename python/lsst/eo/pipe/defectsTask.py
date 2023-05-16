@@ -82,8 +82,8 @@ def tabulate_defects(det, defects, colthresh=100):
                 bad_cols.add(region.minX)
         bad_columns[amp_name] = len(bad_cols)
         isolated_regions = [_ for _ in regions if _.minX not in bad_cols]
-        bad_pixels[amp_name] = (sum(_.area for _ in isolated_regions)
-                                + bbox.height*len(bad_cols))
+        # Exclude columns from bad pixel counts
+        bad_pixels[amp_name] = sum(_.area for _ in isolated_regions)
     assert total_area == total_region_area
     return bad_columns, bad_pixels
 
