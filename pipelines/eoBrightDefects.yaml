@@ -25,6 +25,7 @@ tasks:
       connections.outputData: 'eo_dark'
       calibrationType: 'dark'
       exposureScaling: "DarkTime"
+      combine: 'MEDIAN'
   eoMeasureBrightDefects:
     class: lsst.cp.pipe.defects.MeasureDefectsCombinedTask
     config:

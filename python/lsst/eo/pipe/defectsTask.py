@@ -51,12 +51,17 @@ def get_plot_locations(repo, collections):
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
-def get_overlap_region(row, bbox):
-    llc = lsst.geom.Point2I(max(row.x0, bbox.minX),
-                            max(row.y0, bbox.minY))
-    urc = lsst.geom.Point2I(min(row.x0 + row.width - 1, bbox.maxX),
-                            min(row.y0 + row.height - 1, bbox.maxY))
-    return lsst.geom.Box2I(llc, urc)
+def get_overlap_subcolumns(row, bbox):
+    regions = []
+    xmin = max(row.x0, bbox.minX)
+    xmax = min(row.x0 + row.width - 1, bbox.maxX)
+    ymin = max(row.y0, bbox.minY)
+    ymax = min(row.y0 + row.height - 1, bbox.maxY)
+    for x in range(xmin, xmax + 1):
+        llc = lsst.geom.Point2I(x, ymin)
+        urc = lsst.geom.Point2I(x, ymax)
+        regions.append(lsst.geom.Box2I(llc, urc))
+    return regions
 
 
 def tabulate_defects(det, defects, colthresh=100):
@@ -73,7 +78,7 @@ def tabulate_defects(det, defects, colthresh=100):
                        f'{bbox.minY} - height < y0 <= {bbox.maxY}')
         regions = []
         for _, row in df.iterrows():
-            regions.append(get_overlap_region(row, bbox))
+            regions.extend(get_overlap_subcolumns(row, bbox))
         total_region_area += sum(_.area for _ in regions)
 
         bad_cols = set()
