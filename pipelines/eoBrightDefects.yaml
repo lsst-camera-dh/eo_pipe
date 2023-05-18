@@ -12,6 +12,8 @@ tasks:
       doApplyGains: false
       doFringe: false
       doDefect: false
+      doSaturation: false
+      doSuspect: false
   eoDarkTask:
     class: lsst.cp.pipe.cpDarkTask.CpDarkTask
     config:
