@@ -12,6 +12,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
+from .dh_utils import convert_amp_data_to_df
 from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
@@ -50,12 +51,17 @@ def get_plot_locations(repo, collections):
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
-def get_overlap_region(row, bbox):
-    llc = lsst.geom.Point2I(max(row.x0, bbox.minX),
-                            max(row.y0, bbox.minY))
-    urc = lsst.geom.Point2I(min(row.x0 + row.width - 1, bbox.maxX),
-                            min(row.y0 + row.height - 1, bbox.maxY))
-    return lsst.geom.Box2I(llc, urc)
+def get_overlap_subcolumns(row, bbox):
+    regions = []
+    xmin = max(row.x0, bbox.minX)
+    xmax = min(row.x0 + row.width - 1, bbox.maxX)
+    ymin = max(row.y0, bbox.minY)
+    ymax = min(row.y0 + row.height - 1, bbox.maxY)
+    for x in range(xmin, xmax + 1):
+        llc = lsst.geom.Point2I(x, ymin)
+        urc = lsst.geom.Point2I(x, ymax)
+        regions.append(lsst.geom.Box2I(llc, urc))
+    return regions
 
 
 def tabulate_defects(det, defects, colthresh=100):
@@ -72,7 +78,7 @@ def tabulate_defects(det, defects, colthresh=100):
                        f'{bbox.minY} - height < y0 <= {bbox.maxY}')
         regions = []
         for _, row in df.iterrows():
-            regions.append(get_overlap_region(row, bbox))
+            regions.extend(get_overlap_subcolumns(row, bbox))
         total_region_area += sum(_.area for _ in regions)
 
         bad_cols = set()
@@ -81,23 +87,10 @@ def tabulate_defects(det, defects, colthresh=100):
                 bad_cols.add(region.minX)
         bad_columns[amp_name] = len(bad_cols)
         isolated_regions = [_ for _ in regions if _.minX not in bad_cols]
-        bad_pixels[amp_name] = (sum(_.area for _ in isolated_regions)
-                                + bbox.height*len(bad_cols))
+        # Exclude columns from bad pixel counts
+        bad_pixels[amp_name] = sum(_.area for _ in isolated_regions)
     assert total_area == total_region_area
     return bad_columns, bad_pixels
-
-
-def convert_amp_data_to_df(amp_data_dict):
-    data = defaultdict(list)
-    for column, amp_data in amp_data_dict.items():
-        if not data:
-            for det_name in amp_data:
-                for amp_name in amp_data[det_name]:
-                    data['det_name'].append(det_name)
-                    data['amp_name'].append(amp_name)
-        for det_name, amp_name in zip(data['det_name'], data['amp_name']):
-            data[column].append(amp_data[det_name][amp_name])
-    return pd.DataFrame(data)
 
 
 class MergeSelectedDefectsTaskConfig(MergeDefectsTaskConfig):

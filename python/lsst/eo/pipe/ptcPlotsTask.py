@@ -14,6 +14,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
+from .dh_utils import convert_amp_data_to_df
 from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 from .dsref_utils import get_plot_locations_by_dstype
 
@@ -31,22 +32,33 @@ def get_amp_data(repo, collections, camera=None):
 
     amp_data = defaultdict(lambda: defaultdict(dict))
 
-    # Extra PTC results.
-    dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
-    for dsref in dsrefs:
-        det = camera[dsref.dataId['detector']]
-        det_name = det.getName()
-        ptc = butler.get(dsref)
-        for amp_name, values in ptc.ptcFitPars.items():
-            if len(values) != 3:
-                continue
-            ptc_a00, ptc_gain, ptc_var = values
-            amp_data['ptc_a00'][det_name][amp_name] = -ptc_a00
-            amp_data['ptc_gain'][det_name][amp_name] = ptc_gain
-            if ptc_var > 0:
-                amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
-            amp_data['ptc_turnoff'][det_name][amp_name] \
-                = ptc.ptcTurnoff[amp_name]
+    # Extract PTC results.
+    refs = set(butler.registry.queryDatasets('ptc_summary', findFirst=True))
+    if refs:
+        # A ptc_summary dataset exists.
+        df = butler.get(refs.pop())
+        fields = set(df.columns).difference(['amp_name', 'det_name'])
+        for _, row in df.iterrows():
+            for field in fields:
+                amp_data[field][row.det_name][row.amp_name] = row[field]
+    else:
+        # No ptc_summary dataset is available, so extract directly from
+        # ptc datasets.
+        dsrefs = list(set(butler.registry.queryDatasets('ptc', findFirst=True)))
+        for dsref in dsrefs:
+            det = camera[dsref.dataId['detector']]
+            det_name = det.getName()
+            ptc = butler.get(dsref)
+            for amp_name, values in ptc.ptcFitPars.items():
+                if len(values) != 3:
+                    continue
+                ptc_a00, ptc_gain, ptc_var = values
+                amp_data['ptc_a00'][det_name][amp_name] = -ptc_a00
+                amp_data['ptc_gain'][det_name][amp_name] = ptc_gain
+                if ptc_var > 0:
+                    amp_data['ptc_noise'][det_name][amp_name] = np.sqrt(ptc_var)
+                amp_data['ptc_turnoff'][det_name][amp_name] \
+                    = ptc.ptcTurnoff[amp_name]
 
     # Extract row means variance slopes
     dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
@@ -177,6 +189,16 @@ class PtcFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                            isCalibration=True,
                            multiple=True,
                            deferLoad=True)
+    camera = cT.PrerequisiteInput(name="camera",
+                                  doc="Camera used in observations",
+                                  storageClass="Camera",
+                                  isCalibration=True,
+                                  dimensions=("instrument",),
+                                  lookupFunction=lookupStaticCalibration)
+    ptc_summary = cT.Output(name="ptc_summary",
+                            doc="Summary of PTC-related measurements",
+                            storageClass="DataFrame",
+                            dimensions=("instrument",))
     ptc_a00 = cT.Output(name="ptc_a00_plot",
                         doc="Focal plane map of PTC a00",
                         storageClass="Plot",
@@ -238,15 +260,16 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         input_handles = butlerQC.get(inputRefs)
+        camera = input_handles['camera']
 
         ptc_results = {_.dataId['detector']: _ for
                        _ in input_handles['ptc_results']}
 
-        struct = self.run(ptc_results)
+        struct = self.run(ptc_results, camera)
         butlerQC.put(struct, outputRefs)
         plt.close()
 
-    def run(self, ptc_results):
+    def run(self, ptc_results, camera):
         """
         Create summary plots of PTC results for the full focal plane.
 
@@ -273,6 +296,7 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                 if ptc_var > 0:
                     amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
                 amp_data['ptc_turnoff'][detector][amp] = ptc.ptcTurnoff[amp]
+        df = convert_amp_data_to_df(amp_data, camera=camera)
         plots = {}
         hists = {}
         for field in amp_data:
@@ -285,7 +309,7 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
             hist_amp_data(amp_data[field], field, hist_range=z_range,
                           title=title)
 
-        return pipeBase.Struct(**plots, **hists)
+        return pipeBase.Struct(ptc_summary=df, **plots, **hists)
 
 
 class RowMeansVarianceTaskConnections(pipeBase.PipelineTaskConnections,
