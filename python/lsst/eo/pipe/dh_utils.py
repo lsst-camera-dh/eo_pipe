@@ -34,5 +34,9 @@ def convert_amp_data_to_df(amp_data_dict, camera=None):
         for det_name, amp_name, detector in zip(data['det_name'],
                                                 data['amp_name'],
                                                 detectors):
-            data[column].append(amp_data[detector][amp_name])
+            try:
+                value = amp_data[detector][amp_name]
+            except KeyError:
+                value = None
+            data[column].append(value)
     return pd.DataFrame(data)
