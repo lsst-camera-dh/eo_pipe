@@ -406,7 +406,7 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
             flat2 = ptc_frames[expIds[1]].get().getMaskedImage()
             diff = flat1.Factory(flat1, deep=True)
             diff -= flat2
-            det_name = det.getName()
+            det_name = det.getId()
             for amp in det:
                 amp_name = amp.getName()
                 bbox = amp.getBBox()
