@@ -463,7 +463,7 @@ class RowMeansVarianceTask(pipeBase.PipelineTask):
         plt.axis((xmin, xmax, ymin, ymax))
         plt.xlabel('2*(flux/(e-/pixel))/num_cols')
         plt.ylabel('var(row_means)')
-        plt.title(append_acq_run(self, det_name))
+        plt.title(append_acq_run(self, det.getName()))
 
         return pipeBase.Struct(row_means_variance_plot=fig,
                                row_means_variance_stats=pd.DataFrame(data))
