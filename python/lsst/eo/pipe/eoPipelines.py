@@ -1,4 +1,5 @@
 import os
+import sys
 import yaml
 import subprocess
 import click
@@ -44,6 +45,17 @@ class EoPipelines:
             raise RuntimeError("Missing required environment variables: "
                                f"{missing}")
 
+    def _print_inCollection(self):
+        print("Using input collection:")
+        command = (f"butler query-collections {os.environ['BUTLER_CONFIG']} "
+                   f"{os.environ['EO_PIPE_INCOLLECTION']}")
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
+            print("\nError querying for input collection. Aborting")
+            sys.exit(1)
+        print()
+
     def submit(self, run_type):
         """
         Run bps submit for each pipeline of the specified run type.
@@ -61,9 +73,10 @@ class EoPipelines:
             for pipeline in self.config[run_type]['pipelines']:
                 print(f"  {pipeline}")
             print()
+            self._print_inCollection()
         if self.dry_run:
             return
-        if not click.confirm("Proceed?", default=True):
+        if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
         for pipeline in self.config[run_type]['pipelines']:
