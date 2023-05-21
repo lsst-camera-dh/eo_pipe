@@ -1,6 +1,7 @@
 import os
 import yaml
 import subprocess
+import click
 
 
 __all__ = ['EoPipelines']
@@ -59,7 +60,11 @@ class EoPipelines:
             print("Running pipelines:")
             for pipeline in self.config[run_type]['pipelines']:
                 print(f"  {pipeline}")
+            print()
         if self.dry_run:
+            return
+        if not click.confirm("Proceed?", default=True):
+            print("Aborting runs.")
             return
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
