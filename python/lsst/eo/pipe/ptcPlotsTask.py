@@ -304,7 +304,8 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
             ax = plots[field].add_subplot(111)
             title = append_acq_run(self, field)
             z_range = self._z_range.get(field, None)
-            plot_focal_plane(ax, amp_data[field], title=title, z_range=z_range)
+            plot_focal_plane(ax, amp_data[field], camera=camera,
+                             title=title, z_range=z_range)
             hists[f'{field}_hist'] = plt.figure()
             hist_amp_data(amp_data[field], field, hist_range=z_range,
                           title=title)

@@ -197,18 +197,18 @@ class DefectsPlotsTask(pipeBase.PipelineTask):
         xlabel = f"{defect_type} columns".lower()
         title = append_acq_run(self, xlabel.title())
         outputs['columns_fp_plot'], outputs['columns_fp_hist'] \
-            = self._make_fp_plot(column_data, title, xlabel)
+            = self._make_fp_plot(column_data, title, xlabel, camera)
         xlabel = f"{defect_type} pixels".lower()
         title = append_acq_run(self, xlabel.title())
         outputs['pixels_fp_plot'], outputs['pixels_fp_hist'] \
-            = self._make_fp_plot(pixel_data, title, xlabel)
+            = self._make_fp_plot(pixel_data, title, xlabel, camera)
         return outputs
 
-    def _make_fp_plot(self, amp_data, title, xlabel, z_range=None):
+    def _make_fp_plot(self, amp_data, title, xlabel, camera, z_range=None):
         mosaic = plt.figure(figsize=self.figsize)
         ax = mosaic.add_subplot(111)
-        plot_focal_plane(ax, amp_data, title=title, z_range=z_range,
-                         use_log10=True)
+        plot_focal_plane(ax, amp_data, camera=camera, title=title,
+                         z_range=z_range, use_log10=True)
         hist = plt.figure()
         hist_amp_data(amp_data, xlabel, hist_range=z_range, use_log10=True,
                       title=title)
