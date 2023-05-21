@@ -12,14 +12,20 @@ class EoPipelines:
     run type, e.g., all the pipelines associated with a B-protocol or
     a PTC run.
     """
-    def __init__(self, eo_pipeline_config):
+    def __init__(self, eo_pipeline_config, verbose=True, dry_run=False):
         """
         Parameters
         ----------
         eo_pipeline_config : str
             Configuration file containing the lists of pipelines and
             environment variables for the various run types.
+        verbose : bool [True]
+            Set to True for verbose output.
+        dry_run : bool [False]
+            Set to True to do a dry-run, listing pipelines to be run.
         """
+        self.verbose = verbose
+        self.dry_run = dry_run
         with open(eo_pipeline_config) as fobj:
             self.config = yaml.safe_load(fobj)
 
@@ -28,6 +34,11 @@ class EoPipelines:
         required = (self.config['baseline']['env_vars']
                     + self.config[run_type]['env_vars'])
         missing = [_ for _ in required if _ not in os.environ]
+        if self.verbose:
+            print("Using environment variables:")
+            for key in required:
+                print(f"  {key}: {os.environ[key]}")
+            print()
         if missing:
             raise RuntimeError("Missing required environment variables: "
                                f"{missing}")
@@ -44,11 +55,18 @@ class EoPipelines:
         self._check_env_vars(run_type)
         eo_pipe_dir = os.environ['EO_PIPE_DIR']
         failed = []
+        if self.verbose or self.dry_run:
+            print("Running pipelines:")
+            for pipeline in self.config[run_type]['pipelines']:
+                print(f"  {pipeline}")
+        if self.dry_run:
+            return
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
                        os.path.join(eo_pipe_dir, 'bps', pipeline)]
             print('\n*****')
             print(' '.join(command))
+            print('*****')
             try:
                 subprocess.check_call(command)
             except subprocess.CalledProcessError as eobj:

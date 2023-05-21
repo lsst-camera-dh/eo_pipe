@@ -2,6 +2,7 @@ baseline:
   env_vars:
     - WEEKLY
     - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - EO_PIPE_INCOLLECTION
