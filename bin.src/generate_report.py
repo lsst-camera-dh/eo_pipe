@@ -5,8 +5,7 @@ import argparse
 from lsst.eo.pipe import generate_report
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--repo', help='data repository', type=str,
-                    default='/repo/main')
+parser.add_argument('--repo', help='data repository', type=str, default=None)
 parser.add_argument('--acq_run', help='acquisition run', type=str)
 parser.add_argument('--pattern', help='pattern to find collections', type=str,
                     default=None)
@@ -23,9 +22,13 @@ pattern = args.pattern
 staging_dir = args.staging_dir
 htmldir = args.htmldir
 
+if repo is None:
+    repo = os.environ['BUTLER_CONFIG']
+
 if args.pattern is None:
     weekly = os.environ['WEEKLY']
-    pattern = f"eo_*_{acq_run}_{weekly}"
+    user = os.environ['USER']
+    pattern = f"u/{user}/eo_*_{acq_run}_{weekly}"
 
 generate_report(repo, pattern, acq_run, staging_dir=staging_dir,
                 htmldir=htmldir)
