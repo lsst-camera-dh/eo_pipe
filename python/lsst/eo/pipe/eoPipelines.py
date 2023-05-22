@@ -68,7 +68,6 @@ class EoPipelines:
             Type of run, e.g., b_protocol or ptc.
         """
         self._check_env_vars(run_type)
-        failed = []
         if self.verbose or self.dry_run:
             print("Running pipelines:")
             for pipeline in self.config[run_type]['pipelines']:
@@ -83,6 +82,7 @@ class EoPipelines:
         self._run_pipelines(run_type)
 
     def _run_pipelines(self, run_type):
+        failed = []
         eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
