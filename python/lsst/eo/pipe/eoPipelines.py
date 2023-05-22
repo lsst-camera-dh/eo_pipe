@@ -1,11 +1,13 @@
 import os
 import sys
+import time
+import datetime
 import yaml
 import subprocess
 import click
 
 
-__all__ = ['EoPipelines']
+__all__ = ['EoPipelines', 'CpPipelines']
 
 
 class EoPipelines:
@@ -14,11 +16,11 @@ class EoPipelines:
     run type, e.g., all the pipelines associated with a B-protocol or
     a PTC run.
     """
-    def __init__(self, eo_pipeline_config, verbose=True, dry_run=False):
+    def __init__(self, pipeline_config, verbose=True, dry_run=False):
         """
         Parameters
         ----------
-        eo_pipeline_config : str
+        pipeline_config : str
             Configuration file containing the lists of pipelines and
             environment variables for the various run types.
         verbose : bool [True]
@@ -28,7 +30,7 @@ class EoPipelines:
         """
         self.verbose = verbose
         self.dry_run = dry_run
-        with open(eo_pipeline_config) as fobj:
+        with open(pipeline_config) as fobj:
             self.config = yaml.safe_load(fobj)
 
     def _check_env_vars(self, run_type):
@@ -66,7 +68,6 @@ class EoPipelines:
             Type of run, e.g., b_protocol or ptc.
         """
         self._check_env_vars(run_type)
-        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         failed = []
         if self.verbose or self.dry_run:
             print("Running pipelines:")
@@ -79,6 +80,10 @@ class EoPipelines:
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
+        self._run_pipelines(run_type)
+
+    def _run_pipelines(self, run_type):
+        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
                        os.path.join(eo_pipe_dir, 'bps', pipeline)]
@@ -91,3 +96,51 @@ class EoPipelines:
                 failed.append((pipeline, eobj))
         for item in failed:
             print(item)
+
+
+class CpPipelines(EoPipelines):
+    """
+    Class to manage sequential bps submission of cp_pipe pipelines.
+    """
+    def __init__(self, cp_pipeline_config, verbose=True, dry_run=False):
+        super().__init__(cp_pipeline_config, verbose=verbose, dry_run=dry_run)
+
+    def _print_inCollection(self):
+        pass
+
+    def _run_pipelines(self, run_type):
+        cp_pipe_processing_dir = os.environ['CP_PIPE_PROCESSING_DIR']
+        for pipeline in self.config[run_type]['pipelines']:
+            command = ['bps', 'submit',
+                       os.path.join(cp_pipe_processing_dir, 'bps', pipeline)]
+            print('\n*****')
+            print(' '.join(command))
+            print('*****')
+            output = subprocess.check_output(command, stderr=subprocess.STDOUT)\
+                               .decode('utf-8').split('\n')
+            for line in output:
+                if line.startswith('Submit dir:'):
+                    submit_dir = line.strip().split()[-1]
+                if line.startswith('Run Id:'):
+                    run_id = line.strip().split()[-1]
+                    break
+            print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
+            while True:
+                i = 0
+                command = ["bps", "report", "--id", submit_dir]
+                output = subprocess.check_output(command,
+                                                 stderr=subprocess.STDOUT)\
+                                   .decode('utf-8').split('\n')
+                for line in output:
+                    if run_id in line and not line.startswith('Global job id'):
+                        state = line[3:].strip().split()[0]
+                        now = datetime.datetime\
+                                      .now().strftime('%Y-%m-%d %H:%M:%S')
+                        print(now, state)
+                time.sleep(10)
+                i += 1
+                if state == 'SUCCEEDED':
+                    break
+                if state == 'FAILED':
+                    raise RuntimeError(f"Pipeline {os.path.basename(pipeline)} "
+                                       "failed")

@@ -1,0 +1,27 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+
+b_protocol:
+  pipelines:
+    - bps_cpBias.yaml
+    - bps_cpDark.yaml
+    - bps_cpFlat.yaml
+    - bps_findDefects.yaml
+    - bps_cpPtc.yaml
+  env_vars:
+    - B_PROTOCOL_RUN
+    - PTC_RUN
+    - HIGH_FLUX_FILTER
+    - LOW_FLUX_FILTER
+
+ptc:
+  pipelines:
+    - bps_cpPtc.yaml
+  env_vars:
+    - B_PROTOCOL_RUN
+    - PTC_RUN
