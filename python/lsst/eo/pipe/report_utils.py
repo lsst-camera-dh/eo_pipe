@@ -314,7 +314,7 @@ def create_plot_table_row(tbody_node, desc, plot_file, outdir, **kwargs):
     """
     plot_files = glob.glob(plot_file)
     if not plot_files:
-        logger.warning("skipping missing plot %s", plot_file)
+        logger.debug("skipping missing plot %s", plot_file)
         return None
 
     basename = handle_file(plot_files[0], outdir,
