@@ -2,6 +2,7 @@ baseline:
   env_vars:
     - WEEKLY
     - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - EO_PIPE_INCOLLECTION
@@ -30,7 +31,7 @@ b_protocol:
 
 ptc:
   pipelines:
-    - bps_eoPtc.yaml
+    - bps_eoPtcPlots.yaml
   env_vars:
     - PTC_RUN
 

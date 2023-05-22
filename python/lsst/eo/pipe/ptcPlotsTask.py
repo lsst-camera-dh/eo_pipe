@@ -240,6 +240,10 @@ class PtcFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    ptc_gain_nsigma = pexConfig.Field(doc="Number of sigma to use in "
+                                      "autoscaling the ptc_gain focal "
+                                      "plane plot.",
+                                      dtype=float, default=6)
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
@@ -304,7 +308,9 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
             ax = plots[field].add_subplot(111)
             title = append_acq_run(self, field)
             z_range = self._z_range.get(field, None)
-            plot_focal_plane(ax, amp_data[field], title=title, z_range=z_range)
+            plot_focal_plane(ax, amp_data[field], camera=camera,
+                             title=title, z_range=z_range,
+                             nsigma=self.config.ptc_gain_nsigma)
             hists[f'{field}_hist'] = plt.figure()
             hist_amp_data(amp_data[field], field, hist_range=z_range,
                           title=title)

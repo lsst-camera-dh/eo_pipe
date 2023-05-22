@@ -1,19 +1,26 @@
 #!/usr/bin/env python
 import os
+import shutil
 import argparse
 from lsst.eo.pipe import EoPipelines
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--run_type', help='Type of analysis run',
-                    default='b_protocol', type=str)
-parser.add_argument('--eo_config', help='Run type config file',
-                    default=None, type=str)
+parser.add_argument('--run_type', default='b_protocol',
+                    help='Type of analysis run',
+                    choices=['b_protocol', 'ptc', 'flat_gain_stability',
+                             'dark_mosaic', 'run_info'])
+parser.add_argument('--verbose', action='store_false', default=True,
+                    help='Verbosity flag')
+parser.add_argument('--dry_run', action='store_true', default=False,
+                    help='Dry-run flag')
 args = parser.parse_args()
 
-config_file = args.eo_config
-if config_file is None:
-    config_file = os.path.join(os.environ['EO_PIPE_DIR'], 'data',
-                               'eo_pipe_config.yaml')
-eo_pipelines = EoPipelines(config_file)
+config_file = './eo_pipe_config.yaml'
+if not os.path.isfile(config_file):
+    src = os.path.join(os.environ['EO_PIPE_DIR'], 'data', config_file)
+    shutil.copy(src, config_file)
+
+eo_pipelines = EoPipelines(config_file, verbose=args.verbose,
+                           dry_run=args.dry_run)
 
 eo_pipelines.submit(args.run_type)
