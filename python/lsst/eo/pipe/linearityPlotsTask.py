@@ -143,9 +143,30 @@ class LinearityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                              "linearity turnoff calculation."),
                                         dtype=float, default=0.05)
     xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
-                               dtype=float, default=9)
+                               dtype=float, default=12)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
-                               dtype=float, default=9)
+                               dtype=float, default=12)
+    photodiodeIntegrationMethod = pexConfig.ChoiceField(
+        dtype=str,
+        doc="Integration method for photodiode monitoring data.",
+        default="CHARGE_SUM",
+        allowed={
+            "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
+                           "readout entries"),
+            "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
+                            "leading and trailing entries, which are "
+                            "nominally at zero baseline level."),
+            "CHARGE_SUM": ("Treat the current values as integrated charge "
+                           "over the sampling interval and simply sum "
+                           "the values, after subtracting a baseline level."),
+        }
+    )
+    photodiodeCurrentScale = pexConfig.Field(
+        dtype=float,
+        doc="Scale factor to apply to photodiode current values for the "
+            "``CHARGE_SUM`` integration method.",
+        default=-1.0,
+    )
 
 
 class LinearityPlotsTask(pipeBase.PipelineTask):
@@ -158,6 +179,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         self.fit_range = self.config.fit_range_min, self.config.fit_range_max
         self.max_frac_dev_spec = self.config.max_frac_dev_spec
         self.figsize = self.config.yfigsize, self.config.xfigsize
+        self.pd_integration_method = self.config.photodiodeIntegrationMethod
+        self.pd_current_scale = self.config.photodiodeCurrentScale
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -187,6 +210,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         pd_integrals = {}
         for exposure, (physical_filter, handle) in pd_data.items():
             photodiode = handle.get()
+            photodiode.integrationMethod = self.pd_integration_method
+            photodiode.currentScale = self.pd_current_scale
             pd_integrals[exposure] \
                 = photodiode.integrate()[0]*pd_corr(physical_filter)
 
@@ -199,6 +224,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         index = {}
         linearity_plots = plt.figure(figsize=self.figsize)
         amp_data = defaultdict(list)
+        notes = {}
         for i, amp in enumerate(det, 1):
             amp_name = amp.getName()
             pd_values = get_pd_values(pd_integrals, ptc, amp_name)
@@ -216,16 +242,24 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 # Results to include in final data frame:
                 amp_data['det_name'].append(det_name)
                 amp_data['amp_name'].append(amp_name)
-                amp_data['max_frac_dev'].append(
-                    max(np.abs(resids[amp_name][index[amp_name]])))
-                amp_data['max_observed_signal'].append(
-                    max(ptc.rawMeans[amp_name]))
+                max_frac_dev = max(np.abs(resids[amp_name][index[amp_name]]))
+                amp_data['max_frac_dev'].append(max_frac_dev)
+                max_observed_signal = max(ptc.rawMeans[amp_name])
+                amp_data['max_observed_signal'].append(max_observed_signal)
                 amp_data['linearity_turnoff'].append(linearity_turnoff)
                 # plot for current amp
                 ax = plt.subplot(4, 4, i)
                 plt.scatter(pd_values, Ne, s=2)
                 plt.scatter(pd_values[index[amp_name]], Ne[index[amp_name]],
                             s=2, color='red')
+                notes[amp_name] \
+                    = (f"{amp_name}\n"
+                       f"max_frac_dev = {max_frac_dev:.1e}\n"
+                       f"max_observed_signal = {max_observed_signal:7.0f}\n"
+                       f"linearity_turnoff = {linearity_turnoff:7.0f}")
+                plt.annotate(notes[amp_name], (0.05, 0.95),
+                             xycoords='axes fraction', verticalalignment='top',
+                             size='x-small')
                 plt.xscale('log')
                 plt.yscale('log')
                 plt.axhline(self.fit_range[0], linestyle=':')
@@ -245,6 +279,9 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             amp_name = amp.getName()
             try:
                 plt.scatter(pd_values, resids[amp_name], s=2)
+                plt.annotate(notes[amp_name], (0.05, 0.95),
+                             xycoords='axes fraction', verticalalignment='top',
+                             size='x-small')
             except KeyError:
                 pass
             else:
@@ -258,7 +295,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 plt.ylim(-0.03, 0.03)
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         residual_plots.supxlabel('photodiode current integral')
-        residual_plots.supylabel('e-/pixel')
+        residual_plots.supylabel('fractional residuals')
         residual_plots.suptitle(f'Linearity Residuals, acq. run {acq_run}, '
                                 f'{det_name}')
 
