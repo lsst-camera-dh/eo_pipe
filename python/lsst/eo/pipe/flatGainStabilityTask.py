@@ -175,13 +175,23 @@ class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
     pd_integration_method = pexConfig.ChoiceField(
         dtype=str,
         doc="Integration method for photodiode monitoring data.",
-        default="DIRECT_SUM",
+        default="CHARGE_SUM",
         allowed={
             "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
                            "readout entries"),
             "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
                             "leading and trailing entries, which are "
-                            "nominally at zero baseline level.")})
+                            "nominally at zero baseline level."),
+            "CHARGE_SUM": ("Treat the current values as integrated charge "
+                           "over the sampling interval and simply sum "
+                           "the values, after subtracting a baseline level."),
+        })
+    pd_current_scale = pexConfig.Field(
+        dtype=float,
+        doc="Scale factor to apply to photodiode current values for the "
+            "``CHARGE_SUM`` integration method.",
+        default=-1.0,
+    )
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
@@ -199,6 +209,7 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.y_range = self.config.y_range_min, self.config.y_range_max
         self.pd_integration_method = self.config.pd_integration_method
+        self.pd_current_scale = self.config.pd_current_scale
 
     def run(self, flat_gain_stability_stats, pd_data, camera):
         # Prepare dict of photodiode integrals and key by exposure.
@@ -207,6 +218,7 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
             exposure = ref.dataId['exposure']
             pd_calib = ref.get()
             pd_calib.integrationMethod = self.pd_integration_method
+            pd_calib.currentScale = self.pd_current_scale
             pd_integrals[exposure] = pd_calib.integrate()[0]
 
         # Sort by raft and slot:
