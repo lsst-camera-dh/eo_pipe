@@ -135,7 +135,7 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
             pd_calib = ref.get()
             pd_calib.integrationMethod = self.pd_integration_method
             pd_calib.currentScale = self.pd_current_scale
-            pd_integrals[exposure] = pd_calib.integrate()[0]
+            pd_integrals[exposure] = pd_calib.integrate()
 
         det = camera[raws[0].dataId['detector']]
         det_name = det.getName()
