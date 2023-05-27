@@ -7,13 +7,13 @@ tasks:
       connections.raws: "raw"
       connections.bias: "bias"
       connections.dark: "dark"
+      connections.pd_data: "photodiode"
       connections.camera: "camera"
       connections.flat_gain_stability_stats: "flat_gain_stability_stats"
   flatGainStabilityPlots:
     class: lsst.eo.pipe.FlatGainStabilityPlotsTask
     config:
       connections.flat_gain_stability_stats: "flat_gain_stability_stats"
-      connections.pd_data: "photodiode"
       connections.camera: "camera"
       connections.flat_gain_stability_plots: "flat_gain_stability_plots"
 
