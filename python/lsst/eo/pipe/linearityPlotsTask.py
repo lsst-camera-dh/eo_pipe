@@ -213,7 +213,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             photodiode.integrationMethod = self.pd_integration_method
             photodiode.currentScale = self.pd_current_scale
             pd_integrals[exposure] \
-                = photodiode.integrate()[0]*pd_corr(physical_filter)
+                = photodiode.integrate()*pd_corr(physical_filter)
 
         # Fit linear model to each amp.
         detector = ptc_ref.dataId['detector']

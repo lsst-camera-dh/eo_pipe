@@ -44,6 +44,14 @@ class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument", "detector"),
         isCalibration=True)
 
+    pd_data = cT.Input(
+        name="photodiode",
+        doc="Photodiode readings data.",
+        storageClass="IsrCalib",
+        dimensions=("instrument", "exposure"),
+        multiple=True,
+        deferLoad=True)
+
     camera = cT.PrerequisiteInput(
         name="camera",
         doc="Camera used in observations",
@@ -81,6 +89,26 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
         dtype=int)
+    pd_integration_method = pexConfig.ChoiceField(
+        dtype=str,
+        doc="Integration method for photodiode monitoring data.",
+        default="CHARGE_SUM",
+        allowed={
+            "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
+                           "readout entries"),
+            "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
+                            "leading and trailing entries, which are "
+                            "nominally at zero baseline level."),
+            "CHARGE_SUM": ("Treat the current values as integrated charge "
+                           "over the sampling interval and simply sum "
+                           "the values, after subtracting a baseline level."),
+        })
+    pd_current_scale = pexConfig.Field(
+        dtype=float,
+        doc="Scale factor to apply to photodiode current values for the "
+            "``CHARGE_SUM`` integration method.",
+        default=-1.0,
+    )
 
 
 class FlatGainStabilityTask(pipeBase.PipelineTask):
@@ -96,8 +124,19 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
         self.dx = self.config.nx_skip
         self.oscan_method = self.config.oscan_method
         self.deg = self.config.polynomial_degree
+        self.pd_integration_method = self.config.pd_integration_method
+        self.pd_current_scale = self.config.pd_current_scale
 
-    def run(self, raws, bias, dark, camera):
+    def run(self, raws, bias, dark, pd_data, camera):
+        # Prepare dict of photodiode integrals and key by exposure.
+        pd_integrals = {}
+        for ref in pd_data:
+            exposure = ref.dataId['exposure']
+            pd_calib = ref.get()
+            pd_calib.integrationMethod = self.pd_integration_method
+            pd_calib.currentScale = self.pd_current_scale
+            pd_integrals[exposure] = pd_calib.integrate()
+
         det = camera[raws[0].dataId['detector']]
         det_name = det.getName()
         raft, slot = det_name.split('_')
@@ -121,6 +160,7 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
                 data['raft'].append(raft)
                 data['slot'].append(slot)
                 data['exposure'].append(exposure)
+                data['pd_integral'].append(pd_integrals[exposure])
                 data['mjd'].append(mjd_obs)
                 data['amp_name'].append(amp_name)
                 data['median'].append(stats.getValue(afw_math.MEDIAN))
@@ -136,14 +176,6 @@ class FlatGainStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
              "integrals, as a function of time."),
         storageClass="DataFrame",
         dimensions=("instrument", "detector"),
-        multiple=True,
-        deferLoad=True)
-
-    pd_data = cT.Input(
-        name="photodiode",
-        doc="Photodiode readings data.",
-        storageClass="IsrCalib",
-        dimensions=("instrument", "exposure"),
         multiple=True,
         deferLoad=True)
 
@@ -172,26 +204,6 @@ class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                   dtype=float, default=0.998)
     y_range_max = pexConfig.Field(doc="Maximum of y-axis range in each plot",
                                   dtype=float, default=1.002)
-    pd_integration_method = pexConfig.ChoiceField(
-        dtype=str,
-        doc="Integration method for photodiode monitoring data.",
-        default="CHARGE_SUM",
-        allowed={
-            "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
-                           "readout entries"),
-            "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
-                            "leading and trailing entries, which are "
-                            "nominally at zero baseline level."),
-            "CHARGE_SUM": ("Treat the current values as integrated charge "
-                           "over the sampling interval and simply sum "
-                           "the values, after subtracting a baseline level."),
-        })
-    pd_current_scale = pexConfig.Field(
-        dtype=float,
-        doc="Scale factor to apply to photodiode current values for the "
-            "``CHARGE_SUM`` integration method.",
-        default=-1.0,
-    )
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
@@ -208,19 +220,8 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.y_range = self.config.y_range_min, self.config.y_range_max
-        self.pd_integration_method = self.config.pd_integration_method
-        self.pd_current_scale = self.config.pd_current_scale
 
-    def run(self, flat_gain_stability_stats, pd_data, camera):
-        # Prepare dict of photodiode integrals and key by exposure.
-        pd_integrals = {}
-        for ref in pd_data:
-            exposure = ref.dataId['exposure']
-            pd_calib = ref.get()
-            pd_calib.integrationMethod = self.pd_integration_method
-            pd_calib.currentScale = self.pd_current_scale
-            pd_integrals[exposure] = pd_calib.integrate()[0]
-
+    def run(self, flat_gain_stability_stats, camera):
         # Sort by raft and slot:
         handles = defaultdict(dict)
         for ref in flat_gain_stability_stats:
@@ -240,11 +241,10 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
                 time = 24.*(stats['mjd'].to_numpy() - t0)
                 signal = stats['median'].to_numpy()
                 amp_names = stats['amp_name'].to_numpy()
-                exposures = stats['exposure'].to_numpy()
+                pd_integrals = stats['pd_integral'].to_numpy()
                 for amp in det:
                     index = np.where(amp_names == amp.getName())
-                    pd_values = np.array([pd_integrals[_] for
-                                          _ in exposures[index]])
+                    pd_values = pd_integrals[index].copy()
                     pd_values /= np.mean(pd_values)
                     signal[index] /= pd_values
                     signal[index] /= np.mean(signal[index])
