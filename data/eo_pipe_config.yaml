@@ -37,6 +37,12 @@ ptc:
   env_vars:
     - PTC_RUN
 
+ptc_subset:
+  pipelines:
+    - bps_cpPtc_tagged.yaml
+  env_vars:
+    - PTC_CHAINED_COLLECTION
+
 flat_gain_stability:
   pipelines:
     - bps_eoFlatGainStability.yaml
