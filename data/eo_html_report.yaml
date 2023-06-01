@@ -52,6 +52,11 @@ slot_plot_tables :
     rows:
       - text: "Brighter-Fatter Covariances vs flux"
         figure: "{run}/bf_covariance_plots_*_{raft}_{slot}_*.png"
+  persistence:
+    header_text: "Persistence vs test sequence number"
+    rows:
+      - text: "Signal persistence as function of test sequence number"
+        figure: "{run}/persistence_plot_*_{raft}_{slot}_*.png"
 raft_plot_tables:
   correlations:
     header_text : "Correlations between amps"
