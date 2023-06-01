@@ -23,6 +23,7 @@ b_protocol:
     - bps_eoDivisaderoTearing.yaml
     - bps_eoBFAnalysis.yaml
     - bps_eoCtiVsFlux.yaml
+    - bps_eoPersistence.yaml
   env_vars:
     - B_PROTOCOL_RUN
     - PTC_RUN
