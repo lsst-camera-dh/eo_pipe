@@ -9,6 +9,15 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 from .plotting import append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
+
+
+__all__ = ['PersistenceTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('persistence_plot',)
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 class PersistenceTaskConnections(pipeBase.PipelineTaskConnections,
