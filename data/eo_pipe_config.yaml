@@ -53,6 +53,12 @@ flat_gain_stability:
     - GAIN_STABILITY_RUN
     - CCOBLED
 
+spot_measurement:
+  pipelines:
+    - bps_eoSpotMeasurement.yaml
+  env_vars:
+    - SPOT_RUN
+
 dark_mosaic:
   pipelines:
     - bps_eoDarkMosaic.yaml

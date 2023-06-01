@@ -1,0 +1,23 @@
+description: Analyze spot data using Duncan's throughput package
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.outputExposure: 'postISRCCD'
+      doWrite: true
+      doBrighterFatter: false
+      doBias: true
+      doDark: true
+      doFlat: false
+      doApplyGains: false
+      usePtcGains: false
+      doLinearize: false
+      doFringe: false
+      doDefect: false
+      overscan.fitType: 'MEDIAN_PER_ROW'
+      overscan.doParallelOverscan: true
+  spotMeasurement:
+    class: lsst.eo.pipe.SpotMeasurementTask
+    config:
+      connections.exposure_handles: 'postISRCCD'
