@@ -25,7 +25,7 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask, \
     ctiVsFluxTask, flatGainStabilityTask, raftAmpCorrelationsTask, \
-    persistenceTask
+    persistenceTask, scanModeTask
 
 
 INSTRUMENTS = {'LSSTCam': LsstCam,
@@ -76,7 +76,7 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
                  defectsTask, darkCurrentTask, divisaderoTearingTask,
                  ptcPlotsTask, eperTask, linearityPlotsTask, bfAnalysisTask,
                  biasStabilityTask, ctiVsFluxTask, flatGainStabilityTask,
-                 raftAmpCorrelationsTask, persistenceTask):
+                 raftAmpCorrelationsTask, persistenceTask, scanModeTask):
         try:
             locations = task.get_plot_locations(repo, found_collections)
         except Exception as eobj:

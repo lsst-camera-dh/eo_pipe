@@ -43,7 +43,7 @@ def get_tm_mode(scan_mode_file):
 
 
 class ScanModeTaskConnections(pipeBase.PipelineTaskConnections,
-                              dimensions=("instrument", "detector")):
+                              dimensions=("instrument",)):
     raw_handles = cT.Input(
         name="raw",
         doc="Raw FITS files from a scan mode frame.",
@@ -118,20 +118,22 @@ class ScanModeTask(pipeBase.PipelineTask):
 
         # Loop over rafts, retrieve the per-CCD file artifacts for
         # each raft, extract the scan mode data, and make plots.
-        for raft, exposure_refs in raft_data.items():
+        for raft, exposure_handles in raft_data.items():
             raft_files = {}
-            for detector, ref in exposure_refs.items():
-                butler = ref.butler
+            refs = []
+            for detector, handle in exposure_handles.items():
+                butler = handle.butler
                 det_name = camera[detector].getName()
                 slot = det_name.split('_')[1]
-                file_name = os.path.basename(butler.getURI(ref).path)
+                file_name = str(butler.getURI(handle.ref).path).lstrip('/')
                 raft_files[slot] = os.path.join('.', file_name)
-            ref.butler.retrieveArtifacts(exposure_refs.values(), "./")
+                refs.append(handle.ref)
+            handle.butler.retrieveArtifacts(refs, ".")
             tm_mode = get_tm_mode(f'./{file_name}')
             # Extract the scan mode data.
             raft_arrays, seg_list = get_raft_arrays(raft_files)
             # Clean up the file artifacts.
-            for item in raft_files:
+            for item in raft_files.values():
                 os.remove(item)
             # Make the dispersion plots for each CCD in the raft.
             for seg, scandata in zip(seg_list, raft_arrays):
