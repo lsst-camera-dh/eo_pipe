@@ -15,6 +15,7 @@ from .raftMosaicTask import *
 from .biasStabilityTask import *
 from .raftAmpCorrelationsTask import *
 from .persistenceTask import *
+from .scanModeTask import *
 from .runInfoTask import *
 from .isr_utils import *
 from .dsref_utils import *

@@ -1,0 +1,9 @@
+description: Produce scan mode plots
+tasks:
+  scanMode:
+    class: lsst.eo.pipe.ScanModeTask
+    config:
+      connections.raw_handles: 'raw'
+      connections.camera: 'camera'
+      connections.scan_mode_dispersion_plot: 'scan_mode_dispersion_plot'
+      connections.scan_mode_multiscope_plot: 'scan_mode_multiscope_plot'

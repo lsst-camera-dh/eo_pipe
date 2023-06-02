@@ -57,6 +57,11 @@ slot_plot_tables :
     rows:
       - text: "Signal persistence as function of test sequence number"
         figure: "{run}/persistence_plot_*_{raft}_{slot}_*.png"
+  scan_mode:
+    header_text: "Scan Mode"
+    rows:
+      - text: "Scan mode dispersion plots"
+        figure: "{run}/scan_mode_dispersion_plot_*_{raft}_{slot}_*.png"
 raft_plot_tables:
   correlations:
     header_text : "Correlations between amps"
@@ -115,6 +120,11 @@ raft_plot_tables:
      rows:
        - text: "Divisadero Tearing"
          figure: "{run}/divisadero_raft_plot_*_{raft}_*.png"
+  scan_mode:
+     header_text: "Scan Mode"
+     rows:
+       - text: "Scan mode multiscope plots"
+         figure: "{run}/scan_mode_multiscope_plot_*_{raft}_*.png"
 run_plot_tables:
   mosaics:
     header_text : "Focal Plane Mosaics"
