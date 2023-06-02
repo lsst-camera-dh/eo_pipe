@@ -24,6 +24,7 @@ b_protocol:
     - bps_eoBFAnalysis.yaml
     - bps_eoCtiVsFlux.yaml
     - bps_eoPersistence.yaml
+    - bps_eoScanMode.yaml
   env_vars:
     - B_PROTOCOL_RUN
     - PTC_RUN
