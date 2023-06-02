@@ -12,4 +12,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_persistence_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='dark' and exposure.observation_reason='bot_persistence'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type in ('dark', 'flat') and exposure.observation_reason='bot_persistence'"

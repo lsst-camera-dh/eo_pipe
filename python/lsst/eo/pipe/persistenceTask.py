@@ -1,9 +1,7 @@
 from collections import defaultdict
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import lsst.afw.math as afw_math
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -77,10 +75,19 @@ class PersistenceTask(pipeBase.PipelineTask):
     def run(self, exposure_handles):
         data = defaultdict(list)
         flags = afw_math.MEANCLIP | afw_math.STDEVCLIP
+        mjd0 = None
         for handle in exposure_handles:
             exp = handle.get()
             md = exp.getMetadata()
-
+            # Use the minimum MJD-TRG value as the reference time.  If
+            # the flat exposure is included in the data selection,
+            # then it will be the earliest exposure and will provide
+            # the reference time.  If there is no flat, then the
+            # MJD-TRG of the earliest dark frame will be used.
+            mjd_trg = md.get('MJD-TRG')
+            image_type = handle.dataId.records['exposure'].observation_type
+            if mjd0 is None or mjd_trg < mjd0:
+                mjd0 = mjd_trg
             mask_val = exp.getMask().getPlaneBitMask(self.masks)
             sctrl = afw_math.StatisticsControl(self.nsig, self.niter, mask_val)
             sctrl.setAndMask(mask_val)
@@ -93,8 +100,10 @@ class PersistenceTask(pipeBase.PipelineTask):
                 stats = afw_math.makeStatistics(amp_image, flags, sctrl)
                 data['det_name'].append(det_name)
                 data['amp_name'].append(amp_name)
+                data['image_type'].append(image_type)
                 data['tseqnum'].append(md.get('TSEQNUM'))
-                data['mjd'].append(md.get('MJD'))
+                data['time'].append((mjd_trg - mjd0)*24.0*60.0)
+                data['dark_time'].append(md.get('DARKTIME'))
                 data['mean_signal'].append(stats.getValue(afw_math.MEANCLIP))
                 data['stdev'].append(stats.getValue(afw_math.STDEVCLIP))
         df0 = pd.DataFrame(data)
@@ -102,15 +111,14 @@ class PersistenceTask(pipeBase.PipelineTask):
         fig = plt.figure()
         for amp in det:
             amp_name = amp.getName()
-            df = df0.query(f"amp_name=='{amp_name}'")
-            plt.scatter(df['tseqnum'], df['mean_signal'], s=2, label=amp_name)
-        xmax = (1.2*(np.max(df['tseqnum'] - np.min(df['tseqnum']))
-                     + np.min(df['tseqnum'])))
-        axis = plt.axis()
-        plt.xlim(axis[0], xmax)
+            df = df0.query(f"amp_name=='{amp_name}' and image_type=='dark'")
+            plt.scatter(df['time'], df['mean_signal'], s=2, label=amp_name)
         plt.legend(fontsize='x-small', ncol=2)
-        plt.xlabel('test sequence number')
-        plt.ylabel('mean residual signal (ADU)')
+        # Include 0 in x-axis range.
+        axis = plt.axis()
+        plt.xlim(0, axis[1])
+        plt.xlabel('Time since flat readout trigger (min)')
+        plt.ylabel('Mean residual signal (ADU)')
         plt.title(append_acq_run(self, "Persistence test", det_name))
-        return pipeBase.Struct(persistence_data=df,
+        return pipeBase.Struct(persistence_data=df0,
                                persistence_plot=fig)
