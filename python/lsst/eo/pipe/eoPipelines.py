@@ -116,14 +116,20 @@ class CpPipelines(EoPipelines):
             print('\n*****')
             print(' '.join(command))
             print('*****')
+            log_file = pipeline.replace('.yaml', '.log')
+            if os.path.isfile(log_file):
+                os.remove(log_file)
             output = subprocess.check_output(command, stderr=subprocess.STDOUT)\
                                .decode('utf-8').split('\n')
-            for line in output:
-                if line.startswith('Submit dir:'):
-                    submit_dir = line.strip().split()[-1]
-                if line.startswith('Run Id:'):
-                    run_id = line.strip().split()[-1]
-                    break
+            with open(log_file, 'w') as fobj:
+                for line in output:
+                    fobj.write(f"{line.strip()}\n")
+                    fobj.flush()
+                    if line.startswith('Submit dir:'):
+                        submit_dir = line.strip().split()[-1]
+                    if line.startswith('Run Id:'):
+                        run_id = line.strip().split()[-1]
+                        break
             print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
             while True:
                 i = 0
