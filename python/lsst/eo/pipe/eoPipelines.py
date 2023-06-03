@@ -109,10 +109,10 @@ class CpPipelines(EoPipelines):
         pass
 
     def _run_pipelines(self, run_type):
-        cp_pipe_processing_dir = os.environ['CP_PIPE_PROCESSING_DIR']
+        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
-                       os.path.join(cp_pipe_processing_dir, 'bps', pipeline)]
+                       os.path.join(eo_pipe_dir, 'bps', 'cp_pipe', pipeline)]
             print('\n*****')
             print(' '.join(command))
             print('*****')
