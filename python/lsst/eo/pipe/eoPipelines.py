@@ -119,8 +119,8 @@ class CpPipelines(EoPipelines):
             log_file = pipeline.replace('.yaml', '.log')
             if os.path.isfile(log_file):
                 os.remove(log_file)
-            output = subprocess.check_output(command, stderr=subprocess.STDOUT)\
-                               .decode('utf-8').split('\n')
+            output = subprocess.check_output(command, stderr=subprocess.STDOUT,
+                                             text=True).split("\n")
             with open(log_file, 'w') as fobj:
                 for line in output:
                     fobj.write(f"{line.strip()}\n")
@@ -135,8 +135,8 @@ class CpPipelines(EoPipelines):
                 i = 0
                 command = ["bps", "report", "--id", submit_dir]
                 output = subprocess.check_output(command,
-                                                 stderr=subprocess.STDOUT)\
-                                   .decode('utf-8').split('\n')
+                                                 stderr=subprocess.STDOUT,
+                                                 text=True).split('\n')
                 for line in output:
                     if run_id in line and not line.startswith('Global job id'):
                         state = line[3:].strip().split()[0]
