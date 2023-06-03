@@ -4,4 +4,5 @@ tasks:
   runInfoTask:
     class: lsst.eo.pipe.RunInfoTask
     config:
-      metadata_fields: "['BOTX', 'BOTY', 'MJD-TRG', 'TEMP10', 'CCDTEMP']"
+      metadata_fields: "['BOTX', 'BOTY', 'MJD-TRG', 'TEMP10', 'CCDTEMP', 'CCOBFLUX']"
+      use_astropy: false

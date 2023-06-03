@@ -9,7 +9,7 @@ instrument: ${INSTRUMENT_CLASS}
 payload:
   acq_run: ${ACQ_RUN}
   weekly: ${WEEKLY}
-  inCollection: LSSTCam/raw/all
+  inCollection: ${INSTRUMENT_NAME}/raw/all
   payloadName: eo_run_info_{acq_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{acq_run}' and detector in (112)"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{acq_run}' and detector in (20)"
