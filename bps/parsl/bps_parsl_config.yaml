@@ -1,0 +1,18 @@
+#parsl_config:
+#  retries: 1
+#  monitoring: true
+#  checkpoint: false
+#  log_level: logging.WARNING
+#  executor: WorkQueue
+#  nodes_per_block: 1
+#  provider: Local
+##  worker_options: "--memory=110000"   # srun --pty --cpus-per-task=32 bash
+#  worker_options: "--memory=450000"    # srun --pty --exclusive bash
+
+parsl_config:
+  retries: 1
+  monitoring: true
+  checkpoint: false
+  log_level: logging.WARNING
+  executor: ThreadPool
+  max_threads: 128

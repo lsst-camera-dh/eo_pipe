@@ -109,28 +109,34 @@ class CpPipelines(EoPipelines):
         pass
 
     def _run_pipelines(self, run_type):
-        cp_pipe_processing_dir = os.environ['CP_PIPE_PROCESSING_DIR']
+        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in self.config[run_type]['pipelines']:
             command = ['bps', 'submit',
-                       os.path.join(cp_pipe_processing_dir, 'bps', pipeline)]
+                       os.path.join(eo_pipe_dir, 'bps', 'cp_pipe', pipeline)]
             print('\n*****')
             print(' '.join(command))
             print('*****')
-            output = subprocess.check_output(command, stderr=subprocess.STDOUT)\
-                               .decode('utf-8').split('\n')
-            for line in output:
-                if line.startswith('Submit dir:'):
-                    submit_dir = line.strip().split()[-1]
-                if line.startswith('Run Id:'):
-                    run_id = line.strip().split()[-1]
-                    break
+            log_file = pipeline.replace('.yaml', '.log')
+            if os.path.isfile(log_file):
+                os.remove(log_file)
+            output = subprocess.check_output(command, stderr=subprocess.STDOUT,
+                                             text=True).split("\n")
+            with open(log_file, 'w') as fobj:
+                for line in output:
+                    fobj.write(f"{line.strip()}\n")
+                    fobj.flush()
+                    if line.startswith('Submit dir:'):
+                        submit_dir = line.strip().split()[-1]
+                    if line.startswith('Run Id:'):
+                        run_id = line.strip().split()[-1]
+                        break
             print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
             while True:
                 i = 0
                 command = ["bps", "report", "--id", submit_dir]
                 output = subprocess.check_output(command,
-                                                 stderr=subprocess.STDOUT)\
-                                   .decode('utf-8').split('\n')
+                                                 stderr=subprocess.STDOUT,
+                                                 text=True).split('\n')
                 for line in output:
                     if run_id in line and not line.startswith('Global job id'):
                         state = line[3:].strip().split()[0]
