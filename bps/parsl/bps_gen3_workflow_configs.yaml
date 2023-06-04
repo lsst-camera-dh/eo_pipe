@@ -1,0 +1,5 @@
+includeConfigs:
+  - ${GEN3_WORKFLOW_DIR}/python/desc/gen3_workflow/etc/bps_drp_baseline.yaml
+  - ${PWD}/bps_parsl_config.yaml
+
+isr_QgraphOptions: "--config isr:overscan.doParallelOverscan=True --config isr:overscan.fitType='MEDIAN_PER_ROW' --config isr:doCrosstalk=False"
