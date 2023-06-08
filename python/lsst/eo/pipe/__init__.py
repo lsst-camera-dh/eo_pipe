@@ -23,3 +23,4 @@ from .report_utils import *
 from .selection_utils import *
 from .et_results import *
 from .eoPipelines import *
+from .biasShiftsTask import *
