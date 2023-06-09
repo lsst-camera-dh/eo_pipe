@@ -13,6 +13,8 @@ parser.add_argument('--laconic', action='store_true', default=False,
                     help='Verbosity flag')
 parser.add_argument('--dry_run', action='store_true', default=False,
                     help='Dry-run flag')
+parser.add_argument('--bps_yaml', type=str, default=None,
+                    help='Specific pipeline to run for a given run type')
 args = parser.parse_args()
 
 config_file = './eo_pipe_config.yaml'
@@ -23,4 +25,4 @@ if not os.path.isfile(config_file):
 eo_pipelines = EoPipelines(config_file, verbose=not args.laconic,
                            dry_run=args.dry_run)
 
-eo_pipelines.submit(args.run_type)
+eo_pipelines.submit(args.run_type, bps_yaml=args.bps_yaml)

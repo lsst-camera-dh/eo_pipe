@@ -58,7 +58,7 @@ class EoPipelines:
             sys.exit(1)
         print()
 
-    def submit(self, run_type):
+    def submit(self, run_type, bps_yaml=None):
         """
         Run bps submit for each pipeline of the specified run type.
 
@@ -68,9 +68,16 @@ class EoPipelines:
             Type of run, e.g., b_protocol or ptc.
         """
         self._check_env_vars(run_type)
+
+        pipelines = self.config[run_type]['pipelines']
+        if bps_yaml is not None:
+            if bps_yaml not in pipelines:
+                raise RuntimeError(f"{bps_yaml} not in {run_type} pipelines.")
+            pipelines = [bps_yaml]
+
         if self.verbose or self.dry_run:
             print("Running pipelines:")
-            for pipeline in self.config[run_type]['pipelines']:
+            for pipeline in pipelines:
                 print(f"  {pipeline}")
             print()
             self._print_inCollection()
@@ -79,12 +86,12 @@ class EoPipelines:
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
-        self._run_pipelines(run_type)
+        self._run_pipelines(pipelines)
 
-    def _run_pipelines(self, run_type):
+    def _run_pipelines(self, pipelines):
         failed = []
         eo_pipe_dir = os.environ['EO_PIPE_DIR']
-        for pipeline in self.config[run_type]['pipelines']:
+        for pipeline in pipelines:
             command = ['bps', 'submit',
                        os.path.join(eo_pipe_dir, 'bps', pipeline)]
             print('\n*****')
@@ -108,9 +115,9 @@ class CpPipelines(EoPipelines):
     def _print_inCollection(self):
         pass
 
-    def _run_pipelines(self, run_type):
+    def _run_pipelines(self, pipelines):
         eo_pipe_dir = os.environ['EO_PIPE_DIR']
-        for pipeline in self.config[run_type]['pipelines']:
+        for pipeline in pipelines:
             command = ['bps', 'submit',
                        os.path.join(eo_pipe_dir, 'bps', 'cp_pipe', pipeline)]
             print('\n*****')
