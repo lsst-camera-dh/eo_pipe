@@ -6,9 +6,6 @@ from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-import scope
-import multiscope
-
 from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
 
 
@@ -22,6 +19,7 @@ def get_plot_locations(repo, collections):
 
 def get_raft_arrays(raft_files):
     """Get raftarrrays list for passing to scan mode plotting code."""
+    import scope
     seglist = []
     raftarrays = []
     slots = sorted(list(raft_files.keys()))
@@ -105,6 +103,7 @@ class ScanModeTask(pipeBase.PipelineTask):
         self.run(acq_run, raft_data, camera, butlerQC, outputRefs)
 
     def run(self, acq_run, raft_data, camera, butlerQC, outputRefs):
+        import scope, multiscope
         # Map the output references for the per-ccd dispersion plots.
         disp_ref_map = {}
         for ref in outputRefs.scan_mode_dispersion_plot:
