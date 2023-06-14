@@ -118,25 +118,23 @@ class CpPipelines(EoPipelines):
     def _run_pipelines(self, pipelines):
         eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in pipelines:
-            command = ['bps', 'submit',
-                       os.path.join(eo_pipe_dir, 'bps', 'cp_pipe', pipeline)]
-            print('\n*****')
-            print(' '.join(command))
-            print('*****')
             log_file = pipeline.replace('.yaml', '.log')
             if os.path.isfile(log_file):
                 os.remove(log_file)
+            command = ' '.join(['bps', 'submit',
+                                os.path.join(eo_pipe_dir, 'bps', 'cp_pipe',
+                                             pipeline), '2>&1 | tee', log_file])
+            print('\n*****')
+            print(command)
+            print('*****')
             output = subprocess.check_output(command, stderr=subprocess.STDOUT,
-                                             text=True).split("\n")
-            with open(log_file, 'w') as fobj:
-                for line in output:
-                    fobj.write(f"{line.strip()}\n")
-                    fobj.flush()
-                    if line.startswith('Submit dir:'):
-                        submit_dir = line.strip().split()[-1]
-                    if line.startswith('Run Id:'):
-                        run_id = line.strip().split()[-1]
-                        break
+                                             shell=True, text=True).split("\n")
+            for line in output:
+                if line.startswith('Submit dir:'):
+                    submit_dir = line.strip().split()[-1]
+                if line.startswith('Run Id:'):
+                    run_id = line.strip().split()[-1]
+                    break
             print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
             while True:
                 i = 0
