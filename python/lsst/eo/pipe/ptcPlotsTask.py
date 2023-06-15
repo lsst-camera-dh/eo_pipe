@@ -62,10 +62,12 @@ def get_amp_data(repo, collections, camera=None):
 
     # Extract row means variance slopes
     dsrefs = list(set(butler.registry.queryDatasets('row_means_variance_stats')))
+    dsrefs = sorted(dsrefs, key=lambda ref: ref.dataId['detector'])
     for ref in dsrefs:
         df = butler.get(ref)
         for _, row in df.iterrows():
-            amp_data['row_mean_var_slope'][row.det_name][row.amp_name] \
+            det_name = camera[row.det_name].getName()
+            amp_data['row_mean_var_slope'][det_name][row.amp_name] \
                 = row.slope
 
     return {field: dict(data) for field, data in amp_data.items()}
