@@ -28,6 +28,9 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     persistenceTask, scanModeTask
 
 
+__all__ = ['get_amp_data']
+
+
 INSTRUMENTS = {'LSSTCam': LsstCam,
                'LSST-TS8': LsstTS8}
 
@@ -35,6 +38,15 @@ INSTRUMENTS = {'LSSTCam': LsstCam,
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
 logger = logging.getLogger()
 logger.setLevel(logging.WARNING)
+
+
+def get_amp_data(repo, collections):
+    amp_data = {}
+    for task in (readNoiseTask, defectsTask, darkCurrentTask,
+                 divisaderoTearingTask, ptcPlotsTask, eperTask,
+                 linearityPlotsTask, bfAnalysisTask):
+        amp_data.update(task.get_amp_data(repo, collections))
+    return amp_data
 
 
 def eo_pipe_data_dir(filename):

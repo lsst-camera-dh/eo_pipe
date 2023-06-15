@@ -20,6 +20,8 @@ def get_amp_data(repo, collections):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('dark_current_stats',
                                                     findFirst=True)))
+    if not dsrefs:
+        return {}
     df = butler.get(dsrefs[0])
     amp_data = {column: defaultdict(dict) for column in df.columns
                 if column.startswith('dark_current')}
