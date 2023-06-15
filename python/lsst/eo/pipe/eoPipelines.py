@@ -16,7 +16,8 @@ class EoPipelines:
     run type, e.g., all the pipelines associated with a B-protocol or
     a PTC run.
     """
-    def __init__(self, pipeline_config, verbose=True, dry_run=False):
+    def __init__(self, pipeline_config, verbose=True, dry_run=False,
+                 log_dir='./logs'):
         """
         Parameters
         ----------
@@ -27,9 +28,14 @@ class EoPipelines:
             Set to True for verbose output.
         dry_run : bool [False]
             Set to True to do a dry-run, listing pipelines to be run.
+        log_idr : str ['./logs']
+            Directory for log files that contain the `bps submit`
+            screen output.
         """
         self.verbose = verbose
         self.dry_run = dry_run
+        self.log_dir = log_dir
+        os.makedirs(log_dir, exist_ok=True)
         with open(pipeline_config) as fobj:
             self.config = yaml.safe_load(fobj)
 
@@ -88,21 +94,40 @@ class EoPipelines:
             return
         self._run_pipelines(pipelines)
 
+    def _bps_submit_command(self, eo_pipe_folder, bps_yaml):
+        eo_pipe_dir = os.environ['EO_PIPE_DIR']
+        log_file = os.path.join(self.log_dir, bps_yaml.replace('.yaml', '.log'))
+        if os.path.isfile(log_file):
+            os.remove(log_file)
+        command = ' '.join(['bps', 'submit',
+                            os.path.join(eo_pipe_dir, eo_pipe_folder, bps_yaml),
+                            '2>&1 | tee', log_file])
+        print('\n*****')
+        print(command)
+        print('*****')
+        return command, log_file
+
     def _run_pipelines(self, pipelines):
         failed = []
-        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in pipelines:
-            command = ['bps', 'submit',
-                       os.path.join(eo_pipe_dir, 'bps', pipeline)]
-            print('\n*****')
-            print(' '.join(command))
-            print('*****')
+            command, log_file = self._bps_submit_command('bps', pipeline)
+            subprocess.check_call(command, shell=True)
+            # Because the `bps submit` output is redirected through
+            # `tee` in order to capture error messages in the log
+            # file, bps failures do not return a non-zero return code.
+            # Instead, we'll do `grep RuntimeError <log file>`, so
+            # that the jobs for which that grep succeeds are the `bps
+            # submit` jobs that failed.
             try:
-                subprocess.check_call(command)
-            except subprocess.CalledProcessError as eobj:
-                failed.append((pipeline, eobj))
+                subprocess.check_call(["grep", "RuntimeError", log_file])
+            except subprocess.CalledProcessError:
+                pass
+            else:
+                failed.append(pipeline)
+        if failed:
+            print("Failed bps submissions:")
         for item in failed:
-            print(item)
+            print("  ", item)
 
 
 class CpPipelines(EoPipelines):
@@ -116,27 +141,16 @@ class CpPipelines(EoPipelines):
         pass
 
     def _run_pipelines(self, pipelines):
-        eo_pipe_dir = os.environ['EO_PIPE_DIR']
         for pipeline in pipelines:
-            command = ['bps', 'submit',
-                       os.path.join(eo_pipe_dir, 'bps', 'cp_pipe', pipeline)]
-            print('\n*****')
-            print(' '.join(command))
-            print('*****')
-            log_file = pipeline.replace('.yaml', '.log')
-            if os.path.isfile(log_file):
-                os.remove(log_file)
+            command, _ = self._bps_submit_command('bps/cp_pipe', pipeline)
             output = subprocess.check_output(command, stderr=subprocess.STDOUT,
-                                             text=True).split("\n")
-            with open(log_file, 'w') as fobj:
-                for line in output:
-                    fobj.write(f"{line.strip()}\n")
-                    fobj.flush()
-                    if line.startswith('Submit dir:'):
-                        submit_dir = line.strip().split()[-1]
-                    if line.startswith('Run Id:'):
-                        run_id = line.strip().split()[-1]
-                        break
+                                             shell=True, text=True).split("\n")
+            for line in output:
+                if line.startswith('Submit dir:'):
+                    submit_dir = line.strip().split()[-1]
+                if line.startswith('Run Id:'):
+                    run_id = line.strip().split()[-1]
+                    break
             print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
             while True:
                 i = 0
