@@ -5,7 +5,8 @@ The original version of this code was copied from
 https://github.com/lsst-camera-dh/EO-utilities/blob/master/python/lsst/eo_utils/base/report_utils.py
 """
 
-__all__ = ['generate_report', 'write_run_report', 'link_eo_pipe_plots']
+__all__ = ['generate_report', 'write_run_report', 'link_eo_pipe_plots',
+           'get_amp_data']
 
 
 import sys
@@ -26,9 +27,6 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask, \
     ctiVsFluxTask, flatGainStabilityTask, raftAmpCorrelationsTask, \
     persistenceTask, scanModeTask
-
-
-__all__ = ['get_amp_data']
 
 
 INSTRUMENTS = {'LSSTCam': LsstCam,
