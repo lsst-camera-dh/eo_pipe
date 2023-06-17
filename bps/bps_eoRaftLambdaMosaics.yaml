@@ -1,9 +1,7 @@
 includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftMosaics.yaml
-extraQgraphOptions: "{isr_QgraphOptions} --config isr:doApplyGains=True"
 
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}

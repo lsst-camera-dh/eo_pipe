@@ -1,0 +1,1 @@
+isr_QgraphOptions: "--config isr:doCrosstalk=False --config isr:doSaturation=False --config isr:overscan.doParallelOverscan=True --config isr:overscan.fitType='MEDIAN_PER_ROW' --config isr:overscan.leadingColumnsToSkip=2 --config isr:overscan.leadingRowsToSkip=2"

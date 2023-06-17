@@ -152,6 +152,7 @@ class CpPipelines(EoPipelines):
                     run_id = line.strip().split()[-1]
                     break
             print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
+            state = None
             while True:
                 i = 0
                 command = ["bps", "report", "--id", submit_dir]

@@ -14,6 +14,9 @@ tasks:
       doLinearize: false
       doFringe: false
       doDefect: false
+      doSaturation: false
+      overscan.leadingColumnsToSkip: 2
+      overscan.leadingRowsToSkip: 2
       overscan.fitType: 'MEDIAN_PER_ROW'
       overscan.doParallelOverscan: true
   darkMosaic:

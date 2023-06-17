@@ -15,6 +15,7 @@ tasks:
       doLinearize: false
       doFringe: false
       doDefect: false
+      doSaturation: false
       overscan.leadingColumnsToSkip: 4
       overscan.trailingColumnsToSkip: 4
       overscan.fitType: 'MEDIAN_PER_ROW'

@@ -1,6 +1,5 @@
 includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStability.yaml
 extraQgraphOptions: "--config biasStabilityPlots:acq_run=' ${B_PROTOCOL_RUN}' --config biasStability:acq_run=' ${B_PROTOCOL_RUN}'"
