@@ -1,6 +1,6 @@
 includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
+  - ${EO_PIPE_DIR}/bps/cp_pipe/bps_qgraph_options.yaml
 #  - ${EO_PIPE_DIR}/bps/parsl/bps_gen3_workflow_configs.yaml
 
 # For CCOB data:

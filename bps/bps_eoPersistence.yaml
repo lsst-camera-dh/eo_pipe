@@ -1,7 +1,5 @@
 includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${EO_PIPE_DIR}/bps/bps_qgraph_options.yaml
-#  - ${CP_PIPE_PROCESSING_DIR}/bps/bps_default_configs.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoPersistence.yaml
 extraQgraphOptions: "--config persistence:acq_run=' ${B_PROTOCOL_RUN}'"
