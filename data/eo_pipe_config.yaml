@@ -31,6 +31,12 @@ b_protocol:
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
 
+read_noise_no_ptc:
+  pipelines:
+    - bps_eoReadNoiseNoPtc.yaml
+  env_vars:
+    - B_PROTOCOL_RUN
+
 ptc:
   pipelines:
     - bps_eoPtcPlots.yaml

@@ -17,10 +17,10 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
-from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
+from .dsref_utils import get_plot_locations_by_dstype
 
 
-__all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask']
+__all__ = ['ReadNoiseTask', 'ReadNoiseNoPtcTask', 'ReadNoiseFpPlotsTask']
 
 
 def get_amp_data(repo, collections, camera=None):
@@ -120,6 +120,78 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                 data['run'].append(obs_info.science_program)
                 data['exposure_id'].append(obs_info.exposure_id)
                 data['det_name'].append(det.getName())
+                data['amp_name'].append(amp_name)
+
+                bbox = amp.getRawSerialOverscanBBox()
+                bbox.grow(-self.edge_buffer)
+                overscan = exposure.getImage()[bbox]
+                sampler = SubRegionSampler(overscan, self.dxy, self.dxy)
+                stdevs = [
+                    afwMath.makeStatistics(subregion, afwMath.STDEV).getValue()
+                    for _, subregion in zip(range(self.nsamp), sampler)]
+                data['read_noise'].append(gain*float(np.median(stdevs)))
+                data['median'].append(gain*float(np.median(overscan.array)))
+        return pipeBase.Struct(read_noise=pd.DataFrame(data))
+
+
+class ReadNoiseNoPtcTaskConnections(pipeBase.PipelineTaskConnections,
+                                    dimensions=("instrument", "detector")):
+
+    raw_frames = cT.Input(name="raw_frames",
+                          doc="Raw input frames",
+                          storageClass="Exposure",
+                          dimensions=("instrument", "exposure", "detector"),
+                          multiple=True,
+                          deferLoad=True)
+
+    camera = cT.PrerequisiteInput(name="camera",
+                                  doc="Camera used in observations",
+                                  storageClass="Camera",
+                                  isCalibration=True,
+                                  dimensions=("instrument",),
+                                  lookupFunction=lookupStaticCalibration)
+
+    read_noise = cT.Output(name="eo_read_noise",
+                           doc="read noise statistics",
+                           storageClass="DataFrame",
+                           dimensions=("instrument", "detector"))
+
+
+class ReadNoiseNoPtcTaskConfig(pipeBase.PipelineTaskConfig,
+                               pipelineConnections=ReadNoiseNoPtcTaskConnections):
+    edge_buffer = pexConfig.Field(doc="Number of pixels to exclude around "
+                                  "the edge of the serial overscan region.",
+                                  dtype=int, default=2)
+    nsamp = pexConfig.Field(doc="Number of sub-regions to sample.",
+                            dtype=int, default=100)
+    dxy = pexConfig.Field(doc="Size in pixels of sub-regions.",
+                          dtype=int, default=20)
+
+
+class ReadNoiseNoPtcTask(pipeBase.PipelineTask):
+
+    ConfigClass = ReadNoiseNoPtcTaskConfig
+    _DefaultName = "readNoiseNoPtcTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.edge_buffer = self.config.edge_buffer
+        self.nsamp = self.config.nsamp
+        self.dxy = self.config.dxy
+
+    def run(self, raw_frames, camera):
+        data = defaultdict(list)
+        for ds_handle in raw_frames:
+            exposure = ds_handle.get()
+            obs_info = ObservationInfo(exposure.getMetadata())
+            det = exposure.getDetector()
+            det_name = det.getName()
+            for amp in det:
+                amp_name = amp.getName()
+                gain = camera[det_name][amp_name].getGain()
+                data['run'].append(obs_info.science_program)
+                data['exposure_id'].append(obs_info.exposure_id)
+                data['det_name'].append(det_name)
                 data['amp_name'].append(amp_name)
 
                 bbox = amp.getRawSerialOverscanBBox()

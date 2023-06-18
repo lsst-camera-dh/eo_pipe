@@ -1,0 +1,15 @@
+includeConfigs:
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoiseNoPtc.yaml
+extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
+
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  weekly: ${WEEKLY}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_read_noise_no_ptc_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_reason='bias' and exposure.science_program='{b_protocol_run}'"
