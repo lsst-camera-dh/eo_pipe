@@ -2,3 +2,5 @@ description: Pipeline to detect bias shifts measured from overscans.
 tasks:
   biasShifts:
     class: lsst.eo.pipe.BiasShiftsTask
+  biasShiftsFpPlots:
+    class: lsst.eo.pipe.BiasShiftsFpPlotsTask
