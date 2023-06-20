@@ -9,7 +9,7 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 import lsst.afw.cameraGeom
-from .plotting import plot_focal_plane, append_acq_run
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 
 
 __all__ = ['BiasShiftsTask', 'BiasShiftsFpPlotsTask']
@@ -270,8 +270,14 @@ class BiasShiftsFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   lookupFunction=lookupStaticCalibration)
 
     bias_shifts_plot = cT.Output(name="bias_shifts_plot",
-                                 doc=("Plot of number of detected bias shifts "
-                                      "over the run."),
+                                 doc=("Plot of the number of exposures per amp "
+                                      "with detected bias shifts."),
+                                 storageClass="Plot",
+                                 dimensions=("instrument",))
+
+    bias_shifts_hist = cT.Output(name="bias_shifts_hist",
+                                 doc=("Histogram of the number of exposures "
+                                      "per amp with detected bias shifts."),
                                  storageClass="Plot",
                                  dimensions=("instrument",))
 
@@ -296,20 +302,25 @@ class BiasShiftsFpPlotsTask(pipeBase.PipelineTask):
 
     def run(self, bias_shifts_stats, camera):
         amp_data = defaultdict(dict)
-        values = []
+        n_obs = None
         for handle in bias_shifts_stats:
             detector = handle.dataId['detector']
             det_name = camera[detector].getName()
             df = handle.get()
             for _, row in df.iterrows():
-                values.append(row.shift_count)
-                amp_data[det_name][row.amp] = values[-1]
-                # This should be the same value for all amps in all detectors.
-                n_obs = row.n_obs
+                # This *should* be the same value for all amps in all
+                # detectors.
+                if n_obs is None or row.n_obs > n_obs:
+                    n_obs = row.n_obs
+                # Reconstruct the number of exposures with detected shifts.
+                amp_data[det_name][row.amp] = row.n_obs*row.shift_freq
         z_range = [0, n_obs]
-        fig = plt.figure(figsize=self.figsize)
-        ax = fig.gca()
+        bias_shifts_plot = plt.figure(figsize=self.figsize)
+        ax = bias_shifts_plot.gca()
         title = append_acq_run(self, "Number of exposures with bias shifts")
         plot_focal_plane(ax, amp_data, camera=camera, title=title,
                          z_range=z_range)
-        return pipeBase.Struct(bias_shifts_plot=fig)
+        bias_shifts_hist = plt.figure()
+        hist_amp_data(amp_data, "Number of exposures", title=title)
+        return pipeBase.Struct(bias_shifts_plot=bias_shifts_plot,
+                               bias_shifts_hist=bias_shifts_hist)
