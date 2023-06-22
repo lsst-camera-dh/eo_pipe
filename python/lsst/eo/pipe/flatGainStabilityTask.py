@@ -109,6 +109,11 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
             "``CHARGE_SUM`` integration method.",
         default=-1.0,
     )
+    ccob_led_constraint = pexConfig.Field(
+        dtype=str,
+        doc="Value of CCOBLED keyword to use for filtering sflat exposures. "
+        "If 'None', then process all of the exposures.",
+        default="None")
 
 
 class FlatGainStabilityTask(pipeBase.PipelineTask):
@@ -126,6 +131,7 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
         self.deg = self.config.polynomial_degree
         self.pd_integration_method = self.config.pd_integration_method
         self.pd_current_scale = self.config.pd_current_scale
+        self.ccob_led_constraint = self.config.ccob_led_constraint
 
     def run(self, raws, bias, dark, pd_data, camera):
         # Prepare dict of photodiode integrals and key by exposure.
@@ -147,6 +153,11 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
             raw = handle.get()
             md = raw.getMetadata()
             exposure = handle.dataId['exposure']
+            if (self.ccob_led_constraint != "None"
+                and md.get('CCOBLED') != self.ccob_led_constraint):
+                self.log.info(f"Skipping exposure {exposure} "
+                              "because of ccob_led_constraint.")
+                continue
             self.log.info(f"Processing exposure {exposure}, "
                           f"image {i} of {num_raws}")
             mjd_obs = md.get('MJD-OBS')
@@ -204,6 +215,11 @@ class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                   dtype=float, default=0.998)
     y_range_max = pexConfig.Field(doc="Maximum of y-axis range in each plot",
                                   dtype=float, default=1.002)
+    ccob_led_constraint = pexConfig.Field(
+        dtype=str,
+        doc="Value of CCOBLED keyword to use for filtering sflat exposures. "
+        "If 'None', then process all of the exposures.",
+        default="None")
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
@@ -220,6 +236,7 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.y_range = self.config.y_range_min, self.config.y_range_max
+        self.ccob_led = self.config.ccob_led_constraint
 
     def run(self, flat_gain_stability_stats, camera):
         # Sort by raft and slot:
@@ -255,5 +272,10 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         fig.supxlabel(f'(MJD - {int(t0)})*24 (hours)')
         fig.supylabel('counts/mean(counts)')
-        fig.suptitle(append_acq_run(self, 'flat gain stability'))
+        if self.ccob_led != "None":
+            suptitle = append_acq_run(self, 'flat gain stability',
+                                      f"{self.ccob_led} LED")
+        else:
+            suptitle = append_acq_run(self, 'flat gain stability')
+        fig.suptitle(suptitle)
         return pipeBase.Struct(flat_gain_stability_plots=fig)
