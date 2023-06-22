@@ -2,7 +2,7 @@ includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoFlatGainStability.yaml
-extraQgraphOptions: "--config flatGainStabilityPlots:acq_run=' ${GAIN_STABILITY_RUN}'"
+extraQgraphOptions: "--config flatGainStabilityTask:ccob_led_constraint='${CCOBLED}' --config flatGainStabilityPlots:acq_run=' ${GAIN_STABILITY_RUN}' --config flatGainStabilityPlots:ccob_led_constraint='${CCOBLED}'"
 
 instrument: ${INSTRUMENT_CLASS}
 

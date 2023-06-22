@@ -49,6 +49,7 @@ flat_gain_stability:
     - bps_eoFlatGainStability.yaml
   env_vars:
     - GAIN_STABILITY_RUN
+    - CCOBLED
 
 dark_mosaic:
   pipelines:
