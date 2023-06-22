@@ -179,6 +179,8 @@ run_plot_tables:
         figure : "{run}/bf_xcorr_plot_*.png"
       - text : "Brighter-Fatter, ycorr slope"
         figure : "{run}/bf_ycorr_plot_*.png"
+      - text : "Bias Shifts"
+        figure : "{run}/bias_shifts_plot_*.png"
   histograms:
     header_text : "Focal Plane Histograms"
     rows :
@@ -226,6 +228,8 @@ run_plot_tables:
         figure : "{run}/bf_xcorr_hist_*.png"
       - text : "Brighter-Fatter, ycorr slope"
         figure : "{run}/bf_ycorr_hist_*.png"
+      - text : "Bias Shifts"
+        figure : "{run}/bias_shifts_hist_*.png"
   gain_stability:
     header_text: "Gain stability"
     rows:

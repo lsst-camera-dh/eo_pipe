@@ -1,12 +1,18 @@
+from collections import defaultdict
+import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.signal
 import scipy.stats
 import numpy as np
+from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 import lsst.afw.cameraGeom
+from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
 
-__all__ = ['BiasShiftsTask']
+
+__all__ = ['BiasShiftsTask', 'BiasShiftsFpPlotsTask']
 
 
 def readout_order_arr(arr, amp, verbose=False):
@@ -215,6 +221,8 @@ class BiasShiftsTask(pipeBase.PipelineTask):
             amp_stats = {'raft': raft, 'sensor': sensor, 'amp': amp}
             amp_shifts = amp_data[amp_data['Bias Shift (ADU)'].notna()]
 
+            n_obs = amp_data['obs_id'].nunique()
+            amp_stats['n_obs'] = n_obs
             if len(amp_shifts) == 0:
                 amp_stats['shift_freq'] = 0.
                 amp_stats['shift_count'] = 0.
@@ -225,7 +233,6 @@ class BiasShiftsTask(pipeBase.PipelineTask):
                 amp_stats['median_row'] = np.nan
                 amp_stats['std_row'] = np.nan
             else:
-                n_obs = amp_data['obs_id'].nunique()
                 n_obs_shifts = amp_shifts['obs_id'].nunique()
                 amp_stats['shift_freq'] = n_obs_shifts/n_obs
 
@@ -243,3 +250,77 @@ class BiasShiftsTask(pipeBase.PipelineTask):
         shifts_stats_df = pd.DataFrame(shifts_stats)
         return pipeBase.Struct(bias_shifts=bias_shifts_df,
                                bias_shifts_stats=shifts_stats_df)
+
+
+class BiasShiftsFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
+                                       dimensions=("instrument",)):
+
+    bias_shifts_stats = cT.Input(name="bias_shifts_stats",
+                                 doc="Per-amp statistics on bias shifts",
+                                 storageClass="DataFrame",
+                                 dimensions=("instrument", "detector"),
+                                 multiple=True,
+                                 deferLoad=True)
+
+    camera = cT.PrerequisiteInput(name="camera",
+                                  doc="Camera used in observations",
+                                  storageClass="Camera",
+                                  isCalibration=True,
+                                  dimensions=("instrument",),
+                                  lookupFunction=lookupStaticCalibration)
+
+    bias_shifts_plot = cT.Output(name="bias_shifts_plot",
+                                 doc=("Plot of the number of exposures per amp "
+                                      "with detected bias shifts."),
+                                 storageClass="Plot",
+                                 dimensions=("instrument",))
+
+    bias_shifts_hist = cT.Output(name="bias_shifts_hist",
+                                 doc=("Histogram of the number of exposures "
+                                      "per amp with detected bias shifts."),
+                                 storageClass="Plot",
+                                 dimensions=("instrument",))
+
+
+class BiasShiftsFpPlotsTaskConfig(pipeBase.PipelineTaskConfig,
+                                  pipelineConnections=BiasShiftsFpPlotsTaskConnections):
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
+
+
+class BiasShiftsFpPlotsTask(pipeBase.PipelineTask):
+    ConfigClass = BiasShiftsFpPlotsTaskConfig
+    _DefaultName = "biasShiftsFpPlotsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.xfigsize, self.config.yfigsize
+
+    def run(self, bias_shifts_stats, camera):
+        amp_data = defaultdict(dict)
+        n_obs = None
+        for handle in bias_shifts_stats:
+            detector = handle.dataId['detector']
+            det_name = camera[detector].getName()
+            df = handle.get()
+            for _, row in df.iterrows():
+                # This *should* be the same value for all amps in all
+                # detectors.
+                if n_obs is None or row.n_obs > n_obs:
+                    n_obs = row.n_obs
+                # Reconstruct the number of exposures with detected shifts.
+                amp_data[det_name][row.amp] = row.n_obs*row.shift_freq
+        z_range = [0, n_obs]
+        bias_shifts_plot = plt.figure(figsize=self.figsize)
+        ax = bias_shifts_plot.gca()
+        title = append_acq_run(self, "Number of exposures with bias shifts")
+        plot_focal_plane(ax, amp_data, camera=camera, title=title,
+                         z_range=z_range)
+        bias_shifts_hist = plt.figure()
+        hist_amp_data(amp_data, "Number of exposures", title=title)
+        return pipeBase.Struct(bias_shifts_plot=bias_shifts_plot,
+                               bias_shifts_hist=bias_shifts_hist)
