@@ -112,7 +112,7 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
     ccob_led_constraint = pexConfig.Field(
         dtype=str,
         doc="Value of CCOBLED keyword to use for filtering sflat exposures. "
-        "If None, then process all of the exposures.",
+        "If 'None', then process all of the exposures.",
         default="None")
 
 
@@ -218,7 +218,7 @@ class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
     ccob_led_constraint = pexConfig.Field(
         dtype=str,
         doc="Value of CCOBLED keyword to use for filtering sflat exposures. "
-        "If None, then process all of the exposures.",
+        "If 'None', then process all of the exposures.",
         default="None")
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
