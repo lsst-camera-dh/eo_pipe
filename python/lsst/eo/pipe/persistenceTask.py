@@ -75,19 +75,11 @@ class PersistenceTask(pipeBase.PipelineTask):
     def run(self, exposure_handles):
         data = defaultdict(list)
         flags = afw_math.MEANCLIP | afw_math.STDEVCLIP
-        mjd0 = None
         for handle in exposure_handles:
             exp = handle.get()
             md = exp.getMetadata()
-            # Use the minimum MJD-TRG value as the reference time.  If
-            # the flat exposure is included in the data selection,
-            # then it will be the earliest exposure and will provide
-            # the reference time.  If there is no flat, then the
-            # MJD-TRG of the earliest dark frame will be used.
             mjd_trg = md.get('MJD-TRG')
             image_type = handle.dataId.records['exposure'].observation_type
-            if mjd0 is None or mjd_trg < mjd0:
-                mjd0 = mjd_trg
             mask_val = exp.getMask().getPlaneBitMask(self.masks)
             sctrl = afw_math.StatisticsControl(self.nsig, self.niter, mask_val)
             sctrl.setAndMask(mask_val)
@@ -102,11 +94,13 @@ class PersistenceTask(pipeBase.PipelineTask):
                 data['amp_name'].append(amp_name)
                 data['image_type'].append(image_type)
                 data['tseqnum'].append(md.get('TSEQNUM'))
-                data['time'].append((mjd_trg - mjd0)*24.0*60.0)
+                data['mjd_trg'].append(mjd_trg)
                 data['dark_time'].append(md.get('DARKTIME'))
                 data['mean_signal'].append(stats.getValue(afw_math.MEANCLIP))
                 data['stdev'].append(stats.getValue(afw_math.STDEVCLIP))
         df0 = pd.DataFrame(data)
+        mjd0 = min(data['mjd_trg'])
+        df0['time'] = (df0['mjd_trg'] - mjd0)*24.0*60.0
 
         fig = plt.figure()
         for amp in det:
