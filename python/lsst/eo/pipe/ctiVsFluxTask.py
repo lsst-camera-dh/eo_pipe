@@ -131,7 +131,7 @@ class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
     flux_keyword = pexConfig.Field(
         doc=("FITS header keyword with target flux value "
              "for finding image pairs"),
-        default="",
+        default="CCOBFLUX",
         dtype=str)
     acq_run = pexConfig.Field(
         doc="Acquisition run number.",
