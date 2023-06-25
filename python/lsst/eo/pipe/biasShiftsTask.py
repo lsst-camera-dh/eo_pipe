@@ -10,9 +10,15 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 import lsst.afw.cameraGeom
 from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['BiasShiftsTask', 'BiasShiftsFpPlotsTask']
+
+
+def get_plot_locations(repo, collections):
+    dstypes = ('bias_shifts_plot', 'bias_shifts_hist')
+    return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
 def readout_order_arr(arr, amp, verbose=False):
