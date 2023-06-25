@@ -35,6 +35,8 @@ b_protocol:
 ptc:
   pipelines:
     - bps_eoPtcPlots.yaml
+    - bps_eoLinearityPlots.yaml
+    - bps_eoBFAnalysis.yaml
   env_vars:
     - PTC_RUN
 

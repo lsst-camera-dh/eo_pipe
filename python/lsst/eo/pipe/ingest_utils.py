@@ -37,7 +37,7 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
 
     # Find unique exposures and an associated reference.
     exposure_refs = {ref.dataId['exposure']: ref for ref in refs}
-    print(f"Found {len(exposure_refs)} exposures.")
+    print(f"Found {len(exposure_refs)} exposures.", flush=True)
 
     ingested = []
     for ref in exposure_refs.values():
@@ -52,7 +52,7 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError as eobj:
-            print(eobj)
+            print(eobj, flush=True)
         else:
             ingested.append(pd_uri)
     print(f"Ingested {len(ingested)} datasets.")
