@@ -1,5 +1,7 @@
+from lsst.afw import cameraGeom
 import lsst.afw.table as afw_table
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
+import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -60,27 +62,40 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
         schema = afw_table.SourceTable.makeMinimalSchema()
         schema.addField("det_name", str, doc="Detector name", size=10)
         schema.addField("exposure", "I", doc="Exposure ID")
-        schema.addField("x", "F", doc="x-coordinate of spot")
-        schema.addField("y", "F", doc="y-coordinate of spot")
+        schema.addField("x", "F", doc="x-coordinate of spot centroid on CCD")
+        schema.addField("y", "F", doc="y-coordinate of spot centroid on CCD")
+        schema.addField("x_fp", "F", doc="x-coordinate of spot centroid in "
+                        "focal plane coordinates (mm)")
+        schema.addField("y_fp", "F", doc="y-coordinate of spot centroid in "
+                        "focal plane coordinates (mm)")
         schema.addField("signal", "F", doc="Spot signal")
         table = afw_table.SourceTable.make(schema)
         catalog = afw_table.SourceCatalog(table)
+
         for handle in exposure_handles:
-            det_name = camera[handle.dataId['detector']].getName()
+            det = camera[handle.dataId['detector']]
+            pix_to_fp = det.getTransform(cameraGeom.PIXELS,
+                                         cameraGeom.FOCAL_PLANE)
+            det_name = det.getName()
             exposure = handle.get()
             exp_id = handle.dataId['exposure']
+
             spot_info = throughput.get_spots_counts(
                 exposure,
                 threshold_adu=self.config.threshold_adu,
                 minarea=self.config.minarea,
                 maxarea=self.config.maxarea,
                 force_circle=self.config.force_circle)
+
             for signal, (x, y), fp in spot_info:
+                fp_pos = pix_to_fp.applyForward(lsst.geom.Point2D(x, y))
                 record = catalog.addNew()
                 record.set('det_name', det_name)
                 record.set('exposure', exp_id)
                 record.set('x', x)
                 record.set('y', y)
+                record.set('x_fp', fp_pos.x)
+                record.set('y_fp', fp_pos.y)
                 record.set('signal', signal)
                 record.setFootprint(fp)
         return pipeBase.Struct(spot_catalog=catalog)
