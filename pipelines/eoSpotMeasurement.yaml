@@ -10,11 +10,14 @@ tasks:
       doBias: true
       doDark: true
       doFlat: false
-      doApplyGains: false
-      usePtcGains: false
+      doApplyGains: true
+      usePtcGains: true
       doLinearize: false
       doFringe: false
       doDefect: false
+      doSaturation: false
+      overscan.leadingColumnsToSkip: 2
+      overscan.leadingRowsToSkip: 2
       overscan.fitType: 'MEDIAN_PER_ROW'
       overscan.doParallelOverscan: true
   spotMeasurement:
