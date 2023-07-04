@@ -6,8 +6,6 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
-from lsst.eo.throughput import throughput
-
 
 __all__ = ["SpotMeasurementTask"]
 
@@ -59,6 +57,8 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
 
     def run(self, exposure_handles, camera):
+        from lsst.eo.throughput import throughput
+
         schema = afw_table.SourceTable.makeMinimalSchema()
         schema.addField("det_name", str, doc="Detector name", size=10)
         schema.addField("exposure", "I", doc="Exposure ID")
