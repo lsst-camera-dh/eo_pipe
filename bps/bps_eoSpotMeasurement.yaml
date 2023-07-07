@@ -1,0 +1,12 @@
+includeConfigs:
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoSpotMeasurement.yaml
+
+payload:
+  spot_run: ${SPOT_RUN}
+  weekly: ${WEEKLY}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_spot_measurements_{spot_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{spot_run}' and exposure.observation_type='ccobthin' and exposure.observation_reason='ccobthin'"

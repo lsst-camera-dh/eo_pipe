@@ -18,6 +18,7 @@ from .persistenceTask import *
 from .scanModeTask import *
 from .runInfoTask import *
 from .biasShiftsTask import *
+from .spotMeasurementTask import *
 from .isr_utils import *
 from .dsref_utils import *
 from .report_utils import *
