@@ -61,7 +61,7 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
 
         schema = afw_table.SourceTable.makeMinimalSchema()
         schema.addField("det_name", str, doc="Detector name", size=10)
-        schema.addField("exposure", "I", doc="Exposure ID")
+        schema.addField("exposure", "L", doc="Exposure ID")
         schema.addField("x", "F", doc="x-coordinate of spot centroid on CCD")
         schema.addField("y", "F", doc="y-coordinate of spot centroid on CCD")
         schema.addField("x_fp", "F", doc="x-coordinate of spot centroid in "
