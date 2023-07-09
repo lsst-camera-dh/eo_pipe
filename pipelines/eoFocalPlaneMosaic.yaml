@@ -1,0 +1,40 @@
+description: Make a focal plane mosaic of ISR'd exposures
+tasks:
+  isr:
+    class: lsst.ip.isr.IsrTask
+    config:
+      connections.ccdExposure: 'raw'
+      connections.outputExposure: 'postISRCCD'
+      doWrite: true
+      doBrighterFatter: false
+      doBias: true
+      doDark: true
+      doFlat: false
+      doApplyGains: true
+      usePtcGains: true
+      doLinearize: false
+      doFringe: false
+      doDefect: false
+      doSaturation: false
+      doAttachTransmissionCurve: false
+      doUseOpticsTransmission: false
+      doUseFilterTransmission: false
+      doUseSensorTransmission: true
+      doUseAtmosphereTransmission: false
+      overscan.leadingColumnsToSkip: 2
+      overscan.leadingRowsToSkip: 2
+      overscan.fitType: 'MEDIAN_PER_ROW'
+      overscan.doParallelOverscan: true
+  focalPlaneMosaic:
+    class: lsst.eo.pipe.FocalPlaneMosaicTask
+    config:
+      connections.exposures: 'postISRCCD'
+      connections.output_mosaic: 'eoFpMosaic'
+      binSize: 8
+      python: >
+        config.filterWavelengthMap = {'uv': '[3500., 3501.]',
+                                      'blue': '[4500., 4501.]',
+                                      'red': '[6500., 6501.]',
+                                      'nm750': '[7500., 7501.]',
+                                      'nm850': '[8500., 8501.]',
+                                      'nm960': '[9600., 9601.]'}
