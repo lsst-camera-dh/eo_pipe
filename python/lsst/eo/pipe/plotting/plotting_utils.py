@@ -70,7 +70,7 @@ class ImageSource:
 
 
 def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
-                title=None):
+                title=None, wls=None):
     """
     Make a a mosaic of exposures using the
     lsst.afw.cameraGeom.utils.showCamera function.
@@ -92,6 +92,9 @@ def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
         Number of clipped stdevs to use around the median for plotting range.
     title : str [None]
         Plot title.
+    wls : list-like [None]
+        List of wavelengths in Angstroms to use for evaluating the mean
+        transmisson factor for each detector.
 
     Returns
     -------
@@ -99,7 +102,7 @@ def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
     """
     detectorNameList = [camera[detector].getName() for
                         detector in exposure_refs]
-    image_source = ImageSource(exposure_refs)
+    image_source = ImageSource(exposure_refs, wls=wls)
     mosaic = cgu.showCamera(camera, imageSource=image_source,
                             detectorNameList=detectorNameList,
                             binSize=binSize)
