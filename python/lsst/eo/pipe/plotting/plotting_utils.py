@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import lsst.afw.math as afwMath
+from lsst.afw import cameraGeom
 from lsst.afw.cameraGeom import utils as cgu
 
 
@@ -43,18 +44,33 @@ class ImageSource:
     isTrimmed = True
     background = 0.0
 
-    def __init__(self, exposure_handles):
+    def __init__(self, exposure_handles, wls=None):
         self.exposure_handles = exposure_handles
+        if wls is not None:
+            wls = np.array(wls)
+        self.wls = wls
+
+    def transmission_factor(self, exp):
+        if self.wls is None or not exp.getInfo().hasTransmissionCurve():
+            return 1.0
+        tc = exp.getInfo().getTransmissionCurve()
+        ccd_center = exp.getDetector().getCenter(cameraGeom.FOCAL_PLANE)
+        values = tc.sampleAt(position=ccd_center, wavelengths=self.wls)
+        delta_wls = (self.wls[1:] - self.wls[:-1])
+        factor = sum((values[1:] + values[:-1])/2.*delta_wls)/sum(delta_wls)
+        return factor
 
     def getCcdImage(self, det, imageFactory, binSize=1, *args, **kwargs):
-        ccdImage = self.exposure_handles[det.getId()].get().getImage()
+        exp = self.exposure_handles[det.getId()].get()
+        ccdImage = exp.getImage()
+        ccdImage /= self.transmission_factor(exp)
         ccdImage = afwMath.binImage(ccdImage, binSize)
         return afwMath.rotateImageBy90(ccdImage,
                                        det.getOrientation().getNQuarter()), det
 
 
 def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
-                title=None):
+                title=None, wls=None):
     """
     Make a a mosaic of exposures using the
     lsst.afw.cameraGeom.utils.showCamera function.
@@ -76,6 +92,9 @@ def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
         Number of clipped stdevs to use around the median for plotting range.
     title : str [None]
         Plot title.
+    wls : list-like [None]
+        List of wavelengths in Angstroms to use for evaluating the mean
+        transmisson factor for each detector.
 
     Returns
     -------
@@ -83,7 +102,7 @@ def make_mosaic(exposure_refs, camera, binSize, figsize, cmap, nsig,
     """
     detectorNameList = [camera[detector].getName() for
                         detector in exposure_refs]
-    image_source = ImageSource(exposure_refs)
+    image_source = ImageSource(exposure_refs, wls=wls)
     mosaic = cgu.showCamera(camera, imageSource=image_source,
                             detectorNameList=detectorNameList,
                             binSize=binSize)

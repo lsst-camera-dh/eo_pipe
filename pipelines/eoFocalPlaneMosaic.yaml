@@ -1,4 +1,4 @@
-description: Make raft-level mosaics of ISR'd raw exposures
+description: Make a focal plane mosaic of ISR'd exposures
 tasks:
   isr:
     class: lsst.ip.isr.IsrTask
@@ -25,12 +25,12 @@ tasks:
       overscan.leadingRowsToSkip: 2
       overscan.fitType: 'MEDIAN_PER_ROW'
       overscan.doParallelOverscan: true
-  raftMosaic:
-    class: lsst.eo.pipe.RaftMosaicTask
+  focalPlaneMosaic:
+    class: lsst.eo.pipe.FocalPlaneMosaicTask
     config:
       connections.exposures: 'postISRCCD'
-      connections.raft_mosaic_plot: 'eoRaftMosaic'
-      binSize: 2
+      connections.output_mosaic: 'eoFpMosaic'
+      binSize: 8
       python: >
         config.filterWavelengthMap = {'uv': '[3500., 3501.]',
                                       'blue': '[4500., 4501.]',

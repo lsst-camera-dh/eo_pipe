@@ -54,6 +54,12 @@ class RaftMosaicTaskConfig(pipeBase.PipelineTaskConfig,
     binSize = pexConfig.Field(doc="Bin size in pixels for rebinning.",
                               dtype=int, default=2)
     cmap = pexConfig.Field(doc="Matplotlib color map", dtype=str, default='hot')
+    filterWavelengthMap = pexConfig.DictField(
+        doc=("Map of physical_filter name to wavelengths used for "
+             "transmission curve integration"),
+        keytype=str,
+        itemtype=str,
+        default={})
 
 
 class RaftMosaicTask(pipeBase.PipelineTask):
@@ -67,6 +73,7 @@ class RaftMosaicTask(pipeBase.PipelineTask):
         self.nsig = self.config.nsig
         self.binSize = self.config.binSize
         self.cmap = self.config.cmap
+        self.filter_wl_map = self.config.filterWavelengthMap
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -93,6 +100,7 @@ class RaftMosaicTask(pipeBase.PipelineTask):
         for physical_filter in raft_data:
             ref_map = raft_output_refs_mapper.create(
                 output_refs[physical_filter])
+            wls = eval(self.filter_wl_map.get(physical_filter, 'None'))
 
             for raft, exposure_refs in raft_data[physical_filter].items():
                 if raft not in ref_map:
@@ -102,6 +110,6 @@ class RaftMosaicTask(pipeBase.PipelineTask):
                          f'{exposure}')
                 raft_plot = make_mosaic(exposure_refs, camera, self.binSize,
                                         self.figsize, self.cmap, self.nsig,
-                                        title=title)
+                                        title=title, wls=wls)
                 butlerQC.put(raft_plot, ref_map[raft])
                 plt.close()
