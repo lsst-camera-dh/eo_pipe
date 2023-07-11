@@ -1,6 +1,6 @@
 includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${EO_PIPE_DIR}/bps/cp_pipe/bps_qgraph_options.yaml
+  - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 #  - ${EO_PIPE_DIR}/bps/parsl/bps_gen3_workflow_configs.yaml
 
 extraQgraphOptions: "{isr_QgraphOptions} --config isr:doDefect=False --config cpDark:repair.doCosmicRay=False"
@@ -11,7 +11,8 @@ instrument: ${INSTRUMENT_CLASS}
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
-  inCollection: u/{operator}/bias_{b_protocol_run}_{weekly}
-  payloadName: dark_{b_protocol_run}_{weekly}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: u/{operator}/bias{payload_modifier}_{b_protocol_run}_{weekly}
+  payloadName: dark{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='dark' and exposure.observation_reason='dark'"

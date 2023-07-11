@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import time
 import datetime
 import yaml
@@ -136,6 +137,17 @@ class CpPipelines(EoPipelines):
     """
     def __init__(self, cp_pipeline_config, verbose=True, dry_run=False):
         super().__init__(cp_pipeline_config, verbose=verbose, dry_run=dry_run)
+        self._cp_bps_qgraph_options()
+
+    def _cp_bps_qgraph_options(self):
+        target_folder = os.path.join('bps', 'cp_pipe')
+        qgraph_options_file = 'bps_qgraph_options.yaml'
+        os.makedirs(target_folder, exist_ok=True)
+        dest_file = os.path.join(target_folder, qgraph_options_file)
+        if not os.path.isfile(dest_file):
+            src_file = os.path.join(os.environ['EO_PIPE_DIR'], target_folder,
+                                    qgraph_options_file)
+            shutil.copy(src_file, dest_file)
 
     def _print_inCollection(self):
         pass
