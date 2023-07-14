@@ -1,0 +1,3 @@
+# These are the defaults in the pipeline yamls in eo_pipe/pipelines.  Edit
+# them locally to enable different options.
+extraQgraphOptions: "--config isr:overscan.doParallelOverscan=True --config isr:overscan.fitType='MEDIAN_PER_ROW' --config isr:overscan.leadingColumnsToSkip=2 --config isr:overscan.leadingRowsToSkip=2"
