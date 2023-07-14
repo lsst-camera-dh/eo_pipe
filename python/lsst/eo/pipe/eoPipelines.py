@@ -11,11 +11,11 @@ import click
 __all__ = ['EoPipelines', 'CpPipelines']
 
 
-class EoPipelines:
+class PipelinesBase:
     """
-    Class to manage submission of eo_pipe pipelines of a particular
-    run type, e.g., all the pipelines associated with a B-protocol or
-    a PTC run.
+    Class to manage submission of cp_pipe or eo_pipe pipelines of a
+    particular run type, e.g., all the pipelines associated with a
+    B-protocol or a PTC run.
     """
     def __init__(self, pipeline_config, verbose=True, dry_run=False,
                  log_dir='./logs'):
@@ -39,6 +39,7 @@ class EoPipelines:
         os.makedirs(log_dir, exist_ok=True)
         with open(pipeline_config) as fobj:
             self.config = yaml.safe_load(fobj)
+        self._cp_bps_options_file('bps/bps_butler_config.yaml')
 
     def _check_env_vars(self, run_type):
         # Check for required env vars for the specified run type.
@@ -54,16 +55,13 @@ class EoPipelines:
             raise RuntimeError("Missing required environment variables: "
                                f"{missing}")
 
-    def _print_inCollection(self):
-        print("Using input collection:")
-        command = (f"butler query-collections {os.environ['BUTLER_CONFIG']} "
-                   f"{os.environ['EO_PIPE_INCOLLECTION']}")
-        try:
-            subprocess.check_call(command, shell=True)
-        except subprocess.CalledProcessError:
-            print("\nError querying for input collection. Aborting")
-            sys.exit(1)
-        print()
+    def _cp_bps_options_file(self, options_file_rel_path):
+        dest_folder = os.path.dirname(options_file_rel_path)
+        os.makedirs(dest_folder, exist_ok=True)
+        if not os.path.isfile(options_file_rel_path):
+            src_file = os.path.join(os.environ['EO_PIPE_DIR'],
+                                    options_file_rel_path)
+            shutil.copy(src_file, options_file_rel_path)
 
     def submit(self, run_type, bps_yaml=None):
         """
@@ -87,13 +85,19 @@ class EoPipelines:
             for pipeline in pipelines:
                 print(f"  {pipeline}")
             print()
-            self._print_inCollection()
+            self._print_in_collection()
         if self.dry_run:
             return
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
         self._run_pipelines(pipelines)
+
+    def _print_in_collection(self):
+        pass
+
+    def _run_pipelines(self, pipelines):
+        raise NotImplementedError
 
     def _bps_submit_command(self, eo_pipe_folder, bps_yaml):
         eo_pipe_dir = os.environ['EO_PIPE_DIR']
@@ -107,6 +111,28 @@ class EoPipelines:
         print(command)
         print('*****')
         return command, log_file
+
+
+class EoPipelines(PipelinesBase):
+    """
+    Class to manage bps submissions of eo_pipe pipelines.
+    """
+    def __init__(self, eo_pipeline_config, verbose=True, dry_run=False,
+                 log_dir='./logs'):
+        super().__init__(eo_pipeline_config, verbose=verbose, dry_run=dry_run,
+                         log_dir=log_dir)
+        self._cp_bps_options_file('bps/bps_eo_pipe_isr_options.yaml')
+
+    def _print_in_collection(self):
+        print("Using input collection:")
+        command = (f"butler query-collections {os.environ['BUTLER_CONFIG']} "
+                   f"{os.environ['EO_PIPE_INCOLLECTION']}")
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
+            print("\nError querying for input collection. Aborting")
+            sys.exit(1)
+        print()
 
     def _run_pipelines(self, pipelines):
         failed = []
@@ -131,26 +157,14 @@ class EoPipelines:
             print("  ", item)
 
 
-class CpPipelines(EoPipelines):
+class CpPipelines(PipelinesBase):
     """
     Class to manage sequential bps submission of cp_pipe pipelines.
     """
-    def __init__(self, cp_pipeline_config, verbose=True, dry_run=False):
+    def __init__(self, cp_pipeline_config, verbose=True, dry_run=False,
+                 log_dir='./logs'):
         super().__init__(cp_pipeline_config, verbose=verbose, dry_run=dry_run)
-        self._cp_bps_qgraph_options()
-
-    def _cp_bps_qgraph_options(self):
-        target_folder = os.path.join('bps', 'cp_pipe')
-        qgraph_options_file = 'bps_qgraph_options.yaml'
-        os.makedirs(target_folder, exist_ok=True)
-        dest_file = os.path.join(target_folder, qgraph_options_file)
-        if not os.path.isfile(dest_file):
-            src_file = os.path.join(os.environ['EO_PIPE_DIR'], target_folder,
-                                    qgraph_options_file)
-            shutil.copy(src_file, dest_file)
-
-    def _print_inCollection(self):
-        pass
+        self._cp_bps_options_file('bps/cp_pipe/bps_qgraph_options.yaml')
 
     def _run_pipelines(self, pipelines):
         for pipeline in pipelines:
