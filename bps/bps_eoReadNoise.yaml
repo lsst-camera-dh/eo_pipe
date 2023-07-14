@@ -1,5 +1,5 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoise.yaml
 extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"

@@ -1,7 +1,6 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
-#  - ${EO_PIPE_DIR}/bps/parsl/bps_gen3_workflow_configs.yaml
 
 extraQgraphOptions: "{isr_QgraphOptions} --config isr:doDefect=False --config isr:doLinearize=False --config cpFlatCombine:exposureScaling='Unity'"
 

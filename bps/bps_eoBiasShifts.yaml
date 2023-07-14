@@ -1,6 +1,5 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-#  - ${EO_PIPE_DIR}/bps/parsl/bps_gen3_workflow_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasShifts.yaml
 extraQgraphOptions: "--config biasShiftsFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
