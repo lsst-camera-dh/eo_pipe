@@ -7,7 +7,8 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDarkMosaic.yaml
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: dark_mosaic_{b_protocol_run}_{weekly}
+  payloadName: dark_mosaic{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure=${EXPOSURE_ID}"

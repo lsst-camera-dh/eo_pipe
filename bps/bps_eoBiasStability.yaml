@@ -11,7 +11,8 @@ payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_bias_stability_{b_protocol_run}_{weekly}
+  payloadName: eo_bias_stability{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{b_protocol_run}'"

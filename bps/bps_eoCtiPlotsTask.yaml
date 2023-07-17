@@ -6,8 +6,9 @@ project: "{outputRun}"
 payload:
   b_protocol_run: 13162
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: u/jchiang/deferredCharge_{b_protocol_run}_w_2022_48
-  payloadName: cti_plots_{b_protocol_run}_{weekly}
+  payloadName: eo_cti_plots{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='LSSTCam'"
 

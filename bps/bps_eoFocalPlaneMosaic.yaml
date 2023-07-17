@@ -7,7 +7,8 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoFocalPlaneMosaic.yaml
 payload:
   exposure_id: ${EXPOSURE_ID}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_focal_plane_mosaic_{exposure_id}_{weekly}
+  payloadName: eo_focal_plane_mosaic{payload_modifier}_{exposure_id}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure=${EXPOSURE_ID} and detector in (0..188)"
