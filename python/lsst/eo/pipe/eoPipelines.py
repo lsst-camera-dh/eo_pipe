@@ -39,7 +39,7 @@ class PipelinesBase:
         os.makedirs(log_dir, exist_ok=True)
         with open(pipeline_config) as fobj:
             self.config = yaml.safe_load(fobj)
-        self._cp_bps_options_file('bps/bps_butler_config.yaml')
+        self._copy_bps_options_file('bps/bps_butler_config.yaml')
 
     def _check_env_vars(self, run_type):
         # Check for required env vars for the specified run type.
@@ -55,7 +55,7 @@ class PipelinesBase:
             raise RuntimeError("Missing required environment variables: "
                                f"{missing}")
 
-    def _cp_bps_options_file(self, options_file_rel_path):
+    def _copy_bps_options_file(self, options_file_rel_path):
         dest_folder = os.path.dirname(options_file_rel_path)
         os.makedirs(dest_folder, exist_ok=True)
         if not os.path.isfile(options_file_rel_path):
@@ -121,7 +121,7 @@ class EoPipelines(PipelinesBase):
                  log_dir='./logs'):
         super().__init__(eo_pipeline_config, verbose=verbose, dry_run=dry_run,
                          log_dir=log_dir)
-        self._cp_bps_options_file('bps/bps_eo_pipe_isr_options.yaml')
+        self._copy_bps_options_file('bps/bps_eo_pipe_isr_options.yaml')
 
     def _print_in_collection(self):
         print("Using input collection:")
@@ -164,7 +164,7 @@ class CpPipelines(PipelinesBase):
     def __init__(self, cp_pipeline_config, verbose=True, dry_run=False,
                  log_dir='./logs'):
         super().__init__(cp_pipeline_config, verbose=verbose, dry_run=dry_run)
-        self._cp_bps_options_file('bps/cp_pipe/bps_qgraph_options.yaml')
+        self._copy_bps_options_file('bps/cp_pipe/bps_qgraph_options.yaml')
 
     def _run_pipelines(self, pipelines):
         for pipeline in pipelines:
