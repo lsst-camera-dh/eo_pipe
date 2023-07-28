@@ -1,5 +1,6 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
+  - ${PWD}/bps/bps_eo_pipe_isr_options.yaml
 
 pipelineYaml: "${EO_PIPE_DIR}/pipelines/eoBrightDefects.yaml"
 extraQgraphOptions: "--config brightDefectsPlots:acq_run=' ${B_PROTOCOL_RUN}'"
@@ -7,7 +8,8 @@ extraQgraphOptions: "--config brightDefectsPlots:acq_run=' ${B_PROTOCOL_RUN}'"
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_bright_defects_{b_protocol_run}_{weekly}
+  payloadName: eo_bright_defects{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='dark' and exposure.observation_reason='dark'"

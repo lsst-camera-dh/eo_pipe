@@ -6,6 +6,7 @@ baseline:
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - EO_PIPE_INCOLLECTION
+    - PAYLOAD_MODIFIER
 
 b_protocol:
   pipelines:

@@ -1,5 +1,5 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
 extraQgraphOptions: "--config divisaderoRaftPlots:acq_run=' ${B_PROTOCOL_RUN}' --config divisaderoFpPlots:acq_run=' ${B_PROTOCOL_RUN}'"
@@ -7,7 +7,8 @@ extraQgraphOptions: "--config divisaderoRaftPlots:acq_run=' ${B_PROTOCOL_RUN}' -
 payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_divisadero_tearing_{b_protocol_run}_{weekly}
+  payloadName: eo_divisadero_tearing{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}'"

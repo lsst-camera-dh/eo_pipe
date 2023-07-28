@@ -1,5 +1,5 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoLinearityPlots.yaml
 extraQgraphOptions: "--config linearityFocalPlanePlots:acq_run=' ${PTC_RUN}'"
@@ -7,7 +7,8 @@ extraQgraphOptions: "--config linearityFocalPlanePlots:acq_run=' ${PTC_RUN}'"
 payload:
   ptc_run: ${PTC_RUN}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${EO_PIPE_INCOLLECTION},${INSTRUMENT_NAME}/photodiode
-  payloadName: eo_linearity_plots_{ptc_run}_{weekly}
+  payloadName: eo_linearity_plots{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}'"

@@ -1,10 +1,9 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${EO_PIPE_DIR}/bps/cp_pipe/bps_qgraph_options.yaml
-#  - ${EO_PIPE_DIR}/bps/parsl/bps_gen3_workflow_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
+  - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 # For CCOB data:
-extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX'"
+extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config ptcSolve:ksTestMinPvalue=0.0"
 
 ## For Run 5 data:
 #extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False"
@@ -15,8 +14,9 @@ instrument: ${INSTRUMENT_CLASS}
 payload:
   ptc_run: ${PTC_RUN}
   b_protocol_run: ${B_PROTOCOL_RUN}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   weekly: ${WEEKLY}
-  inCollection: u/{operator}/defects_{b_protocol_run}_{weekly}
-  payloadName: ptc_{ptc_run}_{weekly}
+  inCollection: u/{operator}/defects{payload_modifier}_{b_protocol_run}_{weekly},${INSTRUMENT_NAME}/photodiode
+  payloadName: ptc{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat'"

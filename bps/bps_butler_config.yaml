@@ -1,0 +1,3 @@
+includeConfigs:
+  - resource://lsst.ctrl.bps/etc/bps_qbb.yaml
+#  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml

@@ -5,6 +5,7 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
+    - PAYLOAD_MODIFIER
 
 b_protocol:
   pipelines:

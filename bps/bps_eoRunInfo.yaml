@@ -1,5 +1,5 @@
 includeConfigs:
-  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRunInfo.yaml
 
@@ -8,7 +8,8 @@ instrument: ${INSTRUMENT_CLASS}
 payload:
   acq_run: ${ACQ_RUN}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${INSTRUMENT_NAME}/raw/all
-  payloadName: eo_run_info_{acq_run}_{weekly}
+  payloadName: eo_run_info{payload_modifier}_{acq_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{acq_run}' and detector in (20)"
