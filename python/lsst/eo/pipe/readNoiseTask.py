@@ -6,7 +6,6 @@ import pandas as pd
 
 from astro_metadata_translator import ObservationInfo
 
-from lsst.afw.cameraGeom import utils as cgu
 import lsst.afw.math as afwMath
 from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
@@ -17,7 +16,7 @@ import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
 from .plotting import plot_focal_plane, hist_amp_data, append_acq_run
-from .dsref_utils import RaftOutputRefsMapper, get_plot_locations_by_dstype
+from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['ReadNoiseTask', 'ReadNoiseFpPlotsTask']
@@ -30,15 +29,18 @@ def get_amp_data(repo, collections, camera=None):
     butler = daf_butler.Butler(repo, collections=collections)
     dsrefs = list(set(butler.registry.queryDatasets('eo_read_noise',
                                                     findFirst=True)))
-    amp_data = defaultdict(dict)
+    amp_data = {'read_noise': defaultdict(dict),
+                'bias_level': defaultdict(dict)}
     for dsref in dsrefs:
         det = camera[dsref.dataId['detector']]
         det_name = det.getName()
         for amp in det:
             amp_name = amp.getName()
             df = butler.get(dsref).query(f"amp_name=='{amp_name}'")
-            amp_data[det_name][amp_name] = np.median(df['read_noise'])
-    return {'read_noise': dict(amp_data)}
+            for column in amp_data:
+                amp_data[column][det_name][amp_name] = np.median(df[column])
+    amp_data = {key: dict(value) for key, value in amp_data.items()}
+    return amp_data
 
 
 def get_plot_locations(repo, collections):
@@ -130,7 +132,7 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                     afwMath.makeStatistics(subregion, afwMath.STDEV).getValue()
                     for _, subregion in zip(range(self.nsamp), sampler)]
                 data['read_noise'].append(gain*float(np.median(stdevs)))
-                data['median'].append(gain*float(np.median(overscan.array)))
+                data['bias_level'].append(float(np.median(overscan.array)))
         return pipeBase.Struct(read_noise=pd.DataFrame(data))
 
 
