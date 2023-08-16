@@ -14,4 +14,4 @@ payload:
   inCollection: ${INSTRUMENT_NAME}/raw/all,${INSTRUMENT_NAME}/calib/unbounded
   payloadName: bias{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias' ${DETECTOR_SELECTION}"

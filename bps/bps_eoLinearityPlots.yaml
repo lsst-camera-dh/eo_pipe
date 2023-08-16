@@ -11,4 +11,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION},${INSTRUMENT_NAME}/photodiode
   payloadName: eo_linearity_plots{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' ${DETECTOR_SELECTION}"

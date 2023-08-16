@@ -11,4 +11,4 @@ payload:
   inCollection: u/jchiang/ptc_0_13144_w_2023_09
   payloadName: eo_defects{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam'"
+  dataQuery: "instrument='LSSTCam' ${DETECTOR_SELECTION}"

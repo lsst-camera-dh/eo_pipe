@@ -11,4 +11,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_dark_current{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION}"
