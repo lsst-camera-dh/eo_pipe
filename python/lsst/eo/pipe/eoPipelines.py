@@ -85,8 +85,6 @@ class PipelinesBase:
                 print(f"  {pipeline}")
             print()
             self._print_in_collection()
-        if self.dry_run:
-            return
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
@@ -136,6 +134,8 @@ class EoPipelines(PipelinesBase):
         failed = []
         for pipeline in pipelines:
             command, log_file = self._bps_submit_command('bps', pipeline)
+            if self.dry_run:
+                continue
             subprocess.check_call(command, shell=True)
             # Because the `bps submit` output is redirected through
             # `tee` in order to capture error messages in the log
@@ -166,6 +166,8 @@ class CpPipelines(PipelinesBase):
     def _run_pipelines(self, pipelines):
         for pipeline in pipelines:
             command, _ = self._bps_submit_command('bps/cp_pipe', pipeline)
+            if self.dry_run:
+                continue
             output = subprocess.check_output(command, stderr=subprocess.STDOUT,
                                              shell=True, text=True).split("\n")
             for line in output:
