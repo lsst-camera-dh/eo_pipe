@@ -13,4 +13,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION},${INSTRUMENT_NAME}/photodiode
   payloadName: eo_flat_gain_stability{payload_modifier}_{gain_stability_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='flat' and exposure.observation_reason in ('sflat', 'sflat_lo', 'sflat_hi') and exposure.science_program='{gain_stability_run}'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='flat' and exposure.observation_reason in ('sflat', 'sflat_lo', 'sflat_hi') and exposure.science_program='{gain_stability_run}' ${DETECTOR_SELECTION}"

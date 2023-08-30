@@ -13,4 +13,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_cti_vs_flux{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat'"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"

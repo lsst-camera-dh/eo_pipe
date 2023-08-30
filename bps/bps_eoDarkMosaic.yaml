@@ -11,4 +11,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: dark_mosaic{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure=${EXPOSURE_ID}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure=${EXPOSURE_ID} ${DETECTOR_SELECTION}"

@@ -6,6 +6,7 @@ baseline:
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - PAYLOAD_MODIFIER
+    - DETECTOR_SELECTION
 
 b_protocol:
   pipelines:

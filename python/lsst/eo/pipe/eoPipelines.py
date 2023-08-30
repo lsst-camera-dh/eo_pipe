@@ -39,7 +39,7 @@ class PipelinesBase:
         os.makedirs(log_dir, exist_ok=True)
         with open(pipeline_config) as fobj:
             self.config = yaml.safe_load(fobj)
-        self._copy_bps_options_file('bps/bps_butler_config.yaml')
+        self._copy_bps_folder()
 
     def _check_env_vars(self, run_type):
         # Check for required env vars for the specified run type.
@@ -55,13 +55,12 @@ class PipelinesBase:
             raise RuntimeError("Missing required environment variables: "
                                f"{missing}")
 
-    def _copy_bps_options_file(self, options_file_rel_path):
-        dest_folder = os.path.dirname(options_file_rel_path)
-        os.makedirs(dest_folder, exist_ok=True)
-        if not os.path.isfile(options_file_rel_path):
-            src_file = os.path.join(os.environ['EO_PIPE_DIR'],
-                                    options_file_rel_path)
-            shutil.copy(src_file, options_file_rel_path)
+    def _copy_bps_folder(self):
+        local_bps_tree = './bps'
+        if os.path.isdir(local_bps_tree):
+            return
+        main_bps_tree = os.path.join(os.environ['EO_PIPE_DIR'], 'bps')
+        shutil.copytree(main_bps_tree, local_bps_tree)
 
     def submit(self, run_type, bps_yaml=None):
         """
@@ -86,8 +85,6 @@ class PipelinesBase:
                 print(f"  {pipeline}")
             print()
             self._print_in_collection()
-        if self.dry_run:
-            return
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
@@ -99,13 +96,13 @@ class PipelinesBase:
     def _run_pipelines(self, pipelines):
         raise NotImplementedError
 
-    def _bps_submit_command(self, eo_pipe_folder, bps_yaml):
-        eo_pipe_dir = os.environ['EO_PIPE_DIR']
+    def _bps_submit_command(self, bps_sub_folder, bps_yaml):
+        root_dir = '.'
         log_file = os.path.join(self.log_dir, bps_yaml.replace('.yaml', '.log'))
         if os.path.isfile(log_file):
             os.remove(log_file)
         command = ' '.join(['bps', 'submit',
-                            os.path.join(eo_pipe_dir, eo_pipe_folder, bps_yaml),
+                            os.path.join(root_dir, bps_sub_folder, bps_yaml),
                             '2>&1 | tee', log_file])
         print('\n*****')
         print(command)
@@ -121,7 +118,6 @@ class EoPipelines(PipelinesBase):
                  log_dir='./logs'):
         super().__init__(eo_pipeline_config, verbose=verbose, dry_run=dry_run,
                          log_dir=log_dir)
-        self._copy_bps_options_file('bps/bps_eo_pipe_isr_options.yaml')
 
     def _print_in_collection(self):
         print("Using input collection:")
@@ -138,6 +134,8 @@ class EoPipelines(PipelinesBase):
         failed = []
         for pipeline in pipelines:
             command, log_file = self._bps_submit_command('bps', pipeline)
+            if self.dry_run:
+                continue
             subprocess.check_call(command, shell=True)
             # Because the `bps submit` output is redirected through
             # `tee` in order to capture error messages in the log
@@ -164,11 +162,12 @@ class CpPipelines(PipelinesBase):
     def __init__(self, cp_pipeline_config, verbose=True, dry_run=False,
                  log_dir='./logs'):
         super().__init__(cp_pipeline_config, verbose=verbose, dry_run=dry_run)
-        self._copy_bps_options_file('bps/cp_pipe/bps_qgraph_options.yaml')
 
     def _run_pipelines(self, pipelines):
         for pipeline in pipelines:
             command, _ = self._bps_submit_command('bps/cp_pipe', pipeline)
+            if self.dry_run:
+                continue
             output = subprocess.check_output(command, stderr=subprocess.STDOUT,
                                              shell=True, text=True).split("\n")
             for line in output:

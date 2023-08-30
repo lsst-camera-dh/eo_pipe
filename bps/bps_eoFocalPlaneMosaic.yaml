@@ -11,4 +11,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_focal_plane_mosaic{payload_modifier}_{exposure_id}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure=${EXPOSURE_ID} and detector in (0..188)"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure=${EXPOSURE_ID} and detector in (0..188) ${DETECTOR_SELECTION}"
