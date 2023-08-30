@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import lsst.afw.math as afw_math
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
 from lsst.geom import Box2I, Extent2I, Point2I
 import lsst.pex.config as pexConfig
@@ -103,8 +102,7 @@ class EperTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     eper_stats = cT.Output(
         name="eper_stats",
@@ -216,8 +214,7 @@ class EperFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     scti_eper_plot = cT.Output(
         name="scti_eper_plot",

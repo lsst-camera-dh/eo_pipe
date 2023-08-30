@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import lsst.afw.math as afw_math
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -76,8 +75,7 @@ class CtiVsFluxTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     cti_vs_flux = cT.Output(
         name="cti_vs_flux",

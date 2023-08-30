@@ -7,7 +7,6 @@ import pandas as pd
 from astro_metadata_translator import ObservationInfo
 
 import lsst.afw.math as afwMath
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
 import lsst.geom
 from lsst.obs.lsst import LsstCam
@@ -149,8 +148,7 @@ class ReadNoiseFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
 
     read_noise_plot = cT.Output(name="read_noise_plot",
                                 doc="Focal plane plot of read noise values",

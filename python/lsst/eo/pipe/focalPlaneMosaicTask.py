@@ -1,5 +1,4 @@
 from lsst.afw.cameraGeom import utils as cgu
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -24,8 +23,7 @@ class FocalPlaneMosaicTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     output_mosaic = cT.Output(
         name="eoFpMosaic",

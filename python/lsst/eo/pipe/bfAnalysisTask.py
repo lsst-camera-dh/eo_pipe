@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import matplotlib.pyplot as plt
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -49,8 +48,7 @@ class BFAnalysisTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
 
     bf_stats = cT.Output(name="bf_stats",
                          doc="Brighter-Fatter covariance statistics",
@@ -179,8 +177,7 @@ class BFAnalysisFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     bf_xcorr_plot = cT.Output(
         name="bf_xcorr_plot",

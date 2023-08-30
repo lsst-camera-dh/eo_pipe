@@ -2,7 +2,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -53,8 +52,7 @@ class DarkCurrentTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     dark_current_stats = cT.Output(
         name="dark_current_stats",

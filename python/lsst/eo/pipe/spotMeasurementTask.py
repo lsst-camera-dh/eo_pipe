@@ -1,6 +1,5 @@
 from lsst.afw import cameraGeom
 import lsst.afw.table as afw_table
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -25,8 +24,7 @@ class SpotMeasurementTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     spot_catalog = cT.Output(
         name="spot_catalog",

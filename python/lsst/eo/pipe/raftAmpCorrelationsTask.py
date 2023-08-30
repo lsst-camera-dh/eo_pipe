@@ -3,7 +3,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 from lsst.afw.cameraGeom import utils as cgu
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -36,8 +35,7 @@ class ImagingCorrelationsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     imaging_correlation_plot = cT.Output(
         name="imaging_correlation_plot",
@@ -131,8 +129,7 @@ class OverscanCorrelationsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     overscan_correlation_plot = cT.Output(
         name="overscan_correlation_plot",
