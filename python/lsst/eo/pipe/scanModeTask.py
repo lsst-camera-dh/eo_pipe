@@ -2,7 +2,6 @@ import os
 from collections import defaultdict
 from astropy.io import fits
 import matplotlib.pyplot as plt
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
@@ -55,8 +54,7 @@ class ScanModeTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     scan_mode_dispersion_plot = cT.Output(
         name="scan_mode_dispersion_plot",

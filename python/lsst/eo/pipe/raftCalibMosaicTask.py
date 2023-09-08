@@ -1,6 +1,5 @@
 from collections import defaultdict
 import matplotlib.pyplot as plt
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -50,8 +49,7 @@ class RaftCalibMosaicTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     bias_mosaic = cT.Output(
         name="raft_bias_mosaic",

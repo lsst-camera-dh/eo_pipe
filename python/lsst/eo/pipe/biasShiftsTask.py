@@ -4,7 +4,6 @@ import pandas as pd
 import scipy.signal
 import scipy.stats
 import numpy as np
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -272,8 +271,7 @@ class BiasShiftsFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
 
     bias_shifts_plot = cT.Output(name="bias_shifts_plot",
                                  doc=("Plot of the number of exposures per amp "

@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 import lsst.afw.math as afwMath
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe.utils import funcAstier, funcPolynomial
 import lsst.daf.butler as daf_butler
 import lsst.geom
@@ -94,8 +93,7 @@ class PtcPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
     ptc_plots = cT.Output(name="ptc_plots",
                           doc=("Plots of photon transfer curves for each "
                                "amp in a CCD"),
@@ -195,8 +193,7 @@ class PtcFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
     ptc_summary = cT.Output(name="ptc_summary",
                             doc="Summary of PTC-related measurements",
                             storageClass="DataFrame",
@@ -493,8 +490,7 @@ class RowMeansVarianceFpPlotTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     row_means_variance_slopes = cT.Output(
         name="row_means_variance_slopes_plot",

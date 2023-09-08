@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import lsst.afw.math as afwMath
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -75,8 +74,7 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
     bias_stability_stats = cT.Output(name="bias_stability_stats",
                            doc="bias stability statistics",
                            storageClass="DataFrame",
@@ -212,8 +210,7 @@ class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
-                                  dimensions=("instrument",),
-                                  lookupFunction=lookupStaticCalibration)
+                                  dimensions=("instrument",))
     bias_mean_vs_time_plot = cT.Output(name="bias_mean_vs_time_plot",
                                        doc="Plot of bias mean vs time",
                                        storageClass="Plot",

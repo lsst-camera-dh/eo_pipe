@@ -2,7 +2,6 @@ from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 import lsst.daf.butler as daf_butler
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
@@ -109,8 +108,7 @@ class LinearityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     linearity_plots = cT.Output(
         name="linearity_fit_plot",
@@ -322,8 +320,7 @@ class LinearityFpPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
     max_frac_dev = cT.Output(name="max_frac_dev",
                              doc=("Maximum fractional deviation from "

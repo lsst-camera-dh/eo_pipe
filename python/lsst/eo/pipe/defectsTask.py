@@ -3,7 +3,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from lsst.cp.pipe._lookupStaticCalibration import lookupStaticCalibration
 from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask
 import lsst.daf.butler as daf_butler
 import lsst.geom
@@ -144,8 +143,7 @@ class DefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
         doc="Camera used in observations",
         storageClass="Camera",
         isCalibration=True,
-        dimensions=("instrument",),
-        lookupFunction=lookupStaticCalibration)
+        dimensions=("instrument",))
 
 
 class DefectsPlotsTaskConfig(pipeBase.PipelineTaskConfig,
