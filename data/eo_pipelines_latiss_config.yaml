@@ -1,0 +1,30 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - EO_PIPE_INCOLLECTION
+    - PAYLOAD_MODIFIER
+    - DETECTOR_SELECTION
+
+b_protocol:
+  pipelines:
+    - bps_eoReadNoise.yaml
+    - bps_eoBiasStability.yaml
+    - bps_eoBrightDefects.yaml
+    - bps_eoDarkDefects.yaml
+    - bps_eoDarkCurrent.yaml
+    - bps_eoEper.yaml
+    - bps_eoBiasShifts.yaml
+  env_vars:
+    - DAY_OBS
+    - HIGH_FLUX_FILTER
+    - LOW_FLUX_FILTER
+
+run_info:
+  pipelines:
+    - bps_eoRunInfo.yaml
+  env_vars:
+    - ACQ_RUN

@@ -151,7 +151,9 @@ class BiasStabilityTask(pipeBase.PipelineTask):
             # Loop over segments and extract statistics
             for i, amp in enumerate(det, 1):
                 amp_name = amp.getName()
-                data['run'].append(md['RUNNUM'])
+                if 'RUNNUM' in md:
+                    data['run'].append(md['RUNNUM'])
+                data['dayobs'].append(md['DAYOBS'])
                 data['exposure_id'].append(handle.dataId['exposure'])
                 data['mjd'].append(md['MJD'])
                 data['det_name'].append(det_name)
@@ -287,6 +289,9 @@ class BiasStabilityPlotsTask(pipeBase.PipelineTask):
             for raft, df0 in raft_data.items():
                 if raft in 'R00 R04 R40 R44':
                     slots = self._corner_raft_slots
+                elif raft == 'RXX':
+                    # The LATISS raft name just has one CCD slot.
+                    slots = ('S00',)
                 else:
                     slots = self._science_raft_slots
                 mjd0 = int(min(df0['mjd']))

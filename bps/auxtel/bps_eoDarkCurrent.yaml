@@ -1,0 +1,14 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDarkCurrent.yaml
+extraQgraphOptions: "--config darkCurrentTask:acq_run=' ${DAY_OBS}'"
+
+payload:
+  day_obs: ${DAY_OBS}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_dark_current{payload_modifier}_{day_obs}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"

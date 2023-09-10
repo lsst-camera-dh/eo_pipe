@@ -21,7 +21,7 @@ from xml.dom import minidom
 import yaml
 import lsst.daf.butler as daf_butler
 import lsst.utils
-from lsst.obs.lsst import LsstCam, LsstTS8
+from lsst.obs.lsst import LsstCam, LsstTS8, Latiss
 from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask, \
@@ -30,7 +30,8 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
 
 
 INSTRUMENTS = {'LSSTCam': LsstCam,
-               'LSST-TS8': LsstTS8}
+               'LSST-TS8': LsstTS8,
+               'LATISS': Latiss}
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)

@@ -1,0 +1,19 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - DAY_OBS
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - PAYLOAD_MODIFIER
+    - DETECTOR_SELECTION
+
+b_protocol:
+  pipelines:
+    - bps_cpBias.yaml
+    - bps_cpDark.yaml
+    - bps_cpFlat.yaml
+    - bps_findDefects.yaml
+  env_vars:
+    - HIGH_FLUX_FILTER
+    - LOW_FLUX_FILTER

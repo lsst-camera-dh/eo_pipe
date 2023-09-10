@@ -81,10 +81,22 @@ class ReadNoiseTaskConnections(pipeBase.PipelineTaskConnections,
                            dimensions=("instrument", "detector"),
                            isCalibration=True)
 
+    camera = cT.PrerequisiteInput(name="camera",
+                                  doc="Camera used in observations",
+                                  storageClass="Camera",
+                                  isCalibration=True,
+                                  dimensions=("instrument",))
+
     read_noise = cT.Output(name="eo_read_noise",
                            doc="read noise statistics",
                            storageClass="DataFrame",
                            dimensions=("instrument", "detector"))
+
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+
+        if not config.usePtcGains:
+            self.inputs.remove('ptc_results')
 
 
 class ReadNoiseTaskConfig(pipeBase.PipelineTaskConfig,
@@ -96,6 +108,9 @@ class ReadNoiseTaskConfig(pipeBase.PipelineTaskConfig,
                             dtype=int, default=100)
     dxy = pexConfig.Field(doc="Size in pixels of sub-regions.",
                           dtype=int, default=20)
+    usePtcGains = pexConfig.Field(doc="Use gains from PTC dataset. If False, "
+                                  "then use the gains from obs_lsst",
+                                  dtype=bool, default=True)
 
 
 class ReadNoiseTask(pipeBase.PipelineTask):
@@ -108,19 +123,24 @@ class ReadNoiseTask(pipeBase.PipelineTask):
         self.edge_buffer = self.config.edge_buffer
         self.nsamp = self.config.nsamp
         self.dxy = self.config.dxy
+        self.use_ptc_gains = self.config.usePtcGains
 
-    def run(self, raw_frames, ptc_results):
+    def run(self, raw_frames, ptc_results=None, camera=None):
         data = defaultdict(list)
         for ds_handle in raw_frames:
             exposure = ds_handle.get()
             obs_info = ObservationInfo(exposure.getMetadata())
             det = exposure.getDetector()
+            det_name = det.getName()
             for amp in det:
                 amp_name = amp.getName()
-                gain = ptc_results.gain[amp_name]
+                if self.use_ptc_gains:
+                    gain = ptc_results.gain[amp_name]
+                else:
+                    gain = camera[det_name][amp_name].getGain()
                 data['run'].append(obs_info.science_program)
                 data['exposure_id'].append(obs_info.exposure_id)
-                data['det_name'].append(det.getName())
+                data['det_name'].append(det_name)
                 data['amp_name'].append(amp_name)
 
                 bbox = amp.getRawSerialOverscanBBox()

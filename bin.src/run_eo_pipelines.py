@@ -17,9 +17,11 @@ parser.add_argument('--bps_yaml', type=str, default=None,
                     help='Specific pipeline to run for a given run type')
 args = parser.parse_args()
 
-config_file = './eo_pipe_config.yaml'
+config_file = './eo_pipelines_config.yaml'
 if not os.path.isfile(config_file):
     src = os.path.join(os.environ['EO_PIPE_DIR'], 'data', config_file)
+    if os.environ['INSTRUMENT_NAME'] == "LATISS":
+        src = src.replace("eo_pipelines_config", "eo_pipelines_latiss_config")
     shutil.copy(src, config_file)
 
 eo_pipelines = EoPipelines(config_file, verbose=not args.laconic,

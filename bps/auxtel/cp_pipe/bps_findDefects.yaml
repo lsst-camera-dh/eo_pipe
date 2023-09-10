@@ -1,0 +1,17 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+  - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
+
+extraQgraphOptions: "{isr_QgraphOptions} --config isr:doSaturation=False"
+
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/findDefects.yaml"
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  day_obs: ${DAY_OBS}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: u/{operator}/flat{payload_modifier}_{day_obs}_{weekly}
+  payloadName: defects{payload_modifier}_{day_obs}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.day_obs={day_obs} and ((exposure.observation_type='dark' and exposure.observation_reason='dark') or (exposure.observation_type='flat' and exposure.observation_reason='flat' and physical_filter='${HIGH_FLUX_FILTER}'))"
