@@ -33,5 +33,5 @@ def get_plot_locations_by_dstype(repo, collections, dstypes):
     file_paths = defaultdict(list)
     for dstype in dstypes:
         for ref in set(butler.registry.queryDatasets(dstype, findFirst=True)):
-            file_paths[dstype].append(butler.getURI(ref).path)
+            file_paths[dstype].append(butler.getURI(ref))
     return dict(file_paths)
