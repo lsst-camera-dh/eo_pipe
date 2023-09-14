@@ -1,0 +1,14 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBFAnalysis.yaml
+extraQgraphOptions: "--config bfAnalysisTask:acq_run=' ${PTC_RUN}' --config bfAnalysisFpPlotsTask:acq_run=' ${PTC_RUN}'"
+
+payload:
+  ptc_run: ${PTC_RUN}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_bf_analysis{payload_modifier}_{ptc_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}'"

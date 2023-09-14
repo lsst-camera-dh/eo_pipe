@@ -7,21 +7,26 @@ baseline:
     - INSTRUMENT_NAME
     - EO_PIPE_INCOLLECTION
     - PAYLOAD_MODIFIER
-    - DETECTOR_SELECTION
 
 b_protocol:
   pipelines:
     - bps_eoReadNoise.yaml
+#    - bps_eoRaftAmpCorrelations.yaml
     - bps_eoBiasStability.yaml
     - bps_eoBrightDefects.yaml
     - bps_eoDarkDefects.yaml
     - bps_eoDarkCurrent.yaml
     - bps_eoEper.yaml
+    - bps_eoPtcPlots.yaml
+#    - bps_eoLinearityPlots.yaml
+#    - bps_eoDivisaderoTearing.yaml
+    - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
     - bps_eoBiasShifts.yaml
   env_vars:
     - DAY_OBS
-    - HIGH_FLUX_FILTER
-    - LOW_FLUX_FILTER
+    - PTC_RUN
+    - SFLAT_EXPTIME_BOUNDARY
 
 run_info:
   pipelines:

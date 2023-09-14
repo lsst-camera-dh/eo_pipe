@@ -6,7 +6,6 @@ baseline:
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - PAYLOAD_MODIFIER
-    - DETECTOR_SELECTION
 
 b_protocol:
   pipelines:
@@ -14,6 +13,6 @@ b_protocol:
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
     - bps_findDefects.yaml
+    - bps_cpPtc.yaml
   env_vars:
-    - HIGH_FLUX_FILTER
-    - LOW_FLUX_FILTER
+    - SFLAT_EXPTIME_BOUNDARY
