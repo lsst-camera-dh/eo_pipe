@@ -20,8 +20,9 @@ from xml.etree import ElementTree
 from xml.dom import minidom
 import yaml
 import lsst.daf.butler as daf_butler
+from lsst.resources import ResourcePath
 import lsst.utils
-from lsst.obs.lsst import LsstCam, LsstTS8
+from lsst.obs.lsst import LsstCam, LsstTS8, Latiss
 from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask, \
@@ -30,7 +31,8 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
 
 
 INSTRUMENTS = {'LSSTCam': LsstCam,
-               'LSST-TS8': LsstTS8}
+               'LSST-TS8': LsstTS8,
+               'LATISS': Latiss}
 
 
 logging.basicConfig(format="%(message)s", stream=sys.stdout)
@@ -99,16 +101,17 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
     os.makedirs(staging_dir, exist_ok=True)
 
     for dstype, locations in plot_locations.items():
-        logger.info("symlinking plots for %s", dstype)
-        for file_path in locations:
-            dest = os.path.join(staging_dir, os.path.basename(file_path))
-            os.symlink(file_path, dest)
+        logger.info("copying plots for %s to %s", dstype, staging_dir)
+        for resource_path in locations:
+            dest = ResourcePath(staging_dir).join(resource_path.basename())
+            dest.transfer_from(resource_path, "copy")
 
     # Symlink the focal plane layout figure.
-    fp_layout = os.path.join(lsst.utils.getPackageDir('eo_pipe'),
-                             'data', 'LSSTCam_fp_layout.png')
-    dest = os.path.join(staging_dir, os.path.basename(fp_layout))
-    os.symlink(fp_layout, dest)
+    if os.environ['INSTRUMENT_NAME'] == 'LSSTCam':
+        fp_layout = os.path.join(lsst.utils.getPackageDir('eo_pipe'),
+                                 'data', 'LSSTCam_fp_layout.png')
+        dest = os.path.join(staging_dir, os.path.basename(fp_layout))
+        os.symlink(fp_layout, dest)
 
 
 instrument_name = os.environ.get('INSTRUMENT_NAME', 'LSSTCam')

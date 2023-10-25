@@ -1,0 +1,18 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - DAY_OBS
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - PAYLOAD_MODIFIER
+
+b_protocol:
+  pipelines:
+    - bps_cpBias.yaml
+    - bps_cpDark.yaml
+    - bps_cpFlat.yaml
+    - bps_findDefects.yaml
+    - bps_cpPtc.yaml
+  env_vars:
+    - SFLAT_EXPTIME_BOUNDARY

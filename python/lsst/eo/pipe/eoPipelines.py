@@ -60,6 +60,8 @@ class PipelinesBase:
         if os.path.isdir(local_bps_tree):
             return
         main_bps_tree = os.path.join(os.environ['EO_PIPE_DIR'], 'bps')
+        if os.environ["INSTRUMENT_NAME"] == "LATISS":
+            main_bps_tree = os.path.join(main_bps_tree, 'auxtel')
         shutil.copytree(main_bps_tree, local_bps_tree)
 
     def submit(self, run_type, bps_yaml=None):
@@ -114,9 +116,9 @@ class EoPipelines(PipelinesBase):
     """
     Class to manage bps submissions of eo_pipe pipelines.
     """
-    def __init__(self, eo_pipeline_config, verbose=True, dry_run=False,
+    def __init__(self, eo_pipelines_config, verbose=True, dry_run=False,
                  log_dir='./logs'):
-        super().__init__(eo_pipeline_config, verbose=verbose, dry_run=dry_run,
+        super().__init__(eo_pipelines_config, verbose=verbose, dry_run=dry_run,
                          log_dir=log_dir)
 
     def _print_in_collection(self):
@@ -159,9 +161,9 @@ class CpPipelines(PipelinesBase):
     """
     Class to manage sequential bps submission of cp_pipe pipelines.
     """
-    def __init__(self, cp_pipeline_config, verbose=True, dry_run=False,
+    def __init__(self, cp_pipelines_config, verbose=True, dry_run=False,
                  log_dir='./logs'):
-        super().__init__(cp_pipeline_config, verbose=verbose, dry_run=dry_run)
+        super().__init__(cp_pipelines_config, verbose=verbose, dry_run=dry_run)
 
     def _run_pipelines(self, pipelines):
         for pipeline in pipelines:

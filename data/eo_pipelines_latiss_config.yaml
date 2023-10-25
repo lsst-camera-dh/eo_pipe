@@ -1,0 +1,35 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - EO_PIPE_INCOLLECTION
+    - PAYLOAD_MODIFIER
+
+b_protocol:
+  pipelines:
+    - bps_eoReadNoise.yaml
+#    - bps_eoRaftAmpCorrelations.yaml
+    - bps_eoBiasStability.yaml
+    - bps_eoBrightDefects.yaml
+    - bps_eoDarkDefects.yaml
+    - bps_eoDarkCurrent.yaml
+    - bps_eoEper.yaml
+    - bps_eoPtcPlots.yaml
+#    - bps_eoLinearityPlots.yaml
+#    - bps_eoDivisaderoTearing.yaml
+    - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
+    - bps_eoBiasShifts.yaml
+  env_vars:
+    - DAY_OBS
+    - PTC_RUN
+    - SFLAT_EXPTIME_BOUNDARY
+
+run_info:
+  pipelines:
+    - bps_eoRunInfo.yaml
+  env_vars:
+    - ACQ_RUN
