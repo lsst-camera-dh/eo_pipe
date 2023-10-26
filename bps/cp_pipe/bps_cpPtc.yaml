@@ -2,7 +2,8 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-# For CCOB data:
+isrTaskName: ptcIsr
+
 extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config ptcSolve:ptcFitType='EXPAPPROXIMATION'"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml"
