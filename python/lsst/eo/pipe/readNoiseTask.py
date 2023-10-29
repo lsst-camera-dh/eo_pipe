@@ -37,7 +37,10 @@ def get_amp_data(repo, collections, camera=None):
             amp_name = amp.getName()
             df = butler.get(dsref).query(f"amp_name=='{amp_name}'")
             for column in amp_data:
-                amp_data[column][det_name][amp_name] = np.median(df[column])
+                try:
+                    amp_data[column][det_name][amp_name] = np.median(df[column])
+                except KeyError:
+                    continue
     amp_data = {key: dict(value) for key, value in amp_data.items()}
     return amp_data
 
