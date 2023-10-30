@@ -31,4 +31,4 @@ if args.pattern is None:
     pattern = f"u/{user}/eo_*_{acq_run}_{weekly}"
 
 generate_report(repo, pattern, acq_run, staging_dir=staging_dir,
-                htmldir=htmldir)
+                htmldir=htmldir, weekly=weekly)
