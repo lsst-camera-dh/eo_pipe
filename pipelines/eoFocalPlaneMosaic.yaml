@@ -16,7 +16,7 @@ tasks:
       doFringe: false
       doDefect: false
       doSaturation: false
-      doAttachTransmissionCurve: false
+      doAttachTransmissionCurve: true
       doUseOpticsTransmission: false
       doUseFilterTransmission: false
       doUseSensorTransmission: true

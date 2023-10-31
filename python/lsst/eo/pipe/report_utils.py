@@ -55,7 +55,7 @@ def eo_pipe_data_dir(filename):
 
 def generate_report(repo, pattern, acq_run, staging_dir='./eo_report_staging',
                     htmldir='/sdf/group/rubin/web_data/lsstcam',
-                    collections=None):
+                    collections=None, weekly=None):
     butler = daf_butler.Butler(repo)
     collections = [] if collections is None else list(collections)
     collections.extend(butler.registry.queryCollections(pattern))
@@ -67,7 +67,7 @@ def generate_report(repo, pattern, acq_run, staging_dir='./eo_report_staging',
 
     subprocess.check_call(f"rm -rf {staging_dir}/*", shell=True)
     link_eo_pipe_plots(repo, collections, staging_dir, acq_run)
-    write_run_report(acq_run, staging_dir, htmldir, **kwargs)
+    write_run_report(acq_run, staging_dir, htmldir, weekly=weekly, **kwargs)
 
 
 def check_chained_collections(repo, collections):
@@ -625,7 +625,7 @@ def write_tree_to_html(tree, filepath=None):
         outfile.close()
 
 
-def write_slot_report(dataid, inputbase, outbase, **kwargs):
+def write_slot_report(dataid, inputbase, outbase, weekly=None, **kwargs):
     """Create table with descriptions and a plots
 
     Parameters
@@ -636,6 +636,9 @@ def write_slot_report(dataid, inputbase, outbase, **kwargs):
         Input base directory
     outbase : `str` or `None`
         Output directory
+    weekly : `str` [None]
+        Version of lsst_distrib to be added to the folder name. If
+        None, then omit it.
 
     Keywords
     --------
@@ -653,7 +656,11 @@ def write_slot_report(dataid, inputbase, outbase, **kwargs):
         outdir = None
         html_file = None
     else:
-        outdir = os.path.join(outbase, dataid['run'], dataid['raft'])
+        if weekly is not None:
+            outdir = os.path.join(outbase, dataid['run'], weekly,
+                                  dataid['raft'])
+        else:
+            outdir = os.path.join(outbase, dataid['run'], dataid['raft'])
         html_file = os.path.join(outdir, '%s.html' % dataid['slot'])
 
     html_node = ElementTree.Element('html')
@@ -676,7 +683,7 @@ def write_slot_report(dataid, inputbase, outbase, **kwargs):
         logger.info("No data, skipping")
 
 
-def write_raft_report(dataid, inputbase, outbase, **kwargs):
+def write_raft_report(dataid, inputbase, outbase, weekly=None, **kwargs):
     """Create table with descriptions and a plots
 
     Parameters
@@ -687,6 +694,9 @@ def write_raft_report(dataid, inputbase, outbase, **kwargs):
         Input base directory
     outbase : `str` or `None`
         Output directory
+    weekly : `str` [None]
+        Version of lsst_distrib to be added to the folder name. If
+        None, then omit it.
 
     Keywords
     --------
@@ -704,7 +714,11 @@ def write_raft_report(dataid, inputbase, outbase, **kwargs):
         outdir = None
         html_file = None
     else:
-        outdir = os.path.join(outbase, dataid['run'], dataid['raft'])
+        if weekly is not None:
+            outdir = os.path.join(outbase, dataid['run'], weekly,
+                                  dataid['raft'])
+        else:
+            outdir = os.path.join(outbase, dataid['run'], dataid['raft'])
         html_file = os.path.join(outdir, 'index.html')
 
     kwcopy['html_file'] = html_file
@@ -725,7 +739,8 @@ def write_raft_report(dataid, inputbase, outbase, **kwargs):
         dataid_slot = dataid.copy()
         dataid_slot['slot'] = slot
         kwcopy.pop('dataid', None)
-        write_slot_report(dataid_slot, inputbase, outbase, **kwcopy)
+        write_slot_report(dataid_slot, inputbase, outbase, weekly=weekly,
+                          **kwcopy)
 
     kwcopy['dataid'] = dataid
     slot_table_node = create_slot_table(body_node, dataid['raft'], **kwcopy)
@@ -738,7 +753,7 @@ def write_raft_report(dataid, inputbase, outbase, **kwargs):
         logger.info("No data, skipping raft")
 
 
-def write_run_report(data, inputbase, outbase, **kwargs):
+def write_run_report(data, inputbase, outbase, weekly=None, **kwargs):
     """Create table with descriptions and a plots
 
     Parameters
@@ -749,6 +764,9 @@ def write_run_report(data, inputbase, outbase, **kwargs):
         Input base directory
     outbase : `str` or `None`
         Output directory
+    weekly : `str` [None]
+        Version of lsst_distrib to be added to the folder name. If
+        None, then omit it.
 
     Keywords
     --------
@@ -766,6 +784,8 @@ def write_run_report(data, inputbase, outbase, **kwargs):
         html_file = None
     else:
         outdir = os.path.join(outbase, dataid['run'])
+        if weekly is not None:
+            outdir = os.path.join(outdir, weekly)
         html_file = os.path.join(outdir, 'index.html')
 
     kwcopy['html_file'] = html_file
@@ -787,7 +807,8 @@ def write_run_report(data, inputbase, outbase, **kwargs):
         dataid_raft = dataid.copy()
         dataid_raft['raft'] = raft
         kwcopy.pop('dataid', None)
-        write_raft_report(dataid_raft, inputbase, outbase, **kwcopy)
+        write_raft_report(dataid_raft, inputbase, outbase, weekly=weekly,
+                          **kwcopy)
 
     kwcopy['dataid'] = dataid
     raft_table_node = create_raft_table(body_node, **kwcopy)
