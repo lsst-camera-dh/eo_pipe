@@ -252,14 +252,14 @@ def plot_focal_plane(ax, amp_data, camera=None, cm=plt.cm.hot,
     for det_name, amp_values in amp_data.items():
         plot_det(ax, camera[det_name], amp_values, cm=cm, z_range=z_range,
                  use_log10=use_log10)
-    plt.xlim(*x_range)
-    plt.ylim(*y_range)
-    plt.xlabel('x (mm)')
-    plt.ylabel('y (mm)')
+    ax.set_xlim(*x_range)
+    ax.set_ylim(*y_range)
+    ax.set_xlabel('x (mm)')
+    ax.set_ylabel('y (mm)')
     norm = plt.Normalize(vmin=z_range[0], vmax=z_range[1])
     sm = plt.cm.ScalarMappable(cmap=cm, norm=norm)
     sm.set_array([])
-    plt.title(title)
+    ax.set_title(title)
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
