@@ -227,6 +227,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             amp_name = amp.getName()
             pd_values = get_pd_values(pd_integrals, ptc, amp_name)
             gain = ptc.gain[amp_name]
+            if np.isnan(gain):
+                gain = camera[det_name][amp_name].getGain()
             Ne = np.array(ptc.rawMeans[amp_name])*gain
             try:
                 func, resids[amp_name], index[amp_name], linearity_turnoff \
