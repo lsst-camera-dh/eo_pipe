@@ -137,10 +137,11 @@ class ReadNoiseTask(pipeBase.PipelineTask):
             det_name = det.getName()
             for amp in det:
                 amp_name = amp.getName()
+                gain = camera[det_name][amp_name].getGain()
                 if self.use_ptc_gains:
-                    gain = ptc_results.gain[amp_name]
-                else:
-                    gain = camera[det_name][amp_name].getGain()
+                    ptc_gain = ptc_results.gain[amp_name]
+                    if not np.isnan(ptc_gain):
+                        gain = ptc_gain
                 data['run'].append(obs_info.science_program)
                 data['exposure_id'].append(obs_info.exposure_id)
                 data['det_name'].append(det_name)
