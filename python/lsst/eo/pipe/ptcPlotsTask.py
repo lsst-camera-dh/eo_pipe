@@ -153,16 +153,24 @@ class PtcPlotsTask(pipeBase.PipelineTask):
             variances = np.array(ptc.rawVars[amp_name])
             plt.scatter(means, variances, s=8, color='blue')
             plt.scatter(means[index], variances[index], s=2, color='red')
+            note = f"{amp_name}\n"
             if ptc.ptcFitType == "EXPAPPROXIMATION":
                 a00, gain, _ = ptc.ptcFitPars[amp_name]
                 a00_err, gain_err, _ = ptc.ptcFitParsError[amp_name]
                 turnoff = ptc.ptcTurnoff[amp_name]
-                note = (f"{amp_name}\n"
-                        f"gain = {gain:.2f} +/- {gain_err:.2f}\n"
-                        f"a00 = {a00:.1e} +/- {a00_err:.1e}\n"
-                        f"turnoff = {turnoff:7.0f}")
-                plt.annotate(note, (0.05, 0.95), xycoords='axes fraction',
-                             verticalalignment='top', size='x-small')
+                note += (f"gain = {gain:.2f} +/- {gain_err:.2f}\n"
+                         f"a00 = {a00:.1e} +/- {a00_err:.1e}\n"
+                         f"turnoff = {turnoff:7.0f}")
+            elif ptc.ptcFitType == "FULLCOVARIANCE":
+                a00 = ptc.aMatrix[amp_name][0, 0]
+                gain = ptc.gain[amp_name]
+                gain_err = ptc.gainErr[amp_name]
+                turnoff = ptc.ptcTurnoff[amp_name]
+                note += (f"gain = {gain:.2f} +/- {gain_err:.2f}\n"
+                         f"a00 = {a00:.1e}\n"
+                         f"turnoff = {turnoff:7.0f}")
+            plt.annotate(note, (0.05, 0.95), xycoords='axes fraction',
+                         verticalalignment='top', size='x-small')
             if means.size != 0:
                 if ptc.ptcFitType in _ptc_func:
                     ptc_func = _ptc_func[ptc.ptcFitType]
@@ -290,14 +298,21 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
         amp_data = defaultdict(lambda: defaultdict(dict))
         for detector, handle in ptc_results.items():
             ptc = handle.get()
-            for amp, values in ptc.ptcFitPars.items():
-                if len(values) != 3:
-                    continue
-                ptc_a00, ptc_gain, ptc_var = values
-                amp_data['ptc_a00'][detector][amp] = -ptc_a00
-                amp_data['ptc_gain'][detector][amp] = ptc_gain
-                if ptc_var > 0:
-                    amp_data['ptc_noise'][detector][amp] = np.sqrt(ptc_var)
+            for amp in ptc.ampNames:
+                if ptc.ptcFitType == "EXPAPPROXIMATION":
+                    values = ptc.ptcFitPars[amp]
+                    if len(values) != 3:
+                        continue
+                    amp_data['ptc_a00'][detector][amp] = -values[0]
+                    amp_data['ptc_noise'][detector][amp] = ptc.noise[amp]
+                elif ptc.ptcFitType == "FULLCOVARIANCE":
+                    amp_data['ptc_a00'][detector][amp] = -ptc.aMatrix[amp][0, 0]
+                    # For FULLCOVARIANCE, ptc.noise looks like it is
+                    # the variance in cp_pipe, not the noise, so take
+                    # the sqrt.
+                    amp_data['ptc_noise'][detector][amp] \
+                        = np.sqrt(ptc.noise[amp])
+                amp_data['ptc_gain'][detector][amp] = ptc.gain[amp]
                 amp_data['ptc_turnoff'][detector][amp] = ptc.ptcTurnoff[amp]
         df = convert_amp_data_to_df(amp_data, camera=camera)
         plots = {}
