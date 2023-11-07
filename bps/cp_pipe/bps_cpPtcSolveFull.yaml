@@ -1,0 +1,19 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+  - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
+
+# For CCOB data:
+extraQgraphOptions: "--config ptcSolve:ptcFitType='FULLCOVARIANCE'"
+
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml#ptcSolve,ptcPlot"
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  ptc_run: ${PTC_RUN}
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  weekly: ${WEEKLY}
+  inCollection: u/{operator}/ptc{payload_modifier}_{ptc_run}_{weekly},${INSTRUMENT_NAME}/photodiode
+  payloadName: ptc_fullcov{payload_modifier}_{ptc_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"
