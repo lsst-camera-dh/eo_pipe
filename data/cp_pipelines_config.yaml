@@ -14,6 +14,7 @@ b_protocol:
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
     - bps_findDefects.yaml
+    - bps_cpDeferredCharge.yaml
     - bps_cpPtc.yaml
   env_vars:
     - B_PROTOCOL_RUN
