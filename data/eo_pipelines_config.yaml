@@ -55,6 +55,12 @@ flat_gain_stability:
     - GAIN_STABILITY_RUN
     - CCOBLED
 
+ccob_nb:
+  pipelines:
+    - bps_eoCcobNarrowBeamIsr.yaml
+  env_vars:
+    - CCOB_NB_RUN
+
 spot_measurement:
   pipelines:
     - bps_eoSpotMeasurement.yaml
