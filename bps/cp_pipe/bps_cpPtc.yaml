@@ -3,7 +3,7 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 # For CCOB data:
-extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config ptcSolve:ptcFitType='FULLCOVARIANCE'"
+extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config ptcSolve:ptcFitType='EXPAPPROXIMATION'"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
