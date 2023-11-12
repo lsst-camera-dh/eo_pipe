@@ -25,8 +25,8 @@ htmldir = args.htmldir
 if repo is None:
     repo = os.environ['BUTLER_CONFIG']
 
+weekly = os.environ['WEEKLY']
 if args.pattern is None:
-    weekly = os.environ['WEEKLY']
     user = os.environ['USER']
     pattern = f"u/{user}/eo_*_{acq_run}_{weekly}"
 
