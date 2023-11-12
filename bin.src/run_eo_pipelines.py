@@ -8,7 +8,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--run_type', default='b_protocol',
                     help='Type of analysis run',
                     choices=['b_protocol', 'ptc', 'flat_gain_stability',
-                             'dark_mosaic', 'run_info', 'spot_measurement'])
+                             'dark_mosaic', 'run_info', 'spot_measurement',
+                             'ccob_nb'])
 parser.add_argument('--laconic', action='store_true', default=False,
                     help='Verbosity flag')
 parser.add_argument('--dry_run', action='store_true', default=False,

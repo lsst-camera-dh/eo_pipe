@@ -1,0 +1,14 @@
+includeConfigs:
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_eo_pipe_isr_options.yaml
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoCcobNarrowBeamIsr.yaml
+
+payload:
+  ccob_nb_run: ${CCOB_NB_RUN}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_ccob_nb_isr{payload_modifier}_{ccob_nb_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ccob_nb_run}' and exposure.observation_type='ccobthin' and exposure.observation_reason='ccobthin' ${DETECTOR_SELECTION}"
