@@ -1,0 +1,6 @@
+# Cluster isr jobs by exposure
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+  isr_exposure:
+    pipetasks: isr
+    dimensions: exposure
