@@ -5,6 +5,14 @@ includeConfigs:
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStability.yaml
 extraQgraphOptions: "--config biasStabilityPlots:acq_run=' ${B_PROTOCOL_RUN}' --config biasStability:acq_run=' ${B_PROTOCOL_RUN}'"
 
+pipetask:
+  biasStability:
+    requestMemory: 4000
+    memoryMultiplier: 1.5
+
+requestMemoryMax: 10000
+memoryLimit: 10000
+
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
