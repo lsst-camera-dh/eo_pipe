@@ -58,6 +58,11 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
     collections = [f"{instrument}/raw/all", output_run]
     butler = daf_butler.Butler(repo, collections=collections)
 
+    # Find any already-ingested datasets.
+    where = f"exposure.science_program='{acq_run}'"
+    pd_refs = set(butler.registry.queryDatasets("photodiode", where=where))
+    pd_exps = {_.dataId["exposure"] for _ in pd_refs}
+
     where = (f"exposure.science_program='{acq_run}' "
              "and exposure.observation_type='flat'")
     refs = list(set(butler.registry.queryDatasets("raw", where=where)
@@ -65,7 +70,8 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
     refs = sorted(refs, key=lambda ref: ref.dataId['exposure'])
 
     # Find unique exposures and an associated reference.
-    exposure_refs = {ref.dataId['exposure']: ref for ref in refs}
+    exposure_refs = {ref.dataId['exposure']: ref for ref in refs
+                     if ref.dataId['exposure'] not in pd_exps}
     print(f"Found {len(exposure_refs)} exposures.", flush=True)
 
     ingested = []
