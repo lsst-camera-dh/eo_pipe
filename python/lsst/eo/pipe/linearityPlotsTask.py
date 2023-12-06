@@ -211,10 +211,10 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
             photodiode.integrationMethod = self.pd_integration_method
             photodiode.currentScale = self.pd_current_scale
             pd_integral = photodiode.integrate()
-            if np.isnan(pd_integral):
-                self.log.warning("nan value found for pd_integral, "
-                                 "flipping the sign of pd_current_scale "
-                                 "and recomputing")
+            if camera.getName() == "LSST-TS8" and np.isnan(pd_integral):
+                self.log.warning("A nan value returned for the pd_integral "
+                                 "for LSST-TS8 data; flipping the sign of "
+                                 "pd_current_scale and recomputing.")
                 photodiode.currentScale = -self.pd_current_scale
                 pd_integral = photodiode.integrate()
             pd_integrals[exposure] \
