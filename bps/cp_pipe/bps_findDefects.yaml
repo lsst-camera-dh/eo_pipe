@@ -2,7 +2,8 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-extraQgraphOptions: "{isr_QgraphOptions} --config isr:doSaturation=False"
+isrTaskName: defectIsr
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doSaturation=False"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/findDefects.yaml"
 instrument: ${INSTRUMENT_CLASS}

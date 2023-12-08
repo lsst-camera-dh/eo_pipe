@@ -63,6 +63,10 @@ class PipelinesBase:
         if os.environ["INSTRUMENT_NAME"] == "LATISS":
             main_bps_tree = os.path.join(main_bps_tree, 'auxtel')
         shutil.copytree(main_bps_tree, local_bps_tree)
+        if os.environ["INSTRUMENT_NAME"] == "LSST-TS8":
+            shutil.copy(os.path.join(main_bps_tree, "cp_pipe", "TS8",
+                                     "bps_cpPtc.yaml"),
+                        "./bps/cp_pipe/bps_cpPtc.yaml")
 
     def submit(self, run_type, bps_yaml=None):
         """

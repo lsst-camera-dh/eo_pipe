@@ -2,7 +2,8 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-extraQgraphOptions: "{isr_QgraphOptions} --config isr:doDefect=False"
+isrTaskName: biasIsr
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doDefect=False"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpBias.yaml"
 instrument: ${INSTRUMENT_CLASS}

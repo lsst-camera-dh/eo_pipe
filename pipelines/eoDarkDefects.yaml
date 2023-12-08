@@ -36,7 +36,7 @@ tasks:
       calibrationType: 'flat'
       exposureScaling: 'Unity'
       scalingLevel: AMP
-  eoMeasureDarkDefects:
+  eoMeasureDarkDefectsWithFilter:
     class: lsst.cp.pipe.defects.MeasureDefectsCombinedWithFilterTask
     config:
       connections.inputExp: 'eo_flat'
