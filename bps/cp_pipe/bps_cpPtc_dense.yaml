@@ -1,10 +1,16 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
-  - ${PWD}/bps/bps_isr_clustering.yaml
 
-# For CCOB data:
-extraQgraphOptions: "{isr_QgraphOptions} --config isr:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config ptcSolve:ptcFitType='EXPAPPROXIMATION' --config ptcSolve:maxSignalInitialPtcOutlierFit=50000"
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+  isr_exposure:
+    pipetasks: ptcIsr
+    dimensions: exposure
+
+isrTaskName: ptcIsr
+
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config ptcSolve:ptcFitType='EXPAPPROXIMATION' --config ptcSolve:maxSignalInitialPtcOutlierFit=50000"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
