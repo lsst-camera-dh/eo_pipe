@@ -2,5 +2,5 @@
 clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
 cluster:
   isr_exposure:
-    pipetasks: isr
+    pipetasks: {isrTaskName}
     dimensions: exposure
