@@ -4,7 +4,7 @@ includeConfigs:
 
 isrTaskName: ptcIsr
 
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config ptcExtract:matchExposuresType='TIME' --config ptcSolve:ptcFitType='EXPAPPROXIMATION'"
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config ptcExtract:matchExposuresType='TIME' --config ptcSolve:ptcFitType='EXPAPPROXIMATION' --config ptcSolve:maxSignalInitialPtcOutlierFit=50000"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
