@@ -10,12 +10,19 @@ tasks:
       connections.bias_stability_stats: 'bias_stability_stats'
       connections.bias_serial_profile_plots: 'bias_serial_profile_plots'
       connections.bias_parallel_profile_plots: 'bias_parallel_profile_plots'
-      doBias: false
-      doDark: false
-      overscan_fitType: 'MEDIAN_PER_ROW'
-      overscan_leadingColumnsToSkip: 4
-      overscan_trailingColumnsToSkip: 4
-      overscan_doParallelOverscan: false
+      isr.doBias: false
+      isr.doDark: false
+      isr.doFlat: false
+      isr.doBrighterFatter: false
+      isr.doApplyGains: false
+      isr.doLinearize: false
+      isr.doFringe: false
+      isr.doDefect: false
+      isr.doSaturation: false
+      isr.overscan.fitType: 'MEDIAN_PER_ROW'
+      isr.overscan.leadingColumnsToSkip: 4
+      isr.overscan.trailingColumnsToSkip: 4
+      isr.overscan.doParallelOverscan: false
   biasStabilityPlots:
     class: lsst.eo.pipe.BiasStabilityPlotsTask
     config:

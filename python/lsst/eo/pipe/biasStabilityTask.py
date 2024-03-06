@@ -119,36 +119,17 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
     def __init__(self, *, config=None):
         super().__init__(config=config)
 
-        if not config.doBias:
+        if not config.isr.doBias:
             self.prerequisiteInputs.remove("biases")
 
-        if not config.doDark:
+        if not config.isr.doDark:
             self.prerequisiteInputs.remove("darks")
 
 
 class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
                               pipelineConnections=BiasStabilityTaskConnections):
-    doBias = pexConfig.Field(doc="Apply bias subtraction",
-                             dtype=bool, default=False)
-    doDark = pexConfig.Field(doc="Apply dark subtraction",
-                             dtype=bool, default=False)
-    overscan_fitType = pexConfig.Field(doc="Overscan fit type",
-                                       dtype=str, default="MEDIAN_PER_ROW")
-    overscan_leadingColumnsToSkip = pexConfig.Field(
-        doc="Number of leading columns to skip for overscan correction",
-        dtype=int, default=4)
-    overscan_trailingColumnsToSkip = pexConfig.Field(
-        doc="Number of trailing columns to skip for overscan correction",
-        dtype=int, default=4)
-    overscan_leadingRowsToSkip = pexConfig.Field(
-        doc="Number of leading rows to skip for overscan correction",
-        dtype=int, default=4)
-    overscan_trailingRowsToSkip = pexConfig.Field(
-        doc="Number of trailing rows to skip for overscan correction",
-        dtype=int, default=0)
-    overscan_doParallelOverscan = pexConfig.Field(
-        doc="Apply parallel overscan correction.",
-        dtype=bool, default=False)
+
+    isr = pexConfig.ConfigurableField(target=IsrTask, doc="ISR task")
 
     readout_corner_size = pexConfig.Field(doc="Size of readout corner region "
                                           "to consider, in pixels.",
@@ -173,37 +154,11 @@ class BiasStabilityTask(pipeBase.PipelineTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.makeSubtask("isr")
         self.readout_size = self.config.readout_corner_size
         self.nsigma = self.config.nsigma
         self.nsigma_y_axis = self.config.nsigma_y_axis
         self.figsize = self.config.xfigsize, self.config.yfigsize
-        self.isr_config = IsrTaskConfig()
-        self.isr_config.doBias = self.config.doBias
-        self.isr_config.doDark = self.config.doDark
-        self.isr_config.overscan.fitType = self.config.overscan_fitType
-
-        self.isr_config.overscan.leadingColumnsToSkip \
-            = self.config.overscan_leadingColumnsToSkip
-        self.isr_config.overscan.leadingRowsToSkip \
-            = self.config.overscan_leadingRowsToSkip
-
-        self.isr_config.overscan.trailingColumnsToSkip \
-            = self.config.overscan_trailingColumnsToSkip
-        self.isr_config.overscan.trailingRowsToSkip \
-            = self.config.overscan_trailingRowsToSkip
-
-        self.isr_config.overscan.doParallelOverscan \
-            = self.config.overscan_doParallelOverscan
-        self.isr_config.doFlat = False
-        self.isr_config.doBrighterFatter = False
-        self.isr_config.doApplyGains = False
-        self.isr_config.doLinearize = False
-        self.isr_config.doFringe = False
-        self.isr_config.doDefect = False
-        self.isr_config.doSaturation = False
-        self.isr_config.maskListToInterpolate=['SAT', 'BAD', 'UNMASKEDNAN']
-        self.log.info('IsrTask config:\n')
-        self.log.info(self.isr_config.saveToString())
 
     def run(self, raws, biases=None, darks=None, camera=None):
         raw_det = camera[raws[0].dataId['detector']]
@@ -217,9 +172,8 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         values = {key: {amp: [] for amp in range(1, namps+1)}
                   for key in profile_plots}
         for handle in raws:
-            isr_task = IsrTask(config=self.isr_config)
             raw = handle.get()
-            exp = isr_task.run(raw).exposure
+            exp = self.isr.run(raw).exposure
             image = exp.getImage()
             md = exp.getMetadata()
             det = exp.getDetector()
