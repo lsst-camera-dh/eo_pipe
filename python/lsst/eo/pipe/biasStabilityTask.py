@@ -217,8 +217,7 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         values = {key: {amp: [] for amp in range(1, namps+1)}
                   for key in profile_plots}
         for handle in raws:
-            isr_task = IsrTask()
-            isr_task.config = self.isr_config
+            isr_task = IsrTask(config=self.isr_config)
             raw = handle.get()
             exp = isr_task.run(raw).exposure
             image = exp.getImage()
