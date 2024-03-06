@@ -1,33 +1,28 @@
 description: Pipeline to gather and plot bias frame stability stats.
 tasks:
-  isr:
-    class: lsst.ip.isr.IsrTask
-    config:
-      connections.ccdExposure: 'raw'
-      connections.outputExposure: 'postISRCCD'
-      doWrite: true
-      doBrighterFatter: false
-      doBias: false
-      doDark: false
-      doFlat: false
-      doApplyGains: false
-      usePtcGains: false
-      doLinearize: false
-      doFringe: false
-      doDefect: false
-      doSaturation: false
-      overscan.leadingColumnsToSkip: 4
-      overscan.trailingColumnsToSkip: 4
-      overscan.fitType: 'MEDIAN_PER_ROW'
-      overscan.doParallelOverscan: false
   biasStability:
     class: lsst.eo.pipe.BiasStabilityTask
     config:
-      connections.exposures: 'postISRCCD'
+      connections.raws: 'raw'
+      connections.bias: 'bias'
+      connections.dark: 'dark'
       connections.camera: 'camera'
       connections.bias_stability_stats: 'bias_stability_stats'
       connections.bias_serial_profile_plots: 'bias_serial_profile_plots'
       connections.bias_parallel_profile_plots: 'bias_parallel_profile_plots'
+      isr.doBias: false
+      isr.doDark: false
+      isr.doFlat: false
+      isr.doBrighterFatter: false
+      isr.doApplyGains: false
+      isr.doLinearize: false
+      isr.doFringe: false
+      isr.doDefect: false
+      isr.doSaturation: false
+      isr.overscan.fitType: 'MEDIAN_PER_ROW'
+      isr.overscan.leadingColumnsToSkip: 4
+      isr.overscan.trailingColumnsToSkip: 4
+      isr.overscan.doParallelOverscan: false
   biasStabilityPlots:
     class: lsst.eo.pipe.BiasStabilityPlotsTask
     config:
