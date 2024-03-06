@@ -73,23 +73,19 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                     multiple=True,
                     deferLoad=True)
 
-    biases = cT.PrerequisiteInput(
-        name="cpBiasProc",
+    bias = cT.PrerequisiteInput(
+        name="bias",
         doc="Input bias calibration.",
         storageClass="ExposureF",
         dimensions=["instrument", "detector"],
-        multiple=True,
-        deferLoad=True,
-        isCalibration=True)
+        isCalibration=True,)
 
-    darks = cT.PrerequisiteInput(
-        name='cpDarkProc',
+    dark = cT.PrerequisiteInput(
+        name='dark',
         doc="Input dark calibration.",
         storageClass="ExposureF",
         dimensions=["instrument", "detector"],
-        multiple=True,
-        deferLoad=True,
-        isCalibration=True)
+        isCalibration=True,)
 
     camera = cT.PrerequisiteInput(name="camera",
                                   doc="Camera used in observations",
@@ -120,10 +116,10 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
         super().__init__(config=config)
 
         if not config.isr.doBias:
-            self.prerequisiteInputs.remove("biases")
+            self.prerequisiteInputs.remove("bias")
 
         if not config.isr.doDark:
-            self.prerequisiteInputs.remove("darks")
+            self.prerequisiteInputs.remove("dark")
 
 
 class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
@@ -160,7 +156,16 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         self.nsigma_y_axis = self.config.nsigma_y_axis
         self.figsize = self.config.xfigsize, self.config.yfigsize
 
-    def run(self, raws, biases=None, darks=None, camera=None):
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        camera = inputs['camera']
+        raws = inputs['raws']
+        bias = inputs.get('bias', None)
+        dark = inputs.get('dark', None)
+
+        outputRefs = self.run(raws, bias, dark, camera)
+
+    def run(self, raws, bias, dark, camera):
         raw_det = camera[raws[0].dataId['detector']]
         namps = len(raw_det)
         data = defaultdict(list)
@@ -173,7 +178,7 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                   for key in profile_plots}
         for handle in raws:
             raw = handle.get()
-            exp = self.isr.run(raw).exposure
+            exp = self.isr.run(raw, bias=bias, dark=dark).exposure
             image = exp.getImage()
             md = exp.getMetadata()
             det = exp.getDetector()
