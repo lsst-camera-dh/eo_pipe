@@ -163,7 +163,8 @@ class BiasStabilityTask(pipeBase.PipelineTask):
         bias = inputs.get('bias', None)
         dark = inputs.get('dark', None)
 
-        outputRefs = self.run(raws, bias, dark, camera)
+        outputs = self.run(raws, bias, dark, camera)
+        butlerQC.put(outputs, outputRefs)
 
     def run(self, raws, bias, dark, camera):
         raw_det = camera[raws[0].dataId['detector']]
