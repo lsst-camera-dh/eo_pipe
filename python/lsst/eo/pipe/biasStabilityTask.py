@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import lsst.afw.math as afwMath
 import lsst.geom
+from lsst.ip.isr import IsrTask, IsrTaskConfig
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -64,27 +65,46 @@ def get_readout_corner(image, amp, raw_amp, dxy):
 
 class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                                    dimensions=("instrument", "detector")):
-    exposures = cT.Input(name="postISRCCD",
-                         doc="CCDs with desired level of ISR applied.",
-                         storageClass="Exposure",
-                         dimensions=("instrument", "exposure", "detector"),
-                         multiple=True,
-                         deferLoad=True)
+
+    raws = cT.Input(name="raw",
+                    doc="Input exposure to process.",
+                    storageClass="Exposure",
+                    dimensions=["instrument", "exposure", "detector"],
+                    multiple=True,
+                    deferLoad=True)
+
+    bias = cT.PrerequisiteInput(
+        name="bias",
+        doc="Input bias calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "detector"],
+        isCalibration=True,)
+
+    dark = cT.PrerequisiteInput(
+        name='dark',
+        doc="Input dark calibration.",
+        storageClass="ExposureF",
+        dimensions=["instrument", "detector"],
+        isCalibration=True,)
+
     camera = cT.PrerequisiteInput(name="camera",
                                   doc="Camera used in observations",
                                   storageClass="Camera",
                                   isCalibration=True,
                                   dimensions=("instrument",))
+
     bias_stability_stats = cT.Output(name="bias_stability_stats",
                            doc="bias stability statistics",
                            storageClass="DataFrame",
                            dimensions=("instrument", "detector"))
+
     bias_serial_profile_plots = cT.Output(
         name="bias_serial_profile_plots",
         doc="profiles of median per-column bias "
         "level as a function of serial pixel",
         storageClass="Plot",
         dimensions=("instrument", "detector"))
+
     bias_parallel_profile_plots = cT.Output(
         name="bias_parallel_profile_plots",
         doc="profiles of median per-column bias "
@@ -92,14 +112,21 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument", "detector"))
 
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+
+        if not config.isr.doBias:
+            self.prerequisiteInputs.remove("bias")
+
+        if not config.isr.doDark:
+            self.prerequisiteInputs.remove("dark")
+
 
 class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
                               pipelineConnections=BiasStabilityTaskConnections):
-    ncol_skip = pexConfig.Field(doc="Number of initial and trailing columns "
-                                "to skip in evaluating serial overscan level",
-                                dtype=int, default=4)
-    oscan_method = pexConfig.Field(doc="Serial overscan subtraction method",
-                                   dtype=str, default="median_per_row")
+
+    isr = pexConfig.ConfigurableField(target=IsrTask, doc="ISR task")
+
     readout_corner_size = pexConfig.Field(doc="Size of readout corner region "
                                           "to consider, in pixels.",
                                           dtype=int, default=200)
@@ -123,15 +150,24 @@ class BiasStabilityTask(pipeBase.PipelineTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.ncol_skip = self.config.ncol_skip
-        self.oscan_method = self.config.oscan_method
+        self.makeSubtask("isr")
         self.readout_size = self.config.readout_corner_size
         self.nsigma = self.config.nsigma
         self.nsigma_y_axis = self.config.nsigma_y_axis
         self.figsize = self.config.xfigsize, self.config.yfigsize
 
-    def run(self, exposures, camera):
-        raw_det = camera[exposures[0].dataId['detector']]
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        camera = inputs['camera']
+        raws = inputs['raws']
+        bias = inputs.get('bias', None)
+        dark = inputs.get('dark', None)
+
+        outputs = self.run(raws, bias, dark, camera)
+        butlerQC.put(outputs, outputRefs)
+
+    def run(self, raws, bias, dark, camera):
+        raw_det = camera[raws[0].dataId['detector']]
         namps = len(raw_det)
         data = defaultdict(list)
         profile_plots = {'serial': plt.figure(figsize=self.figsize),
@@ -141,8 +177,9 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 for key, plot in profile_plots.items()}
         values = {key: {amp: [] for amp in range(1, namps+1)}
                   for key in profile_plots}
-        for handle in exposures:
-            exp = handle.get()
+        for handle in raws:
+            raw = handle.get()
+            exp = self.isr.run(raw, bias=bias, dark=dark).exposure
             image = exp.getImage()
             md = exp.getMetadata()
             det = exp.getDetector()
