@@ -2,14 +2,14 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-isrTaskName: biasIsr
+isrTaskName: cpPtcIsr
 # For CCOB data:
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config ptcExtract:matchExposuresType='FLUX' --config ptcExtract:matchExposuresByFluxKeyword='CCOBFLUX'"
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config cpPtcExtract:matchExposuresType='FLUX' --config cpPtcExtract:matchExposuresByFluxKeyword='CCOBFLUX'"
 
 ## For Run 5 data:
 #extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml"
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:

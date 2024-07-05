@@ -20,7 +20,7 @@ tasks:
       overscan.fitType: 'MEDIAN_PER_ROW'
       overscan.doParallelOverscan: true
   eoDarkTask:
-    class: lsst.cp.pipe.cpDarkTask.CpDarkTask
+    class: lsst.cp.pipe.cpDark.CpDarkTask
     config:
       connections.inputExp: 'eoDarkIsr'
       connections.outputExp: 'eoDarkProc'
@@ -34,7 +34,7 @@ tasks:
       exposureScaling: "DarkTime"
       combine: 'MEDIAN'
   eoMeasureBrightDefects:
-    class: lsst.cp.pipe.defects.MeasureDefectsCombinedTask
+    class: lsst.cp.pipe.cpDefects.MeasureDefectsCombinedTask
     config:
       connections.inputExp: 'eo_dark'
       connections.outputDefects: 'eoBrightDefects'
