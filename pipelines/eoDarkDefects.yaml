@@ -18,12 +18,12 @@ tasks:
       overscan.fitType: 'MEDIAN_PER_ROW'
       overscan.doParallelOverscan: true
   eoFlatMeasure:
-    class: lsst.cp.pipe.cpFlatNormTask.CpFlatMeasureTask
+    class: lsst.cp.pipe.cpFlatMeasure.CpFlatMeasureTask
     config:
       connections.inputExp: 'eoFlatIsr'
       connections.outputStats: 'eoFlatStats'
   eoFlatNorm:
-    class: lsst.cp.pipe.cpFlatNormTask.CpFlatNormalizationTask
+    class: lsst.cp.pipe.cpFlatMeasure.CpFlatNormalizationTask
     config:
       connections.inputMDs: 'eoFlatStats'
       connections.outputScales: 'eoFlatNormScales'
@@ -37,7 +37,7 @@ tasks:
       exposureScaling: 'Unity'
       scalingLevel: AMP
   eoMeasureDarkDefectsWithFilter:
-    class: lsst.cp.pipe.defects.MeasureDefectsCombinedWithFilterTask
+    class: lsst.cp.pipe.cpDefects.MeasureDefectsCombinedWithFilterTask
     config:
       connections.inputExp: 'eo_flat'
       connections.outputDefects: 'eoDarkDefects'

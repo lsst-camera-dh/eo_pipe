@@ -2,10 +2,10 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-isrTaskName: flatIsr
+isrTaskName: cpFlatIsr
 extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doDefect=False --config {isrTaskName}:doLinearize=False --config cpFlatCombine:exposureScaling='Unity'"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpFlat.yaml"
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlat.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:

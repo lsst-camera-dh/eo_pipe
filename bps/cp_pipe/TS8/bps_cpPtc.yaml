@@ -2,9 +2,9 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-isrTaskName: ptcIsr
+isrTaskName: cpPtcIsr
 
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config ptcExtract:matchExposuresType='TIME' --config ptcSolve:ptcFitType='EXPAPPROXIMATION' --config ptcSolve:maxSignalInitialPtcOutlierFit=50000"
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config cpPtcExtract:matchExposuresType='TIME' --config cpPtcSolve:ptcFitType='EXPAPPROXIMATION' --config cpPtcSolve:maxSignalInitialPtcOutlierFit=50000"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}

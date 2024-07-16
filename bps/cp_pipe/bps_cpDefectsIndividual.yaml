@@ -2,10 +2,10 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-isrTaskName: defectIsr
+isrTaskName: cpDefectsIndividualIsr
 extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doSaturation=False"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/findDefects.yaml"
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpDefectsIndividual.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:

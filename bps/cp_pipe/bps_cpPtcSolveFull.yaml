@@ -3,9 +3,9 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 # For CCOB data:
-extraQgraphOptions: "--config ptcSolve:ptcFitType='FULLCOVARIANCE'"
+extraQgraphOptions: "--config cpPtcSolve:ptcFitType='FULLCOVARIANCE'"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_CLASS_NAME}/cpPtc.yaml#ptcSolve,ptcPlot"
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpPtc.yaml#cpPtcSolve,cpPtcPlot"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
