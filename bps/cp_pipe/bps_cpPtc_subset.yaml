@@ -19,4 +19,4 @@ payload:
   inCollection: ${PTC_CHAINED_COLLECTION}
   payloadName: ptc_subset_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' ${DETECTOR_SELECTION}"
