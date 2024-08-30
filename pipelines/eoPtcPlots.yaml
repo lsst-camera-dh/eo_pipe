@@ -14,7 +14,7 @@ tasks:
     class: lsst.eo.pipe.RowMeansVarianceTask
     config:
       connections.ptc_results: "ptc"
-      connections.ptc_frames: "cpPtcProc"
+      connections.ptc_frames: "cpPtcIsrExp"
       connections.row_means_variance_plot: "row_means_variance_plot"
       connections.row_means_variance_stats: "row_means_variance_stats"
   rowMeansVarianceFpPlot:

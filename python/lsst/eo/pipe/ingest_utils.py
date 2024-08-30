@@ -36,7 +36,7 @@ def copy_repo_data(src_repo, in_collection, dest_repo, out_collection,
 
 
 def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
-                   repo='/repo/ir2'):
+                   repo='/repo/embargo', s3_bucket="rubin-summit"):
     """
     Ingest photodiode .ecsv data for all flat frames in a run.
 
@@ -49,8 +49,10 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
     output_run : str [None]
         Run collection name for the photodiode data. If None, then
         use f"{instrument}/photodiode".
-    repo : str ['/repo/ir2']
+    repo : str ['/repo/embargo']
         Data repository.
+    s3_bucket : str ['rubin-summit']
+        S3 bucket name to use in the data product URI, f"s3://{s3_bucket}/"
     """
     if output_run is None:
         output_run = f"{instrument}/photodiode"
@@ -78,7 +80,7 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
     for ref in exposure_refs.values():
         raw_path = butler.getURI(ref).path
         pd_path = raw_path[:-len('R22_S11.fits')] + 'photodiode.ecsv'
-        pd_uri = f"s3://rubin-sts/{pd_path}"
+        pd_uri = f"s3://{s3_bucket}/{pd_path}"
         resource_path = ResourcePath(pd_uri)
         if not resource_path.exists():
             continue
