@@ -36,7 +36,7 @@ def copy_repo_data(src_repo, in_collection, dest_repo, out_collection,
 
 
 def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
-                   repo='/repo/embargo', s3_bucket="rubin-summit"):
+                   repo='embargo_new', dry_run=False):
     """
     Ingest photodiode .ecsv data for all flat frames in a run.
 
@@ -49,47 +49,59 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
     output_run : str [None]
         Run collection name for the photodiode data. If None, then
         use f"{instrument}/photodiode".
-    repo : str ['/repo/embargo']
+    repo : str ['embargo_new']
         Data repository.
-    s3_bucket : str ['rubin-summit']
-        S3 bucket name to use in the data product URI, f"s3://{s3_bucket}/"
+    dry_run : bool [False]
+        If True, print out the ingest-photodiode command, but do not run.
     """
     if output_run is None:
         output_run = f"{instrument}/photodiode"
 
-    collections = [f"{instrument}/raw/all", output_run]
-    butler = daf_butler.Butler(repo, collections=collections)
+    butler = daf_butler.Butler(repo)
 
     # Find any already-ingested datasets.
-    where = f"exposure.science_program='{acq_run}'"
-    pd_refs = set(butler.registry.queryDatasets("photodiode", where=where))
-    pd_exps = {_.dataId["exposure"] for _ in pd_refs}
+    where = f"instrument='{instrument}' and exposure.science_program='{acq_run}'"
+    try:
+        pd_refs = set(butler.registry.queryDatasets("photodiode", where=where,
+                                                    collections=[output_run]))
+    except daf_butler.MissingCollectionError:
+        pd_exps = set()
+    else:
+        pd_exps = {_.dataId["exposure"] for _ in pd_refs}
 
-    where = (f"exposure.science_program='{acq_run}' "
-             "and exposure.observation_type='flat'")
-    refs = list(set(butler.registry.queryDatasets("raw", where=where)
-                    .expanded()))
+    # Find raw flats exposures.
+    where = (f"instrument='{instrument}' and "
+             f"exposure.science_program='{acq_run}' and "
+             "exposure.observation_type='flat'")
+    collections = [f"{instrument}/raw/all"]
+    refs = list(set(butler.registry.queryDatasets(
+        "raw", where=where, collections=collections).expanded()))
     refs = sorted(refs, key=lambda ref: ref.dataId['exposure'])
 
     # Find unique exposures and an associated reference.
+    all_exposures = set(ref.dataId['exposure'] for ref in refs)
     exposure_refs = {ref.dataId['exposure']: ref for ref in refs
                      if ref.dataId['exposure'] not in pd_exps}
-    print(f"Found {len(exposure_refs)} exposures.", flush=True)
+    print(f"Found {len(all_exposures)} total flat exposures and ", end='')
+    print(f"{len(exposure_refs)} exposures missing photodiode data.",
+          flush=True)
 
     ingested = []
     for ref in exposure_refs.values():
-        raw_path = butler.getURI(ref).path
-        pd_path = raw_path[:-len('R22_S11.fits')] + 'photodiode.ecsv'
-        pd_uri = f"s3://{s3_bucket}/{pd_path}"
+        raw_uri = butler.getURI(ref).geturl()
+        pd_uri = raw_uri[:-len('R22_S11.fits')] + 'photodiode.ecsv'
         resource_path = ResourcePath(pd_uri)
         if not resource_path.exists():
             continue
         command = (f"butler ingest-photodiode --output-run {output_run} "
                    f"{repo} {instrument} {pd_uri}")
-        try:
-            subprocess.check_call(command, shell=True)
-        except subprocess.CalledProcessError as eobj:
-            print(eobj, flush=True)
+        if dry_run:
+            print(command)
         else:
-            ingested.append(pd_uri)
+            try:
+                subprocess.check_call(command, shell=True)
+            except subprocess.CalledProcessError as eobj:
+                print(eobj, flush=True)
+            else:
+                ingested.append(pd_uri)
     print(f"Ingested {len(ingested)} datasets.")
