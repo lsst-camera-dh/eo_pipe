@@ -5,7 +5,7 @@ includeConfigs:
 isrTaskName: cpBiasIsr
 extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doDefect=False"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpBias.yaml"
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpBias.yaml#cpBiasIsr,cpBiasCombine"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:

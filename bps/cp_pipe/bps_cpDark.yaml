@@ -2,10 +2,10 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
-isrTaskName: cpDarkIsr
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doDefect=False --config cpDark:repair.doCosmicRay=False"
+isrTaskName: cpDarkForDefectsIsr
+extraQgraphOptions: "{isr_QgraphOptions}"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpDark.yaml"
+pipelineYaml: "${EO_PIPE_DIR}/pipelines/cpDarkForDefects.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
