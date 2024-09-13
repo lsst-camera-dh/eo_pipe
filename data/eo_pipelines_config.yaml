@@ -26,7 +26,6 @@ b_protocol:
     - bps_eoBFAnalysis.yaml
     - bps_eoCtiVsFlux.yaml
     - bps_eoPersistence.yaml
-#    - bps_eoScanMode.yaml
     - bps_eoBiasShifts.yaml
   env_vars:
     - B_PROTOCOL_RUN
@@ -54,6 +53,12 @@ flat_gain_stability:
   env_vars:
     - GAIN_STABILITY_RUN
     - CCOBLED
+
+scan_mode:
+  pipelines:
+    - bps_eoScanMode.yaml
+  env_vars:
+    - SCAN_MODE_RUN
 
 ccob_nb:
   pipelines:
