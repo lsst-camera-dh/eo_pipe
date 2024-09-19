@@ -17,7 +17,8 @@ __all__ = ['BiasStabilityTask', 'BiasStabilityPlotsTask']
 
 def get_plot_locations(repo, collections):
     dstypes = ('bias_mean_vs_time_plot', 'bias_stdev_vs_time_plot',
-               'bias_rc_mean_vs_time_plot', 'bias_serial_profile_plots',
+               'bias_rc_mean_vs_time_plot', 'bias_mean_local_20_vs_time_plot',
+               'bias_stdev_local_20_vs_time_plot', 'bias_serial_profile_plots',
                'bias_parallel_profile_plots')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
@@ -29,6 +30,21 @@ def image_stats(image, nsigma=10):
     stats = afwMath.makeStatistics(image, flags=flags, sctrl=stat_ctrl)
     return stats.getValue(afwMath.MEANCLIP), stats.getValue(afwMath.STDEVCLIP)
 
+def image_stats_local_20(image_arr, nsigma=10):
+    """Compute clipped mean and stdev of a grid of 20*20 superpixels over the image."""
+    #consider a fixed grid of 2000*500 pixels for now (avoid the e2v/ITL difference)  
+    arr_mean_local_20 = np.zeros((100,25))
+    for i in range(100):
+        xmin=20*i
+        xmax=20*(i+1)
+        for j in range(25):
+            ymin=20*j
+            ymax=20*(j+1)
+            arr_mean_local_20[i,j]=np.mean(image_arr[xmin:xmax,ymin:ymax])
+    stat_ctrl = afwMath.StatisticsControl(numSigmaClip=nsigma)
+    flags = afwMath.MEANCLIP | afwMath.STDEVCLIP        
+    stats = afwMath.makeStatistics(arr_mean_local_20, flags=flags, sctrl=stat_ctrl)
+    return stats.getValue(afwMath.MEANCLIP), stats.getValue(afwMath.STDEVCLIP)
 
 def get_readout_corner(image, amp, raw_amp, dxy):
     """
@@ -199,6 +215,9 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 mean, stdev = image_stats(image[bbox], nsigma=self.nsigma)
                 data['mean'].append(mean)
                 data['stdev'].append(stdev)
+                mean_local_20, stdev_local_20 = image_stats_local_20(image[bbox].array)
+                data['mean_local_20'].append(mean_local_20)
+                data['stdev_local_20'].append(stdev_local_20)
                 raw_amp = raw_det[amp_name]
                 rc_image = get_readout_corner(image, amp, raw_amp,
                                               self.readout_size)
@@ -260,6 +279,16 @@ class BiasStabilityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                         storageClass="Plot",
                                         dimensions=("instrument", "detector"),
                                         multiple=True)
+    bias_mean_local_20_vs_time_plot = cT.Output(name="bias_mean_local_20_vs_time_plot",
+                                       doc="Plot of bias mean_local_20 vs time",
+                                       storageClass="Plot",
+                                       dimensions=("instrument", "detector"),
+                                       multiple=True)
+    bias_stdev_local_20_vs_time_plot = cT.Output(name="bias_stdev_local_20_vs_time_plot",
+                                        doc="Plot of bias stdev_local_20 vs time",
+                                        storageClass="Plot",
+                                        dimensions=("instrument", "detector"),
+                                        multiple=True)
     bias_rc_mean_vs_time_plot = cT.Output(name="bias_rc_mean_vs_time_plot",
                                           doc="Plot of bias readout corner "
                                           "mean vs time",
@@ -288,12 +317,18 @@ class BiasStabilityPlotsTask(pipeBase.PipelineTask):
 
     _plot_column_map = {'bias_mean_vs_time': 'mean',
                         'bias_stdev_vs_time': 'stdev',
+                        'bias_mean_local_20_vs_time': 'mean_local_20',
+                        'bias_stdev_local_20_vs_time': 'stdev_local_20',
                         'bias_rc_mean_vs_time': 'rc_mean'}
     _plot_ylabel_map = {'bias_mean_vs_time': 'mean (ADU)',
                         'bias_stdev_vs_time': 'stdev (ADU)',
+                        'bias_mean_local_20_vs_time': 'mean_local_20 (ADU)',
+                        'bias_stdev_local_20_vs_time': 'stdev_local_20 (ADU)',
                         'bias_rc_mean_vs_time': 'readout corner mean (ADU)'}
     _plot_title_map = {'bias_mean_vs_time': 'bias stability, mean signal',
                        'bias_stdev_vs_time': 'bias stability, stdev',
+                       'bias_mean_local_20_vs_time': 'bias stability, mean_local_20 signal',
+                       'bias_stdev_local_20_vs_time': 'bias stability, stdev_local_20',
                        'bias_rc_mean_vs_time':
                        'bias stability, mean of region '
                        'covering the readout corner'}
