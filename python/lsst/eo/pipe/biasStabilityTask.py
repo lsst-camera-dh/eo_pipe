@@ -30,20 +30,13 @@ def image_stats(image, nsigma=10):
     stats = afwMath.makeStatistics(image, flags=flags, sctrl=stat_ctrl)
     return stats.getValue(afwMath.MEANCLIP), stats.getValue(afwMath.STDEVCLIP)
 
-def image_stats_local_20(image_arr, nsigma=10):
-    """Compute clipped mean and stdev of a grid of 20*20 superpixels over the image."""
-    #consider a fixed grid of 2000*500 pixels for now (avoid the e2v/ITL difference)  
-    arr_mean_local_20 = np.zeros((100,25))
-    for i in range(100):
-        xmin=20*i
-        xmax=20*(i+1)
-        for j in range(25):
-            ymin=20*j
-            ymax=20*(j+1)
-            arr_mean_local_20[i,j]=np.mean(image_arr[xmin:xmax,ymin:ymax])
+def image_stats_local_rebin(image, n_rebin=20, nsigma=10):
+    """Compute clipped mean and stdev of a grid of superpixels of size rebin*rebin over the image."""
+    #rebin the image
+    binned_image = afwMath.binImage(image, n_rebin)
     stat_ctrl = afwMath.StatisticsControl(numSigmaClip=nsigma)
     flags = afwMath.MEANCLIP | afwMath.STDEVCLIP        
-    stats = afwMath.makeStatistics(arr_mean_local_20, flags=flags, sctrl=stat_ctrl)
+    stats = afwMath.makeStatistics(binned_image, flags=flags, sctrl=stat_ctrl)
     return stats.getValue(afwMath.MEANCLIP), stats.getValue(afwMath.STDEVCLIP)
 
 def get_readout_corner(image, amp, raw_amp, dxy):
@@ -215,7 +208,7 @@ class BiasStabilityTask(pipeBase.PipelineTask):
                 mean, stdev = image_stats(image[bbox], nsigma=self.nsigma)
                 data['mean'].append(mean)
                 data['stdev'].append(stdev)
-                mean_local_20, stdev_local_20 = image_stats_local_20(image[bbox].array)
+                mean_local_20, stdev_local_20 = image_stats_local_rebin(image[bbox], 20, nsigma=self.nsigma)
                 data['mean_local_20'].append(mean_local_20)
                 data['stdev_local_20'].append(stdev_local_20)
                 raw_amp = raw_det[amp_name]
