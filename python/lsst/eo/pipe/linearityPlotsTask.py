@@ -62,9 +62,11 @@ def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05, logger=None):
     and omit any flux values above the Ne peak and any non-positive
     flux values.
     """
-    max_index = np.where(Ne == max(Ne))[0][0]
+    Ne_max = max(Ne)
+    max_index = np.where(Ne == Ne_max)[0][0]
     index = np.where((y_range[0] < Ne) & (Ne < y_range[1])
-                     & (flux <= flux[max_index]) & (flux > 0))
+                     & (flux <= flux[max_index]) & (flux > 0)
+                     & ~((flux > 0.9*flux[max_index]) & (Ne < 0.1*Ne_max)))
     aa = sum(flux[index])/sum(flux[index]**2/Ne[index])
 
     def func(x):
