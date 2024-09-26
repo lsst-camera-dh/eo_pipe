@@ -264,7 +264,7 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
                 notes[amp_name] \
                     = (f"{amp_name}\n"
                        f"max_frac_dev = {max_frac_dev:.1e}\n"
-                       f"max_observed_signal = {max_observed_signal:7.0f}\n"
+                       f"max_observed_signal = {max_observed_signal:7.0f} ADU\n"
                        f"linearity_turnoff = {linearity_turnoff:7.0f}")
                 plt.annotate(notes[amp_name], (0.05, 0.95),
                              xycoords='axes fraction', verticalalignment='top',
