@@ -13,7 +13,7 @@ b_protocol:
     - bps_cpBias.yaml
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
-    - bps_cpDefects.yaml
+    - bps_cpDefectsIndividual.yaml
     - bps_cpPtc.yaml
   env_vars:
     - B_PROTOCOL_RUN

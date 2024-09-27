@@ -187,15 +187,19 @@ class CpPipelines(PipelinesBase):
             while True:
                 i = 0
                 command = ["bps", "report", "--id", submit_dir]
-                output = subprocess.check_output(command,
-                                                 stderr=subprocess.STDOUT,
-                                                 text=True).split('\n')
-                for line in output:
-                    if run_id in line and not line.startswith('Global job id'):
-                        state = line[3:].strip().split()[0]
-                        now = datetime.datetime\
-                                      .now().strftime('%Y-%m-%d %H:%M:%S')
-                        print(now, state)
+                try:
+                    output = subprocess.check_output(command,
+                                                     stderr=subprocess.STDOUT,
+                                                     text=True).split('\n')
+                except subprocess.CalledProcessError as eobj:
+                    print(eobj)
+                else:
+                    for line in output:
+                        if run_id in line and not line.startswith('Global job id'):
+                            state = line[3:].strip().split()[0]
+                            now = datetime.datetime\
+                                          .now().strftime('%Y-%m-%d %H:%M:%S')
+                            print(now, state)
                 time.sleep(10)
                 i += 1
                 if state == 'SUCCEEDED':
