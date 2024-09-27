@@ -6,10 +6,10 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoScanMode.yaml
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  b_protocol_run: ${B_PROTOCOL_RUN}
+  scan_mode_run: ${SCAN_MODE_RUN}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${INSTRUMENT_NAME}/raw/all
-  payloadName: eo_scan_mode{payload_modifier}_{b_protocol_run}_{weekly}
+  payloadName: eo_scan_mode{payload_modifier}_{scan_mode_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='scan' and exposure.observation_reason='scan' and exposure.science_program='{b_protocol_run}' ${DETECTOR_SELECTION}"
