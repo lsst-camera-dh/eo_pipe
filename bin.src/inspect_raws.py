@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from collections import defaultdict
 import argparse
 import numpy as np
 import lsst.daf.butler as daf_butler
@@ -34,6 +35,7 @@ frame_data = []
 exposure_rec = None
 ptc_flats = set()
 flats = set()
+ccd_count = defaultdict(lambda: 0)
 for ref in refs:
     exposure_rec = ref.dataId.records['exposure']
     md_key = str(eval(f"exposure_rec.{exp_md_key}"))
@@ -44,6 +46,7 @@ for ref in refs:
         f"{exposure_rec.observation_type:6s}  "
         f"{exposure_rec.observation_reason:6s}  "
         f"{ref.dataId['physical_filter']}  "))
+    ccd_count[ref.dataId['exposure']] += 1
     if (exposure_rec.observation_type == "flat" and
         exposure_rec.observation_reason == "flat"):
         ptc_flats.add(ref.dataId['exposure'])
@@ -52,7 +55,9 @@ for ref in refs:
 
 unique_frames = np.unique(frame_data)
 for i, item in enumerate(unique_frames):
-    print(f"{i:05d}  {item}", flush=True)
+    exposure = int(item.split()[1])
+    print(f"{i:05d}  {item}", end="  ")
+    print(f"{ccd_count[exposure]:3d}", flush=True)
 
 if exposure_rec is not None:
     print(exposure_rec)
