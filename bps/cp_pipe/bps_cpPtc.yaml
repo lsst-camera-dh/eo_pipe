@@ -3,8 +3,7 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 isrTaskName: cpPtcIsr
-
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config cpPtcExtract:matchExposuresType='FLUX' --config cpPtcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config cpPtcSolve:ptcFitType='EXPAPPROXIMATION' --config cpPtcSolve:maxSignalInitialPtcOutlierFit=50000 --config cpPtcExtract:photodiodeIntegrationMethod='TRIMMED_SUM'"
+extraQgraphOptions: "{isr_QgraphOptions} --config cpPtcExtract:photodiodeIntegrationMethod='TRIMMED_SUM'"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
@@ -14,7 +13,7 @@ payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   payload_modifier: ${PAYLOAD_MODIFIER}
   weekly: ${WEEKLY}
-  inCollection: u/{operator}/defects{payload_modifier}_{b_protocol_run}_{weekly},${INSTRUMENT_NAME}/photodiode
+  inCollection: u/{operator}/linearizer{payload_modifier}_{b_protocol_run}_{weekly},${INSTRUMENT_NAME}/photodiode
   payloadName: ptc{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"
