@@ -5,7 +5,7 @@ includeConfigs:
 isrTaskName: cpDarkIsr
 extraQgraphOptions: "{isr_QgraphOptions}"
 
-pipelineYaml: "$CP_PIPE_DIR/pipelines/${INSTRUMENT_NAME}/cpDark.yaml"
+pipelineYaml: "$CP_PIPE_DIR/pipelines/${INSTRUMENT_NAME}/cpDark.yaml#cpDarkIsr,cpDark,cpDarkCombine"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
