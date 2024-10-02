@@ -1,0 +1,18 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+  - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
+
+isrTaskName: cpDarkBootstrapIsr
+extraQgraphOptions: "{isr_QgraphOptions}"
+
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpDarkBootstrap.yaml"
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: u/{operator}/bias_bootstrap{payload_modifier}_{b_protocol_run}_{weekly}
+  payloadName: dark_bootstrap{payload_modifier}_{b_protocol_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='dark' and exposure.observation_reason='dark' ${DETECTOR_SELECTION}"

@@ -1,0 +1,19 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+  - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
+
+isrTaskName: cpLinearizerIsr
+extraQgraphOptions: "{isr_QgraphOptions} --config cpLinearizerSolve:splineKnots=5 --config cpLinearizerSolve:doSplineFitTemperature=False --config cpLinearizerSolve:splineGroupingColumn=None"
+
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpLinearizer.yaml"
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  ptc_run: ${PTC_RUN}
+  b_protocol_run: ${B_PROTOCOL_RUN}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  weekly: ${WEEKLY}
+  inCollection: u/{operator}/defects{payload_modifier}_{b_protocol_run}_{weekly},${INSTRUMENT_NAME}/photodiode
+  payloadName: linearizer{payload_modifier}_{ptc_run}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"
