@@ -1,45 +1,9 @@
 description: Extract bright pixel defects from a set of dark exposures.
 tasks:
-  isr:
-    class: lsst.ip.isr.IsrTask
-    config:
-      connections.ccdExposure: 'raw'
-      connections.outputExposure: 'eoFlatIsr'
-      doWrite: true
-      doBrighterFatter: false
-      doDark: false
-      doFlat: false
-      doApplyGains: false
-      doSaturation: false
-      doFringe: false
-      doDefect: false
-      overscan.leadingColumnsToSkip: 2
-      overscan.leadingRowsToSkip: 2
-      overscan.fitType: 'MEDIAN_PER_ROW'
-      overscan.doParallelOverscan: true
-  eoFlatMeasure:
-    class: lsst.cp.pipe.cpFlatMeasure.CpFlatMeasureTask
-    config:
-      connections.inputExp: 'eoFlatIsr'
-      connections.outputStats: 'eoFlatStats'
-  eoFlatNorm:
-    class: lsst.cp.pipe.cpFlatMeasure.CpFlatNormalizationTask
-    config:
-      connections.inputMDs: 'eoFlatStats'
-      connections.outputScales: 'eoFlatNormScales'
-  eoFlatCombine:
-    class: lsst.cp.pipe.cpCombine.CalibCombineByFilterTask
-    config:
-      connections.inputExpHandles: 'eoFlatIsr'
-      connections.inputScales: 'eoFlatNormScales'
-      connections.outputData: 'eo_flat'
-      calibrationType: 'flat'
-      exposureScaling: 'Unity'
-      scalingLevel: AMP
   eoMeasureDarkDefectsWithFilter:
     class: lsst.cp.pipe.cpDefects.MeasureDefectsCombinedWithFilterTask
     config:
-      connections.inputExp: 'eo_flat'
+      connections.inputExp: 'flatBootstrap'
       connections.outputDefects: 'eoDarkDefects'
       thresholdType: 'VALUE'
       fracThresholdFlat: 0.8
