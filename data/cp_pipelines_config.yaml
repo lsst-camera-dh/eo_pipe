@@ -11,11 +11,16 @@ baseline:
 
 b_protocol:
   pipelines:
+    - bps_cpBiasBootstrap.yaml
+    - bps_cpDarkBootstrap.yaml
+    - bps_cpFlatBootstrap.yaml
+    - bps_cpDefects.yaml
+    - bps_cpLinearizer.yaml
+    - bps_cpPtc.yaml
+    - bps_cpBfk.yaml
     - bps_cpBias.yaml
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
-    - bps_cpDefectsIndividual.yaml
-    - bps_cpPtc.yaml
   env_vars:
     - B_PROTOCOL_RUN
     - PTC_RUN
