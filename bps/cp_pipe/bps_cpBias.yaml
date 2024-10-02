@@ -3,7 +3,7 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 isrTaskName: cpBiasIsr
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doDefect=False"
+extraQgraphOptions: "{isr_QgraphOptions}"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpBias.yaml#cpBiasIsr,cpBiasCombine"
 instrument: ${INSTRUMENT_CLASS}
@@ -12,7 +12,7 @@ payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${INSTRUMENT_NAME}/raw/all,${INSTRUMENT_NAME}/calib/unbounded
+  inCollection: u/{operator}/bfk{payload_modifier}_{b_protocol_run}_{weekly}
   payloadName: bias{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias' ${DETECTOR_SELECTION}"
