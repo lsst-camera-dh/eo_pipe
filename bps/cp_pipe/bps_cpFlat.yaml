@@ -5,7 +5,7 @@ includeConfigs:
 isrTaskName: cpFlatIsr
 extraQgraphOptions: "{isr_QgraphOptions}"
 
-pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlat.yaml"
+pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlat.yaml#cpFlatIsr,cpFlatMeasure,cpFlatNormalize,cpFlatCombine"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
