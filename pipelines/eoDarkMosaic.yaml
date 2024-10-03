@@ -1,24 +1,25 @@
 description: Make a focal plane mosaic of ISR'd dark exposures
 tasks:
   isr:
-    class: lsst.ip.isr.IsrTask
+    class: lsst.ip.isr.IsrTaskLSST
     config:
       connections.ccdExposure: 'raw'
       connections.outputExposure: 'postISRCCD'
-      doWrite: true
       doBrighterFatter: false
       doBias: true
       doDark: false
       doFlat: false
       doApplyGains: false
       doLinearize: false
-      doFringe: false
       doDefect: false
       doSaturation: false
-      overscan.leadingColumnsToSkip: 2
-      overscan.leadingRowsToSkip: 2
-      overscan.fitType: 'MEDIAN_PER_ROW'
-      overscan.doParallelOverscan: true
+      doCrosstalk: false
+      doDeferredCharge: false
+      doBootstrap: true
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan: true
   darkMosaic:
     class: lsst.eo.pipe.FocalPlaneMosaicTask
     config:
