@@ -1,6 +1,5 @@
 includeConfigs:
   - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
-  - ${PWD}/bps/bps_eo_pipe_isr_options.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoSpotMeasurement.yaml
 
