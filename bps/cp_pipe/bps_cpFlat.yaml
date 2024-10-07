@@ -3,7 +3,7 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 isrTaskName: cpFlatIsr
-extraQgraphOptions: "{isr_QgraphOptions}"
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doBrighterFatter=False"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlat.yaml#cpFlatIsr,cpFlatMeasure,cpFlatNormalize,cpFlatCombine"
 instrument: ${INSTRUMENT_CLASS}
