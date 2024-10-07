@@ -17,7 +17,6 @@ b_protocol:
     - bps_cpDefects.yaml
     - bps_cpLinearizer.yaml
     - bps_cpPtc.yaml
-    - bps_cpBfk.yaml
     - bps_cpBias.yaml
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
