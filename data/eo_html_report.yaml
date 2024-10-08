@@ -130,7 +130,7 @@ run_plot_tables:
     header_text : "Focal Plane Mosaics"
     rows :
       - text : "LSSTCam focal plane layout"
-        figure : "{run}/LSSTCam_fp_layout.png"
+        figure : "{run}/LSSTCam_fp_layout*.png"
       - text : "Read noise"
         figure : "{run}/read_noise_plot_*.png"
       - text : "Bright columns"
