@@ -1,6 +1,5 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
-  - ${PWD}/bps/bps_eo_pipe_isr_options.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftMosaics.yaml
 

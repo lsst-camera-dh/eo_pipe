@@ -1,25 +1,25 @@
 description: Measure persistence in a sequence of dark frames after high flux exposure
 tasks:
   isr:
-    class: lsst.ip.isr.IsrTask
+    class: lsst.ip.isr.IsrTaskLSST
     config:
       connections.ccdExposure: 'raw'
       connections.outputExposure: 'eoDarkIsr'
-      doWrite: true
       doBrighterFatter: false
       doBias: true
       doDark: false
       doFlat: false
       doApplyGains: false
-      usePtcGains: false
       doLinearize: false
-      doFringe: false
       doDefect: true
       doSaturation: false
-      overscan.leadingColumnsToSkip: 2
-      overscan.leadingRowsToSkip: 2
-      overscan.fitType: 'MEDIAN_PER_ROW'
-      overscan.doParallelOverscan: true
+      doCrosstalk: false
+      doDeferredCharge: false
+      doBootstrap: true
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan: true
   persistence:
     class: lsst.eo.pipe.PersistenceTask
     config:
