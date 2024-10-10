@@ -12,7 +12,7 @@ payload:
   b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${INSTRUMENT_NAME}/raw/all,${INSTRUMENT_NAME}/calib/unbounded
+  inCollection: ${INSTRUMENT_NAME}/raw/all,${CURATED_CALIBS}
   payloadName: bias_bootstrap{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='bias' and exposure.observation_reason='bias' ${DETECTOR_SELECTION}"
