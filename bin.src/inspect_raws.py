@@ -39,22 +39,28 @@ high_flux_filter = None
 low_flux_filter = None
 ccd_count = defaultdict(lambda: 0)
 for ref in refs:
+    exposure = ref.dataId['exposure']
+    ccd_count[exposure] += 1
+    if ccd_count[exposure] > 1:
+        continue
+    md = butler.get(ref.makeComponentRef("metadata"))
+    ccobled = md.get('CCOBLED', None)
     exposure_rec = ref.dataId.records['exposure']
     md_key = str(eval(f"exposure_rec.{exp_md_key}"))
     physical_filter = ref.dataId['physical_filter']
     frame_data.append((
         f"{md_key:6s}  "
-        f"{ref.dataId['exposure']}  "
+        f"{exposure}  "
         f"{exposure_rec.obs_id:6s}  "
         f"{exposure_rec.observation_type:6s}  "
         f"{exposure_rec.observation_reason:6s}  "
-        f"{physical_filter}  "))
-    ccd_count[ref.dataId['exposure']] += 1
+        f"{physical_filter}  "
+        f"{ccobled}  "))
     if (exposure_rec.observation_type == "flat" and
         exposure_rec.observation_reason == "flat"):
-        ptc_flats.add(ref.dataId['exposure'])
+        ptc_flats.add(exposure)
     if exposure_rec.observation_type == "flat":
-        flats.add(ref.dataId['exposure'])
+        flats.add(exposure)
     if exposure_rec.observation_reason == "sflat_hi":
         high_flux_filter = physical_filter
     if exposure_rec.observation_reason == "sflat_lo":
