@@ -13,9 +13,12 @@ parser.add_argument('--repo', type=str, default='embargo_new',
 parser.add_argument('--instrument',
                     choices=['LSST-TS8', 'LSSTCam', 'LSSTComCam', 'LATISS'],
                     default='LSSTCam')
+parser.add_argument('--get_ccobled', action="store_true", default=False,
+                    help='include CCOBLED info for each exposure')
 
 args = parser.parse_args()
 instrument = args.instrument
+get_ccobled = args.get_ccobled
 butler = daf_butler.Butler(args.repo)
 
 acq_run = args.run
@@ -43,19 +46,22 @@ for ref in refs:
     ccd_count[exposure] += 1
     if ccd_count[exposure] > 1:
         continue
-    md = butler.get(ref.makeComponentRef("metadata"))
-    ccobled = md.get('CCOBLED', None)
+    if get_ccobled:
+        md = butler.get(ref.makeComponentRef("metadata"))
+        ccobled = md.get('CCOBLED', None)
     exposure_rec = ref.dataId.records['exposure']
     md_key = str(eval(f"exposure_rec.{exp_md_key}"))
     physical_filter = ref.dataId['physical_filter']
-    frame_data.append((
+    entry = (
         f"{md_key:6s}  "
         f"{exposure}  "
         f"{exposure_rec.obs_id:6s}  "
         f"{exposure_rec.observation_type:6s}  "
         f"{exposure_rec.observation_reason:6s}  "
-        f"{physical_filter}  "
-        f"{ccobled}  "))
+        f"{physical_filter}  ")
+    if get_ccobled:
+        entry += f"{ccobled}  "
+    frame_data.append(entry)
     if (exposure_rec.observation_type == "flat" and
         exposure_rec.observation_reason == "flat"):
         ptc_flats.add(exposure)
