@@ -38,6 +38,7 @@ ptc:
     - bps_eoPtcPlots.yaml
     - bps_eoLinearityPlots.yaml
     - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
   env_vars:
     - PTC_RUN
 
