@@ -32,6 +32,7 @@ b_protocol:
     - PTC_RUN
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
+    - GUIDER_DESELECTION
 
 ptc:
   pipelines:
