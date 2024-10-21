@@ -5,7 +5,7 @@ tasks:
     class: lsst.eo.pipe.LinearityPlotsTask
     config:
       connections.pd_data: 'photodiode'
-      connections.ptc_results: 'ptc'
+      connections.ptc_results: 'linearizerPtc'
       connections.camera: 'camera'
       connections.linearity_plots: 'linearity_fit_plot'
       connections.residual_plots: 'linearity_residuals_plot'
