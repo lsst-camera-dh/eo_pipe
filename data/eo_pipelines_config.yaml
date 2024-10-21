@@ -8,6 +8,7 @@ baseline:
     - EO_PIPE_INCOLLECTION
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
+    - DO_PARALLEL_OSCAN
 
 b_protocol:
   pipelines:
