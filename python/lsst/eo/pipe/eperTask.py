@@ -2,6 +2,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import lsst.afw.image as afw_image
 import lsst.afw.math as afw_math
 import lsst.daf.butler as daf_butler
 from lsst.geom import Box2I, Extent2I, Point2I
@@ -15,6 +16,15 @@ from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ['compute_ctis', 'EperTask', 'EperFpPlotsTask']
+
+
+def signal_estimate(imarr, statistic=afw_math.MEANCLIP):
+    """Robust estimator to replace np.sum(imarr)"""
+    ny, nx = imarr.shape
+    image = afw_image.ImageF(nx, ny)
+    image.array[:] = imarr
+    stats = afw_math.makeStatistics(image, statistic)
+    return stats.getValue(statistic)*nx*ny
 
 
 def get_amp_data(repo, collections):
@@ -62,9 +72,9 @@ def compute_ctis(processed_segment, raw_amp_info, npix=3,
         sbbox = Box2I(Point2I(oscan.minX + npix, oscan.minY),
                       Extent2I(oscan.width - npix, oscan.height))
         imarr -= np.mean(processed_segment[sbbox].array)
-    signal = np.sum(imarr[firstrow:lastrow + 1, lastcol])
-    trailed = np.sum(imarr[firstrow:lastrow + 1,
-                           lastcol + 1:lastcol + 1 + npix])
+    signal = signal_estimate(imarr[firstrow:lastrow + 1, lastcol:lastcol+1])
+    trailed = signal_estimate(imarr[firstrow:lastrow + 1,
+                                    lastcol + 1:lastcol + 1 + npix])
     scti = (trailed/signal)/(bbox.width + 1)
     # Parallel CTI
     imarr = imarr0.copy()
@@ -73,8 +83,9 @@ def compute_ctis(processed_segment, raw_amp_info, npix=3,
         pbbox = Box2I(Point2I(oscan.minX, oscan.minY + npix),
                       Extent2I(oscan.width, oscan.height - npix))
         imarr -= np.mean(processed_segment[pbbox].array)
-    signal = np.sum(imarr[lastrow, firstcol:lastcol+1])
-    trailed = np.sum(imarr[lastrow + 1:lastrow + 1 + npix, firstcol:lastcol+1])
+    signal = signal_estimate(imarr[lastrow:lastrow+1, firstcol:lastcol+1])
+    trailed = signal_estimate(imarr[lastrow + 1:lastrow + 1 + npix,
+                                    firstcol:lastcol+1])
     pcti = (trailed/signal)/(bbox.height + 1)
     return scti, pcti
 
