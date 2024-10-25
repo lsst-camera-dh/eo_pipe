@@ -83,6 +83,10 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
             "median": "Median of all selected pixels in overscan region",
             "median_per_row": "Median of each row of selected pixels",
             "1d_poly": "1D polynomial of degree 2 fit to median_per_row data"})
+    do_parallel_oscan = pexConfig.Field(
+        doc="Flag to do parallel overscan correction in addition to serial",
+        default=True,
+        dtype=bool)
     polynomial_degree = pexConfig.Field(
         doc="Degree of polynomial to fit to overscan row medians",
         default=2,
@@ -126,6 +130,7 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.dx = self.config.nx_skip
         self.oscan_method = self.config.oscan_method
+        self.do_parallel = self.config.do_parallel_oscan
         self.deg = self.config.polynomial_degree
         self.pd_integration_method = self.config.pd_integration_method
         self.pd_current_scale = self.config.pd_current_scale
@@ -163,7 +168,8 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
                 amp_name = amp_info.getName()
                 image = apply_minimal_isr(raw, bias, dark, amp, dx=self.dx,
                                           oscan_method=self.oscan_method,
-                                          deg=self.deg)
+                                          deg=self.deg,
+                                          do_parallel=self.do_parallel)
                 flags = afw_math.MEDIAN | afw_math.STDEVCLIP
                 stats = afw_math.makeStatistics(image, flags)
                 data['raft'].append(raft)
