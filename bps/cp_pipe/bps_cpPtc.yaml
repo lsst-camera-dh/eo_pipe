@@ -4,7 +4,7 @@ includeConfigs:
 
 isrTaskName: cpPtcIsr
 
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config cpPtcExtract:matchExposuresType='FLUX' --config cpPtcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config cpPtcSolve:ptcFitType='EXPAPPROXIMATION' --config cpPtcSolve:maxSignalInitialPtcOutlierFit=50000"
+extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doLinearize=False --config cpPtcExtract:matchExposuresType='FLUX' --config cpPtcExtract:matchExposuresByFluxKeyword='CCOBFLUX' --config cpPtcSolve:ptcFitType='EXPAPPROXIMATION' --config cpPtcSolve:maxSignalInitialPtcOutlierFit=50000 --config cpPtcExtract:photodiodeIntegrationMethod='TRIMMED_SUM'"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
