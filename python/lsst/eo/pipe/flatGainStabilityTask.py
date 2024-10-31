@@ -94,7 +94,7 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
     pd_integration_method = pexConfig.ChoiceField(
         dtype=str,
         doc="Integration method for photodiode monitoring data.",
-        default="CHARGE_SUM",
+        default="TRIMMED_SUM",
         allowed={
             "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
                            "readout entries"),
