@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import argparse
+import time
 from lsst.eo.pipe import ingest_pd_data
 
 parser = argparse.ArgumentParser()
@@ -13,9 +14,16 @@ parser.add_argument("--repo", type=str, default="embargo_new",
                     help="Data repository")
 parser.add_argument("--dry_run", action='store_true', default=False,
                     help="Print the ingest commands, but do not execute.")
+parser.add_argument("--wait_time", type=float, default=5,
+                    help="Minutes to wait between butler queries for pd data")
 
 args = parser.parse_args()
 
-ingest_pd_data(args.run, instrument=args.instrument,
-               output_run=args.output_run, repo=args.repo,
-               dry_run=args.dry_run)
+while True:
+    num_ingested = ingest_pd_data(args.run, instrument=args.instrument,
+                                  output_run=args.output_run, repo=args.repo,
+                                  dry_run=args.dry_run)
+    if num_ingested == 0:
+        break
+    time.sleep(60*args.wait_time)
+

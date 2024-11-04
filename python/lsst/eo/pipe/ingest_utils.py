@@ -104,4 +104,5 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
                 print(eobj, flush=True)
             else:
                 ingested.append(pd_uri)
-    print(f"Ingested {len(ingested)} datasets.")
+    print(f"Ingested {len(ingested)} datasets.", flush=True)
+    return len(ingested)
