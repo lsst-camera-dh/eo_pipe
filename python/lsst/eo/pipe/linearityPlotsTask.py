@@ -36,17 +36,6 @@ def get_plot_locations(repo, collections):
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
-def get_pd_values(pd_integrals, ptc, amp_name):
-    values = []
-    for pair in ptc.inputExpIdPairs[amp_name]:
-        if pair[0] not in pd_integrals or pair[1] not in pd_integrals:
-            # Use sentinel value of -1 to enable this entry to be deselected.
-            values.append(-1)
-        else:
-            values.append((pd_integrals[pair[0]] + pd_integrals[pair[1]])/2.)
-    return np.array(values)
-
-
 def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05, logger=None):
     """
     Fit a line with the y-intercept fixed to zero, using the
@@ -89,14 +78,6 @@ def linearity_fit(flux, Ne, y_range=(1e3, 9e4), max_frac_dev=0.05, logger=None):
 
 class LinearityPlotsTaskConnections(pipeBase.PipelineTaskConnections,
                                     dimensions=("instrument", "detector")):
-    pd_data = cT.Input(
-        name="photodiode",
-        doc="Photodiode readings data.",
-        storageClass="IsrCalib",
-        dimensions=("instrument", "exposure"),
-        multiple=True,
-        deferLoad=True)
-
     ptc_results = cT.Input(
         name="ptc_results",
         doc="PTC results dataset",
@@ -146,27 +127,8 @@ class LinearityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
                                dtype=float, default=12)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=12)
-    photodiodeIntegrationMethod = pexConfig.ChoiceField(
-        dtype=str,
-        doc="Integration method for photodiode monitoring data.",
-        default="CHARGE_SUM",
-        allowed={
-            "DIRECT_SUM": ("Use numpy's trapz integrator on all photodiode "
-                           "readout entries"),
-            "TRIMMED_SUM": ("Use numpy's trapz integrator, clipping the "
-                            "leading and trailing entries, which are "
-                            "nominally at zero baseline level."),
-            "CHARGE_SUM": ("Treat the current values as integrated charge "
-                           "over the sampling interval and simply sum "
-                           "the values, after subtracting a baseline level."),
-        }
-    )
-    photodiodeCurrentScale = pexConfig.Field(
-        dtype=float,
-        doc="Scale factor to apply to photodiode current values for the "
-            "``CHARGE_SUM`` integration method.",
-        default=-1.0,
-    )
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
 
 
 class LinearityPlotsTask(pipeBase.PipelineTask):
@@ -179,49 +141,19 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         self.fit_range = self.config.fit_range_min, self.config.fit_range_max
         self.max_frac_dev_spec = self.config.max_frac_dev_spec
         self.figsize = self.config.yfigsize, self.config.xfigsize
-        self.pd_integration_method = self.config.photodiodeIntegrationMethod
-        self.pd_current_scale = self.config.photodiodeCurrentScale
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
-
-        pd_data = {}
-        for handle in inputs["pd_data"]:
-            exposure = handle.dataId["exposure"]
-            physical_filter = handle.dataId.records["exposure"].physical_filter
-            pd_data[exposure] = (physical_filter, handle)
-        acq_run = handle.dataId.records["exposure"].science_program
 
         ptc_ref = inputs['ptc_results']
 
         camera = inputs['camera']
 
-        struct = self.run(pd_data, ptc_ref, camera, acq_run)
+        struct = self.run(ptc_ref, camera)
         butlerQC.put(struct, outputRefs)
         plt.close()
 
-    def run(self, pd_data, ptc_ref, camera, acq_run):
-        # Compute pd_integrals, applying Run 5 correction factors:
-        def pd_corr(physical_filter):
-            corr_factors = {'SDSSi': 1,
-                            'SDSSi~ND_OD0.5': 0.9974873256470026}
-            return corr_factors.get(physical_filter, 1)
-
-        pd_integrals = {}
-        for exposure, (physical_filter, handle) in pd_data.items():
-            photodiode = handle.get()
-            photodiode.integrationMethod = self.pd_integration_method
-            photodiode.currentScale = self.pd_current_scale
-            pd_integral = photodiode.integrate()
-            if camera.getName() == "LSST-TS8" and np.isnan(pd_integral):
-                self.log.warning("A nan value returned for the pd_integral "
-                                 "for LSST-TS8 data; flipping the sign of "
-                                 "pd_current_scale and recomputing.")
-                photodiode.currentScale = -self.pd_current_scale
-                pd_integral = photodiode.integrate()
-            pd_integrals[exposure] \
-                = pd_integral*pd_corr(physical_filter)
-
+    def run(self, ptc_ref, camera):
         # Fit linear model to each amp.
         detector = ptc_ref.dataId['detector']
         ptc = ptc_ref.get()
@@ -234,11 +166,11 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         notes = {}
         for i, amp in enumerate(det, 1):
             amp_name = amp.getName()
-            pd_values = get_pd_values(pd_integrals, ptc, amp_name)
+            pd_values = ptc.photoCharges[amp_name]
             gain = ptc.gain[amp_name]
             if np.isnan(gain):
                 gain = camera[det_name][amp_name].getGain()
-            Ne = np.array(ptc.rawMeans[amp_name])*gain
+            Ne = gain*ptc.rawMeans[amp_name]
             try:
                 func, resids[amp_name], index[amp_name], linearity_turnoff \
                     = linearity_fit(pd_values, Ne, y_range=self.fit_range,
@@ -279,8 +211,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         linearity_plots.supxlabel('photodiode current integral')
         linearity_plots.supylabel('e-/pixel')
-        linearity_plots.suptitle(f'Linearity Curves, acq. run {acq_run}, '
-                                 f'{det_name}')
+        linearity_plots.suptitle(append_acq_run(self, "Linearity Curves",
+                                                suffix=det_name))
 
         residual_plots = plt.figure(figsize=self.figsize)
         for i, amp in enumerate(det, 1):
@@ -305,8 +237,8 @@ class LinearityPlotsTask(pipeBase.PipelineTask):
         plt.tight_layout(rect=(0.03, 0.03, 1, 0.95))
         residual_plots.supxlabel('photodiode current integral')
         residual_plots.supylabel('fractional residuals')
-        residual_plots.suptitle(f'Linearity Residuals, acq. run {acq_run}, '
-                                f'{det_name}')
+        residual_plots.suptitle(append_acq_run(self, "Linearity Residuals",
+                                               suffix=det_name))
 
         linearity_results = pd.DataFrame(amp_data)
 
