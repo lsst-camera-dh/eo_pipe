@@ -90,9 +90,13 @@ if high_flux_filter is not None and low_flux_filter is not None:
     print(f"export LOW_FLUX_FILTER={low_flux_filter}")
 
 print()
-print(len(set(butler.registry.queryDatasets("photodiode", where=where,
-                                            collections=[f'{instrument}/photodiode']))),
-      "photodiode datasets")
+try:
+    print(len(set(butler.registry.queryDatasets("photodiode", where=where,
+                                                collections=[f'{instrument}/photodiode']))),
+          "photodiode datasets")
+except daf_butler.MissingCollectionError:
+    print(f"No collection {instrument}/photodiode found.")
+
 print(len(flats), "flat frames")
 print(len(ptc_flats), "flat/flat frames")
 print(len(unique_frames), "total frames")
