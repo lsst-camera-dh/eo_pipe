@@ -17,6 +17,7 @@ b_protocol:
     - bps_eoBiasStability.yaml
     - bps_eoBrightDefects.yaml
     - bps_eoDarkDefects.yaml
+    - bps_eoVampireDefects.yaml
     - bps_eoDarkCurrent.yaml
     - bps_eoEper.yaml
     - bps_eoPtcPlots.yaml

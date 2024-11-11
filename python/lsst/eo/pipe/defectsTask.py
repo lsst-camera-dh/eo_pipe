@@ -3,6 +3,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import pandas as pd
 
+import lsst.afw.detection as afw_detect
+import lsst.afw.math as afw_math
 from lsst.cp.pipe import MergeDefectsTaskConfig, MergeDefectsTask
 import lsst.daf.butler as daf_butler
 import lsst.geom
@@ -17,7 +19,8 @@ from .dsref_utils import get_plot_locations_by_dstype
 
 
 __all__ = ["MergeSelectedDefectsTask", "BrightDefectsPlotsTask",
-           "DarkDefectsPlotsTask"]
+           "DarkDefectsPlotsTask", "VampireDefectsTask",
+           "VampireDefectsPlotsTask"]
 
 
 def get_amp_data(repo, collections):
@@ -27,7 +30,8 @@ def get_amp_data(repo, collections):
     amp_data = defaultdict(lambda: defaultdict(dict))
     defect_fields = {
         'bright_defects_results': ('bright_columns', 'bright_pixels'),
-        'dark_defects_results': ('dark_columns', 'dark_pixels')
+        'dark_defects_results': ('dark_columns', 'dark_pixels'),
+        'vampire_defects_results': ('vampire_defects',)
     }
     for dstype, fields in defect_fields.items():
         dsrefs = list(set(butler.registry.queryDatasets(dstype,
@@ -46,7 +50,8 @@ def get_plot_locations(repo, collections):
     dstypes = ('bright_columns_fp_plot', 'bright_pixels_fp_plot',
                'dark_columns_fp_plot', 'dark_pixels_fp_plot',
                'bright_columns_fp_hist', 'bright_pixels_fp_hist',
-               'dark_columns_fp_hist', 'dark_pixels_fp_hist')
+               'dark_columns_fp_hist', 'dark_pixels_fp_hist',
+               'vampire_defects_fp_plot', 'vampire_defects_fp_hist')
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
@@ -347,3 +352,182 @@ class DarkDefectsPlotsTask(DefectsPlotsTask):
             dark_columns_fp_hist=outputs['columns_fp_hist'],
             dark_pixels_fp_plot=outputs['pixels_fp_plot'],
             dark_pixels_fp_hist=outputs['pixels_fp_hist'])
+
+
+class VampireDefectsTaskConnections(
+        pipeBase.PipelineTaskConnections,
+        dimensions=("instrument", "detector", "physical_filter")):
+    """Task to detect bright defects on combined flats."""
+    flat = cT.Input(
+        name="flat",
+        doc="Combined flat constructed by cp_pipe",
+        storageClass="Exposure",
+        dimensions=("instrument", "detector", "physical_filter"),
+        isCalibration=True
+    )
+
+    vampire_defects = cT.Output(
+        name="vampire_defects",
+        doc="Bright defects from combined flats",
+        storageClass="Defects",
+        dimensions=("instrument", "detector", "physical_filter"),
+    )
+
+    vampire_defect_catalog = cT.Output(
+        name="vampire_defect_catalog",
+        doc="Catalog of bright defects from combined flats",
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector", "physical_filter"),
+    )
+
+
+class VampireDefectsTaskConfig(
+        pipeBase.PipelineTaskConfig,
+        pipelineConnections=VampireDefectsTaskConnections):
+    threshold_type = pexConfig.ChoiceField(
+        dtype=str,
+        doc="Type of detection threshold.",
+        default="VALUE",
+        allowed={"VALUE": "Use fractional_threshold * clipped mean.",
+                 "SIGMA": "Use nsigma * clipped stdev + clipped mean."}
+    )
+    fractional_threshold = pexConfig.Field(
+        doc=("Fractional threshold above clipped mean for"
+             "vampire pixel detection."),
+        dtype=float, default=1.2
+    )
+    nsigma = pexConfig.Field(
+        doc=("Number of clipped stdev above clipped mean for "
+             "vampire pixel detection."),
+        dtype=float, default=5.0
+    )
+
+
+class VampireDefectsTask(pipeBase.PipelineTask):
+    """
+    Class for detecting bright defects from combined flats.
+    """
+    ConfigClass = VampireDefectsTaskConfig
+    _DefaultName = "vampireDefectsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.threshold_type = self.config.threshold_type
+        self.frac_threshold = self.config.fractional_threshold
+        self.nsigma = self.config.nsigma
+
+    def run(self, flat):
+        det = flat.getDetector()
+        det_name = det.getName()
+        image = flat.getMaskedImage()
+        fp_list = []
+        data = defaultdict(list)
+        flags = afw_math.MEANCLIP | afw_math.STDEVCLIP
+        for amp in det:
+            amp_name = amp.getName()
+            amp_image = image.Factory(image, amp.getBBox())
+            stats = afw_math.makeStatistics(amp_image, flags)
+            mean = stats.getValue(afw_math.MEANCLIP)
+            if self.threshold_type == "VALUE":
+                threshold = afw_detect.createThreshold(self.frac_threshold*mean,
+                                                       'value')
+            elif self.threshold_type == "SIGMA":
+                stdev = stats.getValue(afw_math.STDEVCLIP)
+                threshold = afw_detect.createThreshold(mean + self.nsigma*stdev,
+                                                       'value')
+            footprints = afw_detect.FootprintSet(amp_image, threshold)\
+                                   .getFootprints()
+            fp_list.extend(footprints)
+            # Subtract the baseline for flux calculations.
+            amp_image -= mean
+            for index, fp in enumerate(footprints):
+                data['det_name'].append(det_name)
+                data['amp_name'].append(amp_name)
+                data['index'].append(index)
+                centroid = fp.getCentroid()
+                data['xpos'].append(centroid.x)
+                data['ypos'].append(centroid.y)
+                heavy_fp = afw_detect.HeavyFootprintF(fp, amp_image)
+                data['flux'].append(sum(heavy_fp.getImageArray()))
+                data['peak_flux'].append(max(heavy_fp.getImageArray()))
+        return pipeBase.Struct(
+            vampire_defects=Defects.fromFootprintList(fp_list),
+            vampire_defect_catalog=pd.DataFrame(data)
+        )
+
+
+class VampireDefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
+                                         dimensions=("instrument",)):
+    vampire_defect_catalogs = cT.Input(
+        name="vampire_defect_catalogs",
+        doc="Catalogs of bright defects from combined flats",
+        storageClass="DataFrame",
+        dimensions=("instrument", "detector", "physical_filter"),
+        deferLoad=True,
+        multiple=True
+    )
+
+    camera = cT.PrerequisiteInput(
+        name="camera",
+        doc="Camera used in observations",
+        storageClass="Camera",
+        isCalibration=True,
+        dimensions=("instrument",))
+
+    vampire_defects_fp_plot = cT.Output(
+        name="vampire_defects_fp_plot",
+        doc="Vampire defects focal plane mosaic",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+    vampire_defects_fp_hist = cT.Output(
+        name="vampire_defects_fp_hist",
+        doc="Vampire defects focal plane histogram",
+        storageClass="Plot",
+        dimensions=("instrument",))
+
+
+class VampireDefectsPlotsTaskConfig(
+        pipeBase.PipelineTaskConfig,
+        pipelineConnections=VampireDefectsPlotsTaskConnections):
+    """Configuration for PixelDefectsPlotsTask"""
+    xfigsize = pexConfig.Field(doc="Figure size x-direction in inches.",
+                               dtype=float, default=9)
+    yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
+                               dtype=float, default=9)
+    acq_run = pexConfig.Field(doc="Acquisition run number.",
+                              dtype=str, default="")
+
+
+class VampireDefectsPlotsTask(pipeBase.PipelineTask):
+    """
+    Class for creating summary plots of vampire defects.
+    """
+    ConfigClass = VampireDefectsPlotsTaskConfig
+    _DefaultName = "vampireDefectsPlotsTask"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.figsize = self.config.yfigsize, self.config.xfigsize
+
+    def run(self, vampire_defect_catalogs, camera):
+        amp_data = defaultdict(dict)
+        for handle in vampire_defect_catalogs:
+            det_name = camera[handle.dataId['detector']].getName()
+            df = handle.get()
+            if len(df) == 0:
+                continue
+            for amp_name in set(df['amp_name']):
+                amp_data[det_name][amp_name] \
+                    = len(df.query(f"amp_name=='{amp_name}'"))
+
+        mosaic = plt.figure(figsize=self.figsize)
+        ax = mosaic.add_subplot(111)
+        title = append_acq_run(self, "Bright defects from combined flats")
+        plot_focal_plane(ax, amp_data, camera=camera, title=title)
+        hist = plt.figure()
+        hist_amp_data(amp_data, "# defects", title=title)
+        return pipeBase.Struct(
+            vampire_defects_fp_plot=mosaic,
+            vampire_defects_fp_hist=hist
+        )
