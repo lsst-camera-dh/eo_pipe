@@ -12,4 +12,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_vampire_defects{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='LSSTCam' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='LSSTCam' ${DETECTOR_SELECTION}"

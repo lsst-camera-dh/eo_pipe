@@ -495,6 +495,10 @@ class VampireDefectsPlotsTaskConfig(
                                dtype=float, default=9)
     yfigsize = pexConfig.Field(doc="Figure size y-direction in inches.",
                                dtype=float, default=9)
+    zmin = pexConfig.Field(doc="Lower range of color bar for # defects per amp",
+                           dtype=float, default=0)
+    zmax = pexConfig.Field(doc="Upper range of color bar for # defects per amp",
+                           dtype=float, default=100)
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
 
@@ -509,6 +513,7 @@ class VampireDefectsPlotsTask(pipeBase.PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.figsize = self.config.yfigsize, self.config.xfigsize
+        self.z_range = self.config.zmin, self.config.zmax
 
     def run(self, vampire_defect_catalogs, camera):
         amp_data = defaultdict(dict)
@@ -524,7 +529,8 @@ class VampireDefectsPlotsTask(pipeBase.PipelineTask):
         mosaic = plt.figure(figsize=self.figsize)
         ax = mosaic.add_subplot(111)
         title = append_acq_run(self, "Bright defects from combined flats")
-        plot_focal_plane(ax, amp_data, camera=camera, title=title)
+        plot_focal_plane(ax, amp_data, camera=camera, title=title,
+                         z_range=self.z_range)
         hist = plt.figure()
         hist_amp_data(amp_data, "# defects", title=title)
         return pipeBase.Struct(
