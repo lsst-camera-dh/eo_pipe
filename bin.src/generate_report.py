@@ -29,15 +29,15 @@ htmldir = args.htmldir
 if repo is None:
     repo = os.environ['BUTLER_CONFIG']
 
-weekly = os.environ['WEEKLY']
-if args.pattern is None:
-    user = os.environ['USER']
-    pattern = f"u/{user}/eo_*_{acq_run}_{weekly}"
-
 if args.payload_modifier is None:
     payload_modifier = os.environ.get("PAYLOAD_MODIFIER", "")
 else:
     payload_modifier = args.payload_modifier
+
+weekly = os.environ['WEEKLY']
+if args.pattern is None:
+    user = os.environ['USER']
+    pattern = f"u/{user}/eo_*{payload_modifier}_{acq_run}_{weekly}"
 
 generate_report(repo, pattern, acq_run, staging_dir=staging_dir,
                 htmldir=htmldir, weekly=weekly+payload_modifier)
