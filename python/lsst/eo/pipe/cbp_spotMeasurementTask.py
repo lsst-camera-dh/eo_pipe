@@ -55,7 +55,6 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
 
     def run(self, exposure_handles, camera):
-        sys.path.append('/sdf/data/rubin/user/amouroux/comissioning/cbp_codes/scripts/spot_measurement/')
         from photometry import AperturePhotometry
         #from lsst.eo.throughput import throughput
 
