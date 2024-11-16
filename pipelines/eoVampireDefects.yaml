@@ -1,0 +1,14 @@
+description: Characterize bright defects from combined flats
+tasks:
+  vampireDefects:
+    class: lsst.eo.pipe.VampireDefectsTask
+    config:
+      connections.flat: 'flat'
+      connections.vampire_defects: 'eo_vampire_defects'
+      connections.vampire_defect_catalog: 'eo_vampire_defect_catalog'
+      threshold_type: "VALUE"
+      fractional_threshold: 1.2
+  vampireDefectsPlots:
+    class: lsst.eo.pipe.VampireDefectsPlotsTask
+    config:
+      connections.vampire_defect_catalogs: 'eo_vampire_defect_catalog'
