@@ -384,6 +384,10 @@ class VampireDefectsTaskConnections(
 class VampireDefectsTaskConfig(
         pipeBase.PipelineTaskConfig,
         pipelineConnections=VampireDefectsTaskConnections):
+    background_size = pexConfig.Field(
+        doc="Approximate size in pixels of cells used for background scaling.",
+        dtype=int, default=64
+    )
     threshold_type = pexConfig.ChoiceField(
         dtype=str,
         doc="Type of detection threshold.",
@@ -412,6 +416,7 @@ class VampireDefectsTask(pipeBase.PipelineTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.bg_size = self.config.background_size
         self.threshold_type = self.config.threshold_type
         self.frac_threshold = self.config.fractional_threshold
         self.nsigma = self.config.nsigma
@@ -425,7 +430,7 @@ class VampireDefectsTask(pipeBase.PipelineTask):
         flags = afw_math.MEANCLIP | afw_math.STDEVCLIP
         for amp in det:
             amp_name = amp.getName()
-            amp_image = image.Factory(image, amp.getBBox())
+            amp_image = self._background_scaling(image.Factory(image, amp.getBBox()))
             stats = afw_math.makeStatistics(amp_image, flags)
             mean = stats.getValue(afw_math.MEANCLIP)
             if self.threshold_type == "VALUE":
@@ -454,6 +459,15 @@ class VampireDefectsTask(pipeBase.PipelineTask):
             vampire_defects=Defects.fromFootprintList(fp_list),
             vampire_defect_catalog=pd.DataFrame(data)
         )
+
+    def _background_scaling(self, amp_image):
+        bbox = amp_image.getBBox()
+        nx = bbox.getWidth() // self.bg_size
+        ny = bbox.getHeight() // self.bg_size
+        bg_ctrl = afw_math.BackgroundControl(nx, ny)
+        bg_obj = afw_math.makeBackground(amp_image, bg_ctrl)
+        amp_image /= bg_obj.getImageF("LINEAR")
+        return amp_image
 
 
 class VampireDefectsPlotsTaskConnections(pipeBase.PipelineTaskConnections,
