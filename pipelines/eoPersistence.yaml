@@ -13,6 +13,7 @@ tasks:
       doLinearize: false
       doDefect: true
       doSaturation: false
+      doSuspect: false
       doCrosstalk: false
       doDeferredCharge: false
       doBootstrap: true
