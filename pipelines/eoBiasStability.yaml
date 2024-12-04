@@ -24,7 +24,6 @@ tasks:
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 4
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 4
-      isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan: false
   biasStabilityPlots:
     class: lsst.eo.pipe.BiasStabilityPlotsTask
     config:
