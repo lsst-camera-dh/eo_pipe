@@ -307,11 +307,7 @@ class PtcFpPlotsTask(pipeBase.PipelineTask):
                     amp_data['ptc_noise'][detector][amp] = ptc.noise[amp]
                 elif ptc.ptcFitType == "FULLCOVARIANCE":
                     amp_data['ptc_a00'][detector][amp] = -ptc.aMatrix[amp][0, 0]
-                    # For FULLCOVARIANCE, ptc.noise looks like it is
-                    # the variance in cp_pipe, not the noise, so take
-                    # the sqrt.
-                    amp_data['ptc_noise'][detector][amp] \
-                        = np.sqrt(ptc.noise[amp])
+                    amp_data['ptc_noise'][detector][amp] = ptc.noise[amp]
                 amp_data['ptc_gain'][detector][amp] = ptc.gain[amp]
                 amp_data['ptc_turnoff'][detector][amp] = ptc.ptcTurnoff[amp]
         df = convert_amp_data_to_df(amp_data, camera=camera)

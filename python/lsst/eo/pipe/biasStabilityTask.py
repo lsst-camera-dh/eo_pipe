@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import lsst.afw.math as afwMath
 import lsst.geom
-from lsst.ip.isr import IsrTask, IsrTaskConfig
+from lsst.ip.isr import IsrTaskLSST, IsrTaskLSSTConfig
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
@@ -125,7 +125,7 @@ class BiasStabilityTaskConnections(pipeBase.PipelineTaskConnections,
 class BiasStabilityTaskConfig(pipeBase.PipelineTaskConfig,
                               pipelineConnections=BiasStabilityTaskConnections):
 
-    isr = pexConfig.ConfigurableField(target=IsrTask, doc="ISR task")
+    isr = pexConfig.ConfigurableField(target=IsrTaskLSST, doc="LSST ISR task")
 
     readout_corner_size = pexConfig.Field(doc="Size of readout corner region "
                                           "to consider, in pixels.",

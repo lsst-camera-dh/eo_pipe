@@ -1,6 +1,5 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
-  - ${PWD}/bps/bps_eo_pipe_isr_options.yaml
 
 pipelineYaml: "${EO_PIPE_DIR}/pipelines/eoDarkDefects.yaml"
 extraQgraphOptions: "--config darkDefectsPlots:acq_run=' ${B_PROTOCOL_RUN}'"
@@ -12,4 +11,4 @@ payload:
   inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_dark_defects{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason in ('sflat', 'sflat_hi') and physical_filter='${HIGH_FLUX_FILTER}' ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION}"
