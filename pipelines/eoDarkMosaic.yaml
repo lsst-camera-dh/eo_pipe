@@ -19,7 +19,6 @@ tasks:
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
-      overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan: true
   darkMosaic:
     class: lsst.eo.pipe.FocalPlaneMosaicTask
     config:
