@@ -5,21 +5,19 @@ tasks:
     config:
       connections.ccdExposure: 'raw'
       connections.outputExposure: 'postISRCCD'
-      doWrite: true
       doBrighterFatter: false
       doBias: true
       doDark: true
       doFlat: false
       doApplyGains: true
-      usePtcGains: true
       doLinearize: false
       doDefect: false
       doSaturation: false
-      doAttachTransmissionCurve: true
-      doUseOpticsTransmission: false
-      doUseFilterTransmission: false
-      doUseSensorTransmission: true
-      doUseAtmosphereTransmission: false
+#      doAttachTransmissionCurve: true
+#      doUseOpticsTransmission: false
+#      doUseFilterTransmission: false
+#      doUseSensorTransmission: true
+#      doUseAtmosphereTransmission: false
       doCrosstalk: false
       doDeferredCharge: false
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
