@@ -17,6 +17,8 @@ parser.add_argument('--payload_modifier',
                     help=('string to append to the WEEKLY folder name '
                           'to indicate a modified payload'),
                     type=str, default=None)
+parser.add_argument('--exclude_string', help="exclude string for collections",
+                    type=str, default=None)
 
 args = parser.parse_args()
 
@@ -40,4 +42,5 @@ if args.pattern is None:
     pattern = f"u/{user}/eo_*{payload_modifier}_{acq_run}_{weekly}"
 
 generate_report(repo, pattern, acq_run, staging_dir=staging_dir,
-                htmldir=htmldir, weekly=weekly+payload_modifier)
+                htmldir=htmldir, weekly=weekly+payload_modifier,
+                exclude_string=args.exclude_string)

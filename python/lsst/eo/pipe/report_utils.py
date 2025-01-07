@@ -55,10 +55,12 @@ def eo_pipe_data_dir(filename):
 
 def generate_report(repo, pattern, acq_run, staging_dir='./eo_report_staging',
                     htmldir='/sdf/group/rubin/web_data/lsstcam',
-                    collections=None, weekly=None):
+                    collections=None, weekly=None, exclude_string=None):
     butler = daf_butler.Butler(repo)
     collections = [] if collections is None else list(collections)
     collections.extend(butler.registry.queryCollections(pattern))
+    if exclude_string is not None:
+        collections = [_ for _ in collections if exclude_string not in _]
 
     template_file = eo_pipe_data_dir('eo_html_report.yaml')
     css_file = eo_pipe_data_dir('style.css')
