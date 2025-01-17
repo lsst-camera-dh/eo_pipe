@@ -8,7 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('run', type=str, help='acquisition run')
 parser.add_argument('--exp_md_key', type=str, help='exposure metadata key',
                     default='science_program')
-parser.add_argument('--repo', type=str, default='embargo_new',
+parser.add_argument('--repo', type=str, default='/repo/main',
                     help='data repository')
 parser.add_argument('--instrument',
                     choices=['LSST-TS8', 'LSSTCam', 'LSSTComCam', 'LATISS'],
