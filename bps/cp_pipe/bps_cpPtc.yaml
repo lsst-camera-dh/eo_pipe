@@ -3,7 +3,7 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 isrTaskName: cpPtcIsr
-extraQgraphOptions: "{isr_QgraphOptions} --config cpPtcExtract:photodiodeIntegrationMethod='TRIMMED_SUM'"
+extraQgraphOptions: "{isr_QgraphOptions} --config cpPtcExtract:photodiodeIntegrationMethod='TRIMMED_SUM' --config cpPtcSolve:ksTestMinPvalue=0"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpPtc.yaml"
 instrument: ${INSTRUMENT_CLASS}
