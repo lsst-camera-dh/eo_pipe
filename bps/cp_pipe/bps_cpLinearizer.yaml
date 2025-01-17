@@ -3,7 +3,7 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 isrTaskName: cpLinearizerIsr
-extraQgraphOptions: "{isr_QgraphOptions} --config cpLinearizerSolve:splineKnots=5 --config cpLinearizerSolve:doSplineFitTemperature=False --config cpLinearizerSolve:splineGroupingColumn=None"
+extraQgraphOptions: "{isr_QgraphOptions} --config cpLinearizerSolve:splineKnots=5 --config cpLinearizerSolve:doSplineFitTemperature=False --config cpLinearizerPtcSolve:ksTestMinPvalue=0 --config cpLinearizerSolve:splineGroupingColumn=None"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpLinearizer.yaml"
 instrument: ${INSTRUMENT_CLASS}
