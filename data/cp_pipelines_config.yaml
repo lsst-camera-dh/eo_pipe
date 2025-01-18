@@ -29,6 +29,7 @@ b_protocol:
 
 ptc:
   pipelines:
+    - bps_cpLinearizer_dense.yaml
     - bps_cpPtc_dense.yaml
   env_vars:
     - B_PROTOCOL_RUN
