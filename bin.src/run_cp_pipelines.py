@@ -23,8 +23,14 @@ if not os.path.isfile(config_file):
         src = src.replace("cp_pipelines_config", "cp_pipelines_latiss_config")
     shutil.copy(src, config_file)
 
-cp_pipelines = CpPipelines(config_file, verbose=not args.laconic,
-                           dry_run=args.dry_run,
-                           max_cpe_count=args.max_cpe_count)
-
-cp_pipelines.submit(args.run_type)
+if args.run_type in ('b_protocol',):
+    # Run pipelines sequentially
+    sequential_pipelines = CpPipelines(config_file, verbose=not args.laconic,
+                                       dry_run=args.dry_run,
+                                       max_cpe_count=args.max_cpe_count)
+    sequential_pipelines.submit(args.run_type)
+elif args.run_type in ('ptc',):
+    # Run pipelines concurrently
+    concurrent_pipelines = EoPipelines(config_file, verbose=no args.laconic,
+                                       dry_run=args.dry_run)
+    concurrent_pipelines.submit(args.run_type)
