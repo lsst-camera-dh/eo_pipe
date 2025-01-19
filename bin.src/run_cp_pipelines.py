@@ -31,6 +31,6 @@ if args.run_type in ('b_protocol',):
     sequential_pipelines.submit(args.run_type)
 elif args.run_type in ('ptc',):
     # Run pipelines concurrently
-    concurrent_pipelines = EoPipelines(config_file, verbose=no args.laconic,
+    concurrent_pipelines = EoPipelines(config_file, verbose=not args.laconic,
                                        dry_run=args.dry_run)
     concurrent_pipelines.submit(args.run_type)
