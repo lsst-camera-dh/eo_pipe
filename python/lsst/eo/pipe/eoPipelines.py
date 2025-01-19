@@ -68,7 +68,7 @@ class PipelinesBase:
                                      "bps_cpPtc.yaml"),
                         "./bps/cp_pipe/bps_cpPtc.yaml")
 
-    def submit(self, run_type, bps_yaml=None):
+    def submit(self, run_type, bps_yaml=None, check_in_collection=True):
         """
         Run bps submit for each pipeline of the specified run type.
 
@@ -90,7 +90,8 @@ class PipelinesBase:
             for pipeline in pipelines:
                 print(f"  {pipeline}")
             print()
-            self._print_in_collection()
+            if check_in_collection:
+                self._print_in_collection()
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
