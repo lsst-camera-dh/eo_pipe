@@ -2,7 +2,7 @@
 import os
 import shutil
 import argparse
-from lsst.eo.pipe import CpPipelines
+from lsst.eo.pipe import CpPipelines, EoPipelines
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_type', default='b_protocol',
