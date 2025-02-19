@@ -10,7 +10,7 @@ tasks:
       doDark: true
       doFlat: false
       doApplyGains: true
-      doLinearize: false
+      doLinearize: true
       doDefect: false
       doSaturation: false
 #      doAttachTransmissionCurve: false
@@ -18,7 +18,8 @@ tasks:
 #      doUseFilterTransmission: false
 #      doUseSensorTransmission: true
 #      doUseAtmosphereTransmission: false
-      doCrosstalk: false
+      doCrosstalk: true
+      crosstalk.doQuadraticCrosstalkCorrection: true
       doDeferredCharge: false
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
