@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 from astropy.io import fits
 import matplotlib.pyplot as plt
+import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
 
@@ -73,7 +74,9 @@ class ScanModeTaskConnections(pipeBase.PipelineTaskConnections,
 
 class ScanModeTaskConfig(pipeBase.PipelineTaskConfig,
                          pipelineConnections=ScanModeTaskConnections):
-    pass
+    nrow_skip = pexConfig.Field(
+        doc="Number of rows to skip for dispersion plot",
+        dtype=int, default=100)
 
 
 class ScanModeTask(pipeBase.PipelineTask):
@@ -85,6 +88,7 @@ class ScanModeTask(pipeBase.PipelineTask):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.nrow_skip = self.config.nrow_skip
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -138,7 +142,8 @@ class ScanModeTask(pipeBase.PipelineTask):
                 det_name = '_'.join((raft, slot))
                 disp_plot_title = f"{det_name}, Run {acq_run}, {tm_mode}"
                 Nchan = 8 if slot.startswith('SW') else 16
-                scope.plot_scan_dispersion(scandata, title=disp_plot_title,
+                scope.plot_scan_dispersion(scandata[:, self.nrow_skip:, :],
+                                           title=disp_plot_title,
                                            Nchan=Nchan)
                 butlerQC.put(plt.gcf(), disp_ref_map[det_name])
                 plt.close()
