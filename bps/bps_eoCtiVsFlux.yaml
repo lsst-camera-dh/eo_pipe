@@ -2,7 +2,7 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoCtiVsFlux.yaml
-extraQgraphOptions: "--config ctiVsFluxTask:acq_run=' ${PTC_RUN}'"
+extraQgraphOptions: "--config ctiVsFluxTask:acq_run=' ${PTC_RUN}' --config ctiVsFluxTask:do_parallel_oscan=${DO_PARALLEL_OSCAN}"
 
 instrument: ${INSTRUMENT_CLASS}
 

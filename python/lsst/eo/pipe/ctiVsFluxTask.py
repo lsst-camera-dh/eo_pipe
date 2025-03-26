@@ -42,7 +42,7 @@ def find_flat_pairs(raws, flux_keyword=""):
     for unique_key in set(key_values):
         i0 = key_values.index(unique_key)
         try:
-            i1 = key_values.index(unique_key, i0)
+            i1 = key_values.index(unique_key, i0 + 1)
         except ValueError:
             # A complete key pair doesn't exist, so omit the raw exposure
             # associated with this key_value.
@@ -161,6 +161,8 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
         for flat0, flat1 in flat_pairs:
             raw0 = flat0.get()
             raw1 = flat1.get()
+            md = raw0.getMetadata()
+            target_flux = md.get(self.flux_keyword)
             for amp, amp_info in enumerate(det):
                 amp_name = amp_info.getName()
                 dark = None  # Don't apply dark subtraction for EPER analysis
@@ -178,6 +180,9 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
                 data['signal'].append(signal)
                 data['scti'].append(scti)
                 data['pcti'].append(pcti)
+                data[self.flux_keyword].append(target_flux)
+                data['expId_0'].append(flat0.dataId['exposure'])
+                data['expId_1'].append(flat1.dataId['exposure'])
         df0 = pd.DataFrame(data)
         df0.sort_values('signal', inplace=True)
 

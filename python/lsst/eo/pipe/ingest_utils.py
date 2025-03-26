@@ -36,7 +36,8 @@ def copy_repo_data(src_repo, in_collection, dest_repo, out_collection,
 
 
 def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
-                   repo='embargo_new', dry_run=False):
+                   repo='embargo', target_repo='embargo',
+                   dry_run=False):
     """
     Ingest photodiode .ecsv data for all flat frames in a run.
 
@@ -49,8 +50,10 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
     output_run : str [None]
         Run collection name for the photodiode data. If None, then
         use f"{instrument}/photodiode".
-    repo : str ['embargo_new']
-        Data repository.
+    repo : str ['embargo']
+        Data repository containing the raw files.
+    target_repo : str ['embargo']
+        Target data repository for ingesting the pd data.
     dry_run : bool [False]
         If True, print out the ingest-photodiode command, but do not run.
     """
@@ -58,12 +61,14 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
         output_run = f"{instrument}/photodiode"
 
     butler = daf_butler.Butler(repo)
+    target_butler = daf_butler.Butler(target_repo)
 
     # Find any already-ingested datasets.
     where = f"instrument='{instrument}' and exposure.science_program='{acq_run}'"
     try:
-        pd_refs = set(butler.registry.queryDatasets("photodiode", where=where,
-                                                    collections=[output_run]))
+        pd_refs = set(target_butler.registry
+                      .queryDatasets("photodiode", where=where,
+                                     collections=[output_run]))
     except daf_butler.MissingCollectionError:
         pd_exps = set()
     else:
@@ -94,7 +99,7 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
         if not resource_path.exists():
             continue
         command = (f"butler ingest-photodiode --output-run {output_run} "
-                   f"{repo} {instrument} {pd_uri}")
+                   f"{target_repo} {instrument} {pd_uri}")
         if dry_run:
             print(command)
         else:
@@ -104,4 +109,5 @@ def ingest_pd_data(acq_run, instrument='LSSTCam', output_run=None,
                 print(eobj, flush=True)
             else:
                 ingested.append(pd_uri)
-    print(f"Ingested {len(ingested)} datasets.")
+    print(f"Ingested {len(ingested)} datasets.", flush=True)
+    return len(ingested)

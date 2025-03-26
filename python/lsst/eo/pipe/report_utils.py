@@ -109,7 +109,7 @@ def link_eo_pipe_plots(repo, collections, staging_dir_root, run):
     # Symlink the focal plane layout figure.
     if os.environ['INSTRUMENT_NAME'] == 'LSSTCam':
         fp_layout = os.path.join(lsst.utils.getPackageDir('eo_pipe'),
-                                 'data', 'LSSTCam_fp_layout.png')
+                                 'data', 'LSSTCam_fp_layout_Oct2024.png')
         dest = os.path.join(staging_dir, os.path.basename(fp_layout))
         os.symlink(fp_layout, dest)
 

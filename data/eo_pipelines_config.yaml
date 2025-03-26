@@ -8,6 +8,7 @@ baseline:
     - EO_PIPE_INCOLLECTION
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
+    - DO_PARALLEL_OSCAN
 
 b_protocol:
   pipelines:
@@ -16,6 +17,7 @@ b_protocol:
     - bps_eoBiasStability.yaml
     - bps_eoBrightDefects.yaml
     - bps_eoDarkDefects.yaml
+    - bps_eoVampireDefects.yaml
     - bps_eoDarkCurrent.yaml
     - bps_eoEper.yaml
     - bps_eoPtcPlots.yaml
@@ -32,12 +34,14 @@ b_protocol:
     - PTC_RUN
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
+    - GUIDER_DESELECTION
 
 ptc:
   pipelines:
     - bps_eoPtcPlots.yaml
     - bps_eoLinearityPlots.yaml
     - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
   env_vars:
     - PTC_RUN
 
