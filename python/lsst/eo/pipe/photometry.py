@@ -281,6 +281,8 @@ class AperturePhotometry:
         background = self.get_2d_background_aperture(aperture=background_aperture)
         substracted_background_image = self.get_substracted_background_image(background= background)
         aperture = self.generate_aperture(centroid=centroid, radius=radius)
+        self.background_stats = ApertureStats(background, aperture)
+        self.background_mean, self.background_std = self.background_stats.mean, self.background_stats.std
         adu_count = self.do_aperture_photometry(image = substracted_background_image, aperture = aperture)
         return adu_count
 

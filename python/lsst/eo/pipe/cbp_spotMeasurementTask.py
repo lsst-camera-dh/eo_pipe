@@ -88,7 +88,7 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
                 sp = Spot()
                 image = idata.get_image()
                 spot = sp.find_and_get_best_spots(image)
-                ap = AperturePhotometry(image=idata, spot=sp)
+                ap = AperturePhotometry(image=idata, spot=spot)
                 signal = ap.do_forced_aperture_photometry(centroid=ap.Spot.centroid, radius=aperture)
             elif forced :
                 sp = Spot(x=ref_spots[handle.dataId['detector']]["x"], y=ref_spots[handle.dataId['detector']]["y"], radius=aperture)
@@ -97,7 +97,7 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
             x, y = ap.Spot.x, ap.Spot.y
             radius = ap.Spot.radius
             fpx, fpy = pix_to_fp.getMapping().applyForward(np.vstack((x, y)))
-            bkg_mean, bkg_std = np.mean(ap.background), np.mean(ap.background)
+            bkg_mean, bkg_std = ap.background_mean, ap.background_std
             if type(fpx)!=list:
                 fpx, fpy=[fpx],[fpy]
             if type(x)!=list:
