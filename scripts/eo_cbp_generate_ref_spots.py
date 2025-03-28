@@ -33,7 +33,7 @@ def produce_ref_spots(day_obs, band):
     print("produce_ref_spots")
     job_ids = main(day_obs, band, forced=False)
     wait_for_jobs_to_finish(job_ids)
-    exp_tables_path = "/sdf/group/rubin/user/amouroux/comissioning/cbp_analysis/notebooks/comcam_analysis/exposures"
+    exp_tables_path = "/sdf/group/rubin/user/amouroux/DATA/CBP/Comcamspotmeasurement/exposures"
     spot_tables_path = "/sdf/group/rubin/user/amouroux/DATA/CBP/Comcamspotmeasurement"
     exp_table = Table.read(f"{exp_tables_path}/{band}_{day_obs}.fits")
     exposure_list = list(exp_table["exps"])
@@ -65,13 +65,13 @@ def produce_ref_spots(day_obs, band):
 
 def wait_for_jobs_to_finish(job_ids, poll_interval=60):
     """
-    Attend que les jobs SLURM spécifiés soient terminés.
+    Wait for SLURM jobs to be done.
     
     Args:
-        job_ids (list): Liste des IDs des jobs SLURM à surveiller.
-        poll_interval (int): Temps d'attente (en secondes) entre chaque vérification.
+        job_ids (list): SLURM jobs IDs to track.
+        poll_interval (int): Waiting time (seconds) between each verification.
     """
-    print(f"Attente de la fin des jobs : {', '.join(job_ids)}")
+    print(f"Ongoing jobs : {', '.join(job_ids)}")
     
     while True:
         # Vérifier les jobs actifs avec `squeue`

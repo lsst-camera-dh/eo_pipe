@@ -118,22 +118,4 @@ class SpotMeasurementTask(pipeBase.PipelineTask):
                 record.set('signal', signal[i])
                 record.set('bkg_mean', bkg_mean)
                 record.set('bkg_std', bkg_std)
-            #spot_info = throughput.get_spots_counts(
-            #    exposure,
-            #    threshold_adu=self.config.threshold_adu,
-            #    minarea=self.config.minarea,
-            #    maxarea=self.config.maxarea,
-            #    force_circle=self.config.force_circle)
-
-            #for signal, (x, y), fp in spot_info:
-            #    fp_pos = pix_to_fp.applyForward(lsst.geom.Point2D(x, y))
-            #    record = catalog.addNew()
-            #    record.set('det_name', det_name)
-            #    record.set('exposure', exp_id)
-            #    record.set('x', x)
-            #    record.set('y', y)
-            #    record.set('x_fp', fp_pos.x)
-            #    record.set('y_fp', fp_pos.y)
-            #    record.set('signal', signal)
-            #    record.setFootprint(fp)
         return pipeBase.Struct(spot_catalog=catalog)

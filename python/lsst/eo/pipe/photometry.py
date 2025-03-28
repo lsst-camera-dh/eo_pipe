@@ -11,8 +11,6 @@ import sys, os
 sys.path.append('/sdf/group/rubin/user/amouroux/comissioning/cbp_analysis/python/lsst/python/exposure_time_calculator')
 from rubin_calib_etc import RubinCalibETC
 
-#def processing()
-
 class Spot:
     def __init__(self, x=None, y=None, radius=None, mask_size = 150): 
         self.magnification_factor = 10.31 / 0.635
@@ -25,7 +23,7 @@ class Spot:
 
     def get_mask_size(self):
         self.mask_size_fp = self.mask_size * self.magnification_factor
-        self.mask_size_fp_px = self.mask_size_fp / 10 # inpx 1px = 10um
+        self.mask_size_fp_px = self.mask_size_fp / 10 # in px 1px = 10um
         self.mask_area_fp_px = np.pi * (self.mask_size_fp_px / 2) ** 2
 
     def find_spot(self, image, threshold_adu=100, minarea=20000):
