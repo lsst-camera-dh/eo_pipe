@@ -22,7 +22,7 @@ import yaml
 import lsst.daf.butler as daf_butler
 from lsst.resources import ResourcePath
 import lsst.utils
-from lsst.obs.lsst import LsstCam, LsstTS8, Latiss
+from lsst.obs.lsst import LsstCam, LsstComCam, LsstTS8, Latiss
 from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
     defectsTask, darkCurrentTask, divisaderoTearingTask, ptcPlotsTask, \
     eperTask, linearityPlotsTask, bfAnalysisTask, biasStabilityTask, \
@@ -31,6 +31,7 @@ from . import readNoiseTask, raftCalibMosaicTask, raftMosaicTask, \
 
 
 INSTRUMENTS = {'LSSTCam': LsstCam,
+               'LSSTComCam': LsstComCam,
                'LSST-TS8': LsstTS8,
                'LATISS': Latiss}
 

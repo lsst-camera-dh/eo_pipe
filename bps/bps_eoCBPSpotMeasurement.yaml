@@ -1,0 +1,15 @@
+includeConfigs:
+  - ${EO_PIPE_DIR}/bps/bps_htcondor_configs.yaml
+  - ${PWD}/bps/bps_eo_pipe_isr_options.yaml
+  
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoCBPSpotMeasurement.yaml
+
+payload:
+  spot_run: ${SPOT_RUN}
+  physical_filter: ${PHYSICAL_FILTER}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: ${PAYLOAD_NAME}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: ${DATAQUERY}

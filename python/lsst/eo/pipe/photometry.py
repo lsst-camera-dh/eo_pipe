@@ -3,6 +3,7 @@ from astropy.io import fits
 from astropy.table import Table
 from lsst.daf.butler import Butler
 import lsst.afw.detection as afwDetect
+from lsst.afw.geom import SpanSet
 from photutils.detection import DAOStarFinder
 from photutils.aperture import CircularAperture, aperture_photometry, ApertureStats, CircularAnnulus
 from photutils.background import Background2D
@@ -15,6 +16,7 @@ class Spot:
     def __init__(self, x=None, y=None, radius=None, mask_size = 150): 
         self.magnification_factor = 10.31 / 0.635
         self.mask_size = mask_size #mask size in um
+        self.centroid = (x,y)
         self.x = x
         self.y = y
         self.radius = radius
@@ -126,12 +128,13 @@ class Spot:
         brightest_spot = max(spot_counts, key=lambda x: x[1])[0]
         return brightest_spot
     
-    def find_and_get_best_spots(self, image):
+    def find_and_get_best_spot(self, image):
         self.get_mask_size()
-        self.find_spot_iteratively(self, image, threshold_adu_min=100, threshold_adu_max=1e4, minarea=self.mask_area_fp_px*.9)
+        self.find_spot_iteratively(image, threshold_adu_min=100, threshold_adu_max=1e4, minarea=int(self.mask_area_fp_px*.9))
         if len(self.found_spot) == 0:
             print("No spot found")
-            return None
+            ss = SpanSet.fromShape(0, offset=(0,0))
+            self.best_spot = afwDetect.Footprint(ss)
         elif len(self.found_spot) > 1:
             self.get_best_spot(image, self.found_spot)
         else:
@@ -140,12 +143,14 @@ class Spot:
         return self.best_spot
 
 class ImageData:
-    def __init__(self, repo=None, collections=None, instrument=None, dataId=None, datasetType=None):
+    def __init__(self, exposure_handle=None, repo=None):
         self.repo = repo
-        self.collections = collections
-        self.instrument = instrument
-        self.dataId = dataId
-        self.datasetType = datasetType
+        self.exposure_handle = exposure_handle
+        if exposure_handle is not None and repo is not None:
+            self.dataId = exposure_handle.dataId
+            self.instrument= self.dataId["instrument"]
+            self.datasetType = exposure_handle.ref.datasetType.name
+            self.collections = exposure_handle.ref.run
         self.image = None
         return None
     
@@ -165,19 +170,39 @@ class ImageData:
         if dataset is None:
             dataset = self.get_datasets()[0]
         self.img = self.butler.get(dataset)
-        self.image = self.img.image.array
+        self.metadata = self.img.getMetadata()
+        self.image = self.img.getImage().getArray()
+        return self.image
+
+    def get_image_from_handle(self, exposure_handle=None):
+        """
+        Get the image from a given exposure object.
+
+        Parameters:
+        exposure: The exposure object to get the image from.
+
+        Returns:
+        np.ndarray: The image array.
+        """
+        if exposure_handle is None:
+            exposure_handle = self.exposure_handle
+        self.img = self.exposure_handle.get()
+        self.metadata = self.img.getMetadata()
+        self.image = self.img.getImage().getArray()
         return self.image
     
 class AperturePhotometry:
     """
-    A class to perform aperture photometry on astronomical images.
+    A class to perform aperture photometry on CBP images.
     """
     def __init__(self, image=None, spot=None):
-        self.ImageData = image #ImageData object
+        self.ImageData = image #ImageData object 
         self.Spot = spot #Spot object
         if self.ImageData is not None:
-            if self.ImageData.image is None:
+            if self.ImageData.image is None and self.ImageData.exposure_handle is None:
                 self.ImageData.get_image()
+            elif self.ImageData.image is None and self.ImageData.exposure_handle is not None:
+                self.ImageData.get_image_from_handle()
             self.image = self.ImageData.image
         self.background = None
 
@@ -215,7 +240,7 @@ class AperturePhotometry:
         self.background = np.mean(self.image[mask==False])
         return self.background
     
-    def get_dark_background(self):
+    def get_dark_background(self): #To change with the task so that this is an input parameter ex : doBackground substraction | background_substraction_method
         exp_table_path = f"/sdf/group/rubin/user/amouroux/comissioning/cbp_analysis/notebooks/comcam_analysis/exposures/{self.ImageData.img.metadata['FILTBAND']}_{self.ImageData.img.metadata['DAYOBS']}.fits"
         exp_table = Table.read(exp_table_path)
         dark_exp = exp_table[exp_table["exposure"] == self.ImageData.dataId["exposure"]]["dark_exposure"][0]

@@ -26,3 +26,4 @@ from .selection_utils import *
 from .ingest_utils import *
 from .et_results import *
 from .eoPipelines import *
+from .cbpspotMeasurementTask import *
