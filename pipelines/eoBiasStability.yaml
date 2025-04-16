@@ -17,7 +17,9 @@ tasks:
       isr.doApplyGains: false
       isr.doLinearize: false
       isr.doDefect: false
-#      isr.doSaturation: false
+      isr.doSaturation: false
+      isr.doITLEdgeBleedMask: false
+      isr.doITLSatSagMask: false
       isr.doSuspect: false
       isr.doCrosstalk: false
       isr.doDeferredCharge: false
