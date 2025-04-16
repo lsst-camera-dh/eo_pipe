@@ -5,17 +5,22 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
+    - CURATED_CALIBS
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
     - DO_PARALLEL_OSCAN
 
 b_protocol:
   pipelines:
+    - bps_cpBiasBootstrap.yaml
+    - bps_cpDarkBootstrap.yaml
+    - bps_cpFlatBootstrap.yaml
+    - bps_cpDefects.yaml
+    - bps_cpLinearizer.yaml
+    - bps_cpPtc.yaml
     - bps_cpBias.yaml
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
-    - bps_cpDefectsIndividual.yaml
-    - bps_cpPtc.yaml
   env_vars:
     - B_PROTOCOL_RUN
     - PTC_RUN
@@ -24,6 +29,7 @@ b_protocol:
 
 ptc:
   pipelines:
+    - bps_cpLinearizer_dense.yaml
     - bps_cpPtc_dense.yaml
   env_vars:
     - B_PROTOCOL_RUN

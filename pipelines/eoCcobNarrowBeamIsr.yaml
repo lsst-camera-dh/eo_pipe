@@ -1,22 +1,20 @@
 description: Perform mininal ISR on CCOB Narrow Beam data.
 tasks:
   isr:
-    class: lsst.ip.isr.IsrTask
+    class: lsst.ip.isr.IsrTaskLSST
     config:
       connections.ccdExposure: 'raw'
       connections.outputExposure: 'postISRCCD'
-      doWrite: true
       doBrighterFatter: false
       doBias: true
       doDark: false
       doFlat: false
       doApplyGains: true
-      usePtcGains: true
       doLinearize: false
-      doFringe: false
       doDefect: false
       doSaturation: false
-      overscan.leadingColumnsToSkip: 2
-      overscan.leadingRowsToSkip: 2
-      overscan.fitType: 'MEDIAN_PER_ROW'
-      overscan.doParallelOverscan: true
+      doCrosstalk: false
+      doDeferredCharge: false
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
+      overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'

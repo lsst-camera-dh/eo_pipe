@@ -12,6 +12,8 @@ parser.add_argument('--laconic', action='store_true', default=False,
                     help='Verbosity flag')
 parser.add_argument('--dry_run', action='store_true', default=False,
                     help='Dry-run flag')
+parser.add_argument('--max_cpe_count', type=int, default=5,
+                    help='Maximum number of CalledProcessErrors per pipeline')
 args = parser.parse_args()
 
 config_file = './cp_pipelines_config.yaml'
@@ -22,6 +24,6 @@ if not os.path.isfile(config_file):
     shutil.copy(src, config_file)
 
 cp_pipelines = CpPipelines(config_file, verbose=not args.laconic,
-                           dry_run=args.dry_run)
-
+                           dry_run=args.dry_run,
+                           max_cpe_count=args.max_cpe_count)
 cp_pipelines.submit(args.run_type)

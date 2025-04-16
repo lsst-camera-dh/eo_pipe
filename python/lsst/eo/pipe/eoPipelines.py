@@ -68,7 +68,7 @@ class PipelinesBase:
                                      "bps_cpPtc.yaml"),
                         "./bps/cp_pipe/bps_cpPtc.yaml")
 
-    def submit(self, run_type, bps_yaml=None):
+    def submit(self, run_type, bps_yaml=None, check_in_collection=True):
         """
         Run bps submit for each pipeline of the specified run type.
 
@@ -90,7 +90,8 @@ class PipelinesBase:
             for pipeline in pipelines:
                 print(f"  {pipeline}")
             print()
-            self._print_in_collection()
+            if check_in_collection:
+                self._print_in_collection()
         if not click.confirm("Proceed?", default=True) or not self.verbose:
             print("Aborting runs.")
             return
@@ -166,8 +167,9 @@ class CpPipelines(PipelinesBase):
     Class to manage sequential bps submission of cp_pipe pipelines.
     """
     def __init__(self, cp_pipelines_config, verbose=True, dry_run=False,
-                 log_dir='./logs'):
+                 log_dir='./logs', max_cpe_count=5):
         super().__init__(cp_pipelines_config, verbose=verbose, dry_run=dry_run)
+        self.max_cpe_count = max_cpe_count
 
     def _run_pipelines(self, pipelines):
         for pipeline in pipelines:
@@ -184,6 +186,7 @@ class CpPipelines(PipelinesBase):
                     break
             print(f"Tracking {os.path.basename(pipeline)} run {run_id}")
             state = None
+            called_process_error_count = 0
             while True:
                 i = 0
                 command = ["bps", "report", "--id", submit_dir]
@@ -192,7 +195,9 @@ class CpPipelines(PipelinesBase):
                                                      stderr=subprocess.STDOUT,
                                                      text=True).split('\n')
                 except subprocess.CalledProcessError as eobj:
-                    print(eobj)
+                    called_process_error_count += 1
+                    if called_process_error_count > self.max_cpe_count:
+                        raise
                 else:
                     for line in output:
                         if run_id in line and not line.startswith('Global job id'):
