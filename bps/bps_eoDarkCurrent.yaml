@@ -9,6 +9,7 @@ extraQgraphOptions: "--config darkCurrentTask:acq_run=' {plot_label}'"
 payload:
   day_obs: ${DAYOBS}
   seq_num_range: ${SEQNUM_RANGE}
+  weekly: ${WEEKLY}
   inCollection: ${INCOLLECTION}
   payloadName: eo_dark_current_{day_obs}_{seq_num_range}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
