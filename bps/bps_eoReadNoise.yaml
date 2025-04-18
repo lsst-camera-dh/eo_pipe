@@ -12,7 +12,8 @@ payload:
   day_obs: ${DAYOBS}
   seq_num_range: ${SEQNUM_RANGE}
   weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${INCOLLECTION}
-  payloadName: eo_read_noise_{day_obs}_{seq_num_range}_{weekly}
+  payloadName: eo_read_noise{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range})"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range}) ${DETECTOR_SELECTION}"

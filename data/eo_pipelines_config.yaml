@@ -6,8 +6,8 @@ baseline:
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - INCOLLECTION
-    - DAYOBS
-    - SEQNUM_RANGE
+    - PAYLOAD_MODIFIER
+    - DETECTOR_SELECTION
 
 b_protocol:
   pipelines:
@@ -29,6 +29,8 @@ b_protocol:
 #    - bps_eoPersistence.yaml
 #    - bps_eoBiasShifts.yaml
   env_vars:
+    - DAYOBS
+    - SEQNUM_RANGE
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
     - GUIDER_DESELECTION
