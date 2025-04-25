@@ -10,7 +10,7 @@ tasks:
       doBias: false
       doDark: false
       doFlat: false
-      doApplyGains: true
+      doApplyGains: false
       doLinearize: false
       doFringe: false
       doDefect: false
@@ -22,5 +22,9 @@ tasks:
   cbpspotMeasurement:
     class: lsst.eo.pipe.CBPSpotMeasurementTask
     config:
-      connections.exposure_handles: 'postISRCCD'
-      doForcedPhotometry: false
+      doISR: true
+      connections.exposure_handles_input: 'postISRCCD'
+      #doISR: false
+      #connections.exposure_handles_prerequisite: 'postISRCCD'
+      doForcedPhotometry: true
+      aperture : 200

@@ -136,7 +136,7 @@ class Spot:
             ss = SpanSet.fromShape(0, offset=(0,0))
             self.best_spot = afwDetect.Footprint(ss)
         elif len(self.found_spot) > 1:
-            self.get_best_spot(image, self.found_spot)
+            self.get_best_spot(image, spots=self.found_spot)
         else:
             self.best_spot = self.found_spot[0]
         self.get_spot_information(self.best_spot)
@@ -170,7 +170,7 @@ class ImageData:
         if dataset is None:
             dataset = self.get_datasets()[0]
         self.img = self.butler.get(dataset)
-        self.metadata = self.img.getMetadata()
+        self.metadata = dict(self.img.getMetadata())
         self.image = self.img.getImage().getArray()
         return self.image
 
@@ -187,7 +187,7 @@ class ImageData:
         if exposure_handle is None:
             exposure_handle = self.exposure_handle
         self.img = self.exposure_handle.get()
-        self.metadata = self.img.getMetadata()
+        self.metadata = dict(self.img.getMetadata())
         self.image = self.img.getImage().getArray()
         return self.image
     
@@ -204,6 +204,8 @@ class AperturePhotometry:
             elif self.ImageData.image is None and self.ImageData.exposure_handle is not None:
                 self.ImageData.get_image_from_handle()
             self.image = self.ImageData.image
+        self.ImageData.shuttime = self.ImageData.metadata["SHUTTIME"]
+        self.ImageData.obsannot = self.ImageData.metadata["OBSANNOT"]
         self.background = None
 
     def get_2d_background_threshold(self, threshold = None):
@@ -213,7 +215,7 @@ class AperturePhotometry:
         if threshold is None:
             threshold = np.mean(self.image) + (3 * np.std(self.image))
         mask = np.ma.masked_where(self.image > threshold, self.image)
-        bkg = Background2D(self.image, (int(len(self.image)), int(len(self.image[0]))), mask=mask.mask, exclude_percentile=50.0)
+        bkg = Background2D(self.image, (int(len(self.image)/10), int(len(self.image[0])/10)), mask=mask.mask, exclude_percentile=50.0)
         self.background = bkg.background
         return self.background
     
@@ -225,7 +227,7 @@ class AperturePhotometry:
             aperture = self.aperture
         mask = np.zeros((self.image.shape[0], self.image.shape[1]), dtype=bool)
         mask |= aperture.to_mask(method='center').to_image((self.image.shape[0], self.image.shape[1])).astype(bool)
-        bkg = Background2D(self.image, (int(len(self.image)), int(len(self.image[0]))), mask=mask, exclude_percentile=50.0)
+        bkg = Background2D(self.image, (int(len(self.image)/10), int(len(self.image[0])/10)), mask=mask, exclude_percentile=50.0)
         self.background = bkg.background
         return self.background
 
@@ -267,6 +269,9 @@ class AperturePhotometry:
         """
         if background is None:
             background = self.background
+            if self.background is None :
+                print("No background found")
+                return None
         self.subtracted_background_image = self.image - background 
         return self.subtracted_background_image
     
@@ -302,7 +307,7 @@ class AperturePhotometry:
             radius = self.Spot.radius
         background_aperture = CircularAperture(centroid, r=600)
         background = self.get_2d_background_aperture(aperture=background_aperture)
-        substracted_background_image = self.get_substracted_background_image(background= background)
+        substracted_background_image = self.get_substracted_background_image(background=background)
         aperture = self.generate_aperture(centroid=centroid, radius=radius)
         self.background_stats = ApertureStats(background, aperture)
         self.background_mean, self.background_std = self.background_stats.mean, self.background_stats.std
