@@ -9,16 +9,24 @@ from lsst.pipe.base import connectionTypes as cT
 
 __all__ = ["CBPSpotMeasurementTask"]
 
-
 class CBPSpotMeasurementTaskConnections(pipeBase.PipelineTaskConnections,
                                      dimensions=("instrument", "detector")):
-    exposure_handles = cT.Input(
-        name="postISRCCD",#postISRCCD
+
+    exposure_handles_input = cT.Input(
+        name="postISRCCD",  
         doc="ISR'd exposures to analyze",
         storageClass="Exposure",
         dimensions=("instrument", "exposure", "detector"),
         multiple=True,
         deferLoad=True)
+    
+    exposure_handles_prerequisite = cT.PrerequisiteInput(
+        name="postISRCCD",  
+        doc="ISR'd exposures to analyze",
+        storageClass="Exposure",
+        dimensions=("instrument", "exposure", "detector"),
+        multiple=True,
+        deferLoad=True) #Attention here : query useless if doISR is false
 
     camera = cT.PrerequisiteInput(
         name="camera",
@@ -28,22 +36,45 @@ class CBPSpotMeasurementTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument",))
 
     reference_spot_catalog = cT.PrerequisiteInput(
-        name="cbp_spot_detection",
+        name="cbp_spot_measurement",
         doc="Catalog of cbp spot measurements.",
         storageClass="AstropyTable",
         dimensions=("instrument", "detector"))
 
     cbp_spot_detection = cT.Output(
-        name="spotMeasurement",
+        name="spot_catalog",
         doc="Catalog of cbp spot measurements.",
         storageClass="SourceCatalog",
+        dimensions=("instrument", "detector"))
+
+    cbp_ref_spots = cT.Output(
+        name="cbp_spot_measurement",
+        doc="Catalog of cbp reference spots.",
+        storageClass="AstropyTable",
         dimensions=("instrument", "detector"))
     
     def __init__(self, *, config=None):
         super().__init__(config=config)
 
-        if config.doForcedPhotometry is not True:
+        if config.doISR:
+            self.prerequisiteInputs.remove("exposure_handles_prerequisite")
+            self.exposure_handles = self.exposure_handles_input
+            self.inputs.add("exposure_handles")
+            self.inputs.remove("exposure_handles_input")
+        else:
+            self.inputs.remove("exposure_handles_input")
+            self.exposure_handles = self.exposure_handles_prerequisite
+            self.prerequisiteInputs.add("exposure_handles")
+            self.prerequisiteInputs.remove("exposure_handles_prerequisite")
+
+        if config.doForcedPhotometry == False:
             self.prerequisiteInputs.remove("reference_spot_catalog")
+            self.outputs.remove("cbp_spot_detection")
+            self.cbp_spot_detection = self.cbp_ref_spots
+            self.outputs.add("cbp_spot_detection")
+            self.outputs.remove("cbp_ref_spots")
+        if config.doForcedPhotometry == True:
+            self.outputs.remove("cbp_ref_spots")
 
 class CBPSpotMeasurementTaskConfig(pipeBase.PipelineTaskConfig,
                                 pipelineConnections=CBPSpotMeasurementTaskConnections):
@@ -57,6 +88,13 @@ class CBPSpotMeasurementTaskConfig(pipeBase.PipelineTaskConfig,
     #""                          dtype=float, default=4000000.0)
     #force_circle = pexConfig.Field(doc="Force spot shape to be a circle",
     #                               dtype=bool, default=True)
+
+    doISR = pexConfig.Field(
+        dtype=bool,
+        doc="Process ISR (Instrument Signature Removal) if True. If False, skip ISR.",
+        default=True,  # Default to True to process ISR by default
+    )
+
     doForcedPhotometry = pexConfig.Field(
         dtype=bool,
         doc="Use forced photometry if True. If False, find new spots.",
@@ -71,7 +109,7 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def run(self, exposure_handles, camera,  reference_spot_catalog=None):
+    def run(self, exposure_handles, camera, reference_spot_catalog=None):
         sys.path.append("/sdf/home/a/amouroux/DATA/eo_pipe/python/lsst/eo/pipe")
         from photometry import AperturePhotometry, ImageData, Spot
 
@@ -88,15 +126,16 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
         schema.addField("signal", "F", doc="Spot signal")
         schema.addField("bkg_mean", "F", doc="mean background")
         schema.addField("bkg_std", "F", doc="std of background")
+        schema.addField("exposure_time", "F", doc="exposure time in seconds")
+        schema.addField("wavelength", "I", doc="observation annotation, may contain wavelength")
         table = afw_table.SourceTable.make(schema)
         catalog = afw_table.SourceCatalog(table)
+            
         if self.config.doForcedPhotometry is True:
             print("Running forced photometry...")
             if reference_spot_catalog is None:
                 raise RuntimeError("Forced photometry requested but no reference spot catalog provided.")
-            ref_spots = {handle.dataId['detector']: reference_spot_catalog[handle.dataId['detector']] for handle in exposure_handles}
-            if not ref_spots:
-                raise RuntimeError("No reference spots found in the catalog.")
+            
         for handle in exposure_handles:
             det = camera[handle.dataId['detector']]
             pix_to_fp = det.getTransform(cameraGeom.PIXELS,
@@ -115,11 +154,18 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
                 ap = AperturePhotometry(image=idata, spot=sp)
                 signal = ap.do_forced_aperture_photometry(centroid=sp.centroid, radius=self.config.aperture)
             elif self.config.doForcedPhotometry is True :
-                sp = Spot(x=ref_spots[handle.dataId['detector']]["x"], y=ref_spots[handle.dataId['detector']]["y"], radius=self.config.aperture)
+                ref_x, ref_y = np.median(reference_spot_catalog["x"]), np.median(reference_spot_catalog["y"])
+                sp = Spot(x=ref_x, y=ref_y, radius=self.config.aperture)
                 ap = AperturePhotometry(image=idata, spot=sp)
                 signal = ap.do_forced_aperture_photometry(centroid=ap.Spot.centroid, radius=self.config.aperture)
             x, y = ap.Spot.x, ap.Spot.y
             radius = ap.Spot.radius
+            exposure_time = idata.shuttime 
+            obs_annot = idata.obsannot
+            try :
+                wavelength = int(obs_annot)
+            except :
+                wavelength = 0
             if int(x)!=0:
                 fpx, fpy = pix_to_fp.getMapping().applyForward(np.vstack((x, y)))
             else : 
@@ -145,4 +191,6 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
                 record.set('signal', signal[i])
                 record.set('bkg_mean', bkg_mean)
                 record.set('bkg_std', bkg_std)
+                record.set('exposure_time', exposure_time)
+                record.set('wavelength', wavelength)
         return pipeBase.Struct(cbp_spot_detection=catalog)
