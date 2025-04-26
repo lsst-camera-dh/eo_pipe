@@ -54,8 +54,8 @@ flat_gain_stability:
   pipelines:
     - bps_eoFlatGainStability.yaml
   env_vars:
-    - GAIN_STABILITY_RUN
-    - CCOBLED
+    - DAYOBS
+    - SEQNUM_RANGE
 
 scan_mode:
   pipelines:
