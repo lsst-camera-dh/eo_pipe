@@ -6,7 +6,7 @@ import lsst.afw.detection as afwDetect
 from lsst.afw.geom import SpanSet
 from photutils.detection import DAOStarFinder
 from photutils.aperture import CircularAperture, aperture_photometry, ApertureStats, CircularAnnulus
-from photutils.background import Background2D
+from photutils.background import Background2D, BkgZoomInterpolator
 import sys, os
 
 sys.path.append('/sdf/group/rubin/user/amouroux/comissioning/cbp_analysis/python/lsst/python/exposure_time_calculator')
@@ -40,7 +40,7 @@ class Spot:
         self.found_spot = afwDetect.FootprintSet(image, threshold, npixMin=minarea).getFootprints()
         return self.found_spot
 
-    def find_spot_iteratively(self, image, threshold_adu_min=100, threshold_adu_max=500, minarea=20000):
+    def find_spot_iteratively(self, image, threshold_array, minarea=20000):
         """
         Find spots in the image using a threshold and minimum area.
 
@@ -48,7 +48,7 @@ class Spot:
         threshold_adu (int): Threshold in ADU.
         minarea (int): Minimum area of the spot.
         """
-        threshold_array = np.logspace(np.log10(threshold_adu_max), np.log10(threshold_adu_min),5)
+        #threshold_array = np.logspace(np.log10(threshold_adu_max), np.log10(threshold_adu_min),5)
         for threshold_adu in threshold_array:
             found_spot = self.find_spot(image, threshold_adu, minarea)
             if len(found_spot) > 0:
@@ -119,10 +119,10 @@ class Spot:
 
         spot_counts = []
         for spot in spots:
-            self.get_spot_information(spot)
-            ap = AperturePhotometry(image=None, spot=spot)
-            aperture = ap.generate_aperture(centroid=(spot.x, spot.y), radius=200)
-            count = ap.do_aperture_photometry(image=image, aperture=aperture)
+            self.get_spot_information(spot=spot)
+            ap = AperturePhotometry(image=None, spot=None)
+            aperture = ap.generate_aperture(centroid=(self.x, self.y), radius=200)
+            count = ap.do_aperture_photometry(image=image.array, aperture=aperture)
             spot_counts.append((spot, count))
 
         brightest_spot = max(spot_counts, key=lambda x: x[1])[0]
@@ -130,14 +130,23 @@ class Spot:
     
     def find_and_get_best_spot(self, image):
         self.get_mask_size()
-        self.find_spot_iteratively(image, threshold_adu_min=100, threshold_adu_max=1e4, minarea=int(self.mask_area_fp_px*.9))
+        threshold_array = np.array([ np.median(image.array)+(25 * np.std(image.array)),
+                            np.median(image.array)+(5 * np.std(image.array)),
+                            np.percentile(image.array, 95),
+                            np.percentile(image.array, 75),
+                            np.percentile(image.array, 60),
+                            np.median(image.array)
+                          ])
+        self.find_spot_iteratively(image, threshold_array=threshold_array, minarea=int(self.mask_area_fp_px*.9))
         if len(self.found_spot) == 0:
             print("No spot found")
             ss = SpanSet.fromShape(0, offset=(0,0))
             self.best_spot = afwDetect.Footprint(ss)
         elif len(self.found_spot) > 1:
-            self.get_best_spot(image, spots=self.found_spot)
+            print(f"Found {len(self.found_spot)} spots.")
+            self.best_spot = self.get_best_spot(image, spots=self.found_spot)
         else:
+            print("Found one spot.")
             self.best_spot = self.found_spot[0]
         self.get_spot_information(self.best_spot)
         return self.best_spot
@@ -204,8 +213,8 @@ class AperturePhotometry:
             elif self.ImageData.image is None and self.ImageData.exposure_handle is not None:
                 self.ImageData.get_image_from_handle()
             self.image = self.ImageData.image
-        self.ImageData.shuttime = self.ImageData.metadata["SHUTTIME"]
-        self.ImageData.obsannot = self.ImageData.metadata["OBSANNOT"]
+            self.ImageData.shuttime = self.ImageData.metadata["SHUTTIME"]
+            self.ImageData.obsannot = self.ImageData.metadata["OBSANNOT"]
         self.background = None
 
     def get_2d_background_threshold(self, threshold = None):
@@ -225,9 +234,19 @@ class AperturePhotometry:
         """
         if aperture is None:
             aperture = self.aperture
+        """   
+        interpolator = BkgZoomInterpolator(
+            order=3,          # cubic interpolation (0=nearest, 1=linear, 3=cubic, etc.)
+            mode='reflect',   # how to handle edges ('reflect', 'constant', 'nearest', etc.)
+            cval=0.0,         # used if mode='constant'
+            clip=True,        # clip interpolated values to min/max of original boxes
+            grid_mode=True    # align interpolation grid with input image pixels
+            )
+        """
         mask = np.zeros((self.image.shape[0], self.image.shape[1]), dtype=bool)
         mask |= aperture.to_mask(method='center').to_image((self.image.shape[0], self.image.shape[1])).astype(bool)
         bkg = Background2D(self.image, (int(len(self.image)/10), int(len(self.image[0])/10)), mask=mask, exclude_percentile=50.0)
+        #bkg = Background2D(self.image, (int(len(self.image)/40), int(len(self.image)/40)), mask=mask, exclude_percentile=20.0,interpolator = interpolator)
         self.background = bkg.background
         return self.background
 
@@ -300,6 +319,7 @@ class AperturePhotometry:
     def do_forced_aperture_photometry(self, centroid=None, radius=None):
         """
         Perform aperture photometry on the image.
+        Add do background_substraction
         """
         if centroid is None:
             centroid = (self.Spot.x, self.Spot.y)
@@ -308,6 +328,7 @@ class AperturePhotometry:
         background_aperture = CircularAperture(centroid, r=600)
         background = self.get_2d_background_aperture(aperture=background_aperture)
         substracted_background_image = self.get_substracted_background_image(background=background)
+        #substracted_background_image = self.image
         aperture = self.generate_aperture(centroid=centroid, radius=radius)
         self.background_stats = ApertureStats(background, aperture)
         self.background_mean, self.background_std = self.background_stats.mean, self.background_stats.std

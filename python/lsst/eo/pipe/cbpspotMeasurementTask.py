@@ -2,10 +2,11 @@ from lsst.afw import cameraGeom
 import sys
 import numpy as np
 import lsst.afw.table as afw_table
-import lsst.geom
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.pipe.base import connectionTypes as cT
+from astropy.table import Table, Column
+import astropy.units as u
 
 __all__ = ["CBPSpotMeasurementTask"]
 
@@ -13,20 +14,12 @@ class CBPSpotMeasurementTaskConnections(pipeBase.PipelineTaskConnections,
                                      dimensions=("instrument", "detector")):
 
     exposure_handles_input = cT.Input(
-        name="postISRCCD",  
+        name="post_isr_image",  
         doc="ISR'd exposures to analyze",
         storageClass="Exposure",
         dimensions=("instrument", "exposure", "detector"),
         multiple=True,
         deferLoad=True)
-    
-    exposure_handles_prerequisite = cT.PrerequisiteInput(
-        name="postISRCCD",  
-        doc="ISR'd exposures to analyze",
-        storageClass="Exposure",
-        dimensions=("instrument", "exposure", "detector"),
-        multiple=True,
-        deferLoad=True) #Attention here : query useless if doISR is false
 
     camera = cT.PrerequisiteInput(
         name="camera",
@@ -35,65 +28,37 @@ class CBPSpotMeasurementTaskConnections(pipeBase.PipelineTaskConnections,
         isCalibration=True,
         dimensions=("instrument",))
 
-    reference_spot_catalog = cT.PrerequisiteInput(
-        name="cbp_spot_measurement",
+    reference_spot_catalog_input = cT.Input(
+        name="cbp_spot_unforced",
         doc="Catalog of cbp spot measurements.",
-        storageClass="AstropyTable",
+        storageClass="ArrowAstropy",
         dimensions=("instrument", "detector"))
 
-    cbp_spot_detection = cT.Output(
-        name="spot_catalog",
-        doc="Catalog of cbp spot measurements.",
-        storageClass="SourceCatalog",
-        dimensions=("instrument", "detector"))
-
-    cbp_ref_spots = cT.Output(
-        name="cbp_spot_measurement",
+    reference_spot_catalog_output = cT.Output(
+        name="cbp_spot_unforced",
         doc="Catalog of cbp reference spots.",
-        storageClass="AstropyTable",
+        storageClass="ArrowAstropy",
+        dimensions=("instrument", "detector"))
+
+    forced_spot_catalog_output = cT.Output(
+        name="cbp_spot_forced",
+        doc="Catalog of cbp spot measurements.",
+        storageClass="ArrowAstropy",
         dimensions=("instrument", "detector"))
     
     def __init__(self, *, config=None):
         super().__init__(config=config)
-
-        if config.doISR:
-            self.prerequisiteInputs.remove("exposure_handles_prerequisite")
-            self.exposure_handles = self.exposure_handles_input
-            self.inputs.add("exposure_handles")
-            self.inputs.remove("exposure_handles_input")
+        if not config.doForcedPhotometry:
+            del self.reference_spot_catalog_input
+            del self.forced_spot_catalog_output
         else:
-            self.inputs.remove("exposure_handles_input")
-            self.exposure_handles = self.exposure_handles_prerequisite
-            self.prerequisiteInputs.add("exposure_handles")
-            self.prerequisiteInputs.remove("exposure_handles_prerequisite")
-
-        if config.doForcedPhotometry == False:
-            self.prerequisiteInputs.remove("reference_spot_catalog")
-            self.outputs.remove("cbp_spot_detection")
-            self.cbp_spot_detection = self.cbp_ref_spots
-            self.outputs.add("cbp_spot_detection")
-            self.outputs.remove("cbp_ref_spots")
-        if config.doForcedPhotometry == True:
-            self.outputs.remove("cbp_ref_spots")
+            del self.reference_spot_catalog_output
 
 class CBPSpotMeasurementTaskConfig(pipeBase.PipelineTaskConfig,
                                 pipelineConnections=CBPSpotMeasurementTaskConnections):
     """Configuration for SpotMeasurementTask."""
     aperture = pexConfig.Field(doc="Aperture radius for spot photometry in pixels.",
                               dtype=int, default=200)  # 200 default, min=1 to avoid zero aperture
-
-    #minarea = pexConfig.Field(doc="Minimum pixel area for spots.",
-    #                          dtype=float, default=20000.0) # 30000 default
-    #maxarea = pexConfig.Field(doc="Maximum pixel area for spots.",
-    #""                          dtype=float, default=4000000.0)
-    #force_circle = pexConfig.Field(doc="Force spot shape to be a circle",
-    #                               dtype=bool, default=True)
-
-    doISR = pexConfig.Field(
-        dtype=bool,
-        doc="Process ISR (Instrument Signature Removal) if True. If False, skip ISR.",
-        default=True,  # Default to True to process ISR by default
-    )
 
     doForcedPhotometry = pexConfig.Field(
         dtype=bool,
@@ -112,25 +77,7 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
     def run(self, exposure_handles, camera, reference_spot_catalog=None):
         sys.path.append("/sdf/home/a/amouroux/DATA/eo_pipe/python/lsst/eo/pipe")
         from photometry import AperturePhotometry, ImageData, Spot
-
-        schema = afw_table.SourceTable.makeMinimalSchema()
-        schema.addField("detector", str, doc="Detector name", size=10)
-        schema.addField("exposure", "L", doc="Exposure ID")
-        schema.addField("x", "F", doc="x-coordinate of spot centroid on CCD")
-        schema.addField("y", "F", doc="y-coordinate of spot centroid on CCD")
-        schema.addField("x_fp", "F", doc="x-coordinate of spot centroid in "
-                        "focal plane coordinates (mm)")
-        schema.addField("y_fp", "F", doc="y-coordinate of spot centroid in "
-                        "focal plane coordinates (mm)")
-        schema.addField("radius", "F", doc="width of spot in pixels")
-        schema.addField("signal", "F", doc="Spot signal")
-        schema.addField("bkg_mean", "F", doc="mean background")
-        schema.addField("bkg_std", "F", doc="std of background")
-        schema.addField("exposure_time", "F", doc="exposure time in seconds")
-        schema.addField("wavelength", "I", doc="observation annotation, may contain wavelength")
-        table = afw_table.SourceTable.make(schema)
-        catalog = afw_table.SourceCatalog(table)
-            
+        table = Table()
         if self.config.doForcedPhotometry is True:
             print("Running forced photometry...")
             if reference_spot_catalog is None:
@@ -141,16 +88,18 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
             pix_to_fp = det.getTransform(cameraGeom.PIXELS,
                                          cameraGeom.FOCAL_PLANE)
             det_name = det.getName()
-            #dataId = handle.dataId
-            #exp_id, instrument = dataId['exposure'], dataId["instrument"]
-            #datasetType = handle.ref.datasetType.name
-            #collections = handle.ref.run
             exposure = handle.get()
+            print(f"Processing exposure {exposure}",
+                 f"on detector {det_name} ; exposure_handle : {handle}")
             idata = ImageData(exposure_handle=handle)
             if self.config.doForcedPhotometry is False:
-                sp = Spot()
+                sp = Spot(mask_size=100)
+                print(f"idata exposure_handle:{idata.exposure_handle}")
                 image = idata.get_image_from_handle()
+                print(idata, image)
                 spot = sp.find_and_get_best_spot(idata.img.getImage())
+                print(f"spot : {spot}")
+                print(idata.img.getImage(), idata.img, idata.img.getImage().getArray())
                 ap = AperturePhotometry(image=idata, spot=sp)
                 signal = ap.do_forced_aperture_photometry(centroid=sp.centroid, radius=self.config.aperture)
             elif self.config.doForcedPhotometry is True :
@@ -179,18 +128,16 @@ class CBPSpotMeasurementTask(pipeBase.PipelineTask):
                 radius=[radius]
             if type(signal)!=list:
                 signal=[signal]
-            for i in range(len(x)):
-                record = catalog.addNew()
-                record.set("exposure", handle.dataId['exposure'])
-                record.set('detector', det_name)
-                record.set('x', x[i])
-                record.set('y', y[i])
-                record.set('x_fp', fpx[i])
-                record.set('y_fp', fpy[i])
-                record.set('radius', radius[i])
-                record.set('signal', signal[i])
-                record.set('bkg_mean', bkg_mean)
-                record.set('bkg_std', bkg_std)
-                record.set('exposure_time', exposure_time)
-                record.set('wavelength', wavelength)
-        return pipeBase.Struct(cbp_spot_detection=catalog)
+            table["exposure"] = Column([handle.dataId['exposure']] * len(x), unit=u.dimensionless_unscaled, description="Exposure ID")
+            table["detector"] = Column([det_name] * len(x), unit=u.dimensionless_unscaled, description="Detector name")
+            table["x"] = Column(x, unit=u.pixel, description="X-coordinate of spot centroid on CCD")
+            table["y"] = Column(y, unit=u.pixel, description="Y-coordinate of spot centroid on CCD")
+            table["x_fp"] = Column(fpx, unit=u.mm, description="X-coordinate in focal plane coordinates")
+            table["y_fp"] = Column(fpy, unit=u.mm, description="Y-coordinate in focal plane coordinates")
+            table["signal"] = Column(signal, unit=u.adu, description="Integrated signal of the spot")
+            table["radius"] = Column(radius, unit=u.pixel, description="Radius of the spot or aperture if forced")
+            table["bkg_mean"] = Column(bkg_mean, unit=u.adu, description="Mean background level")
+            table["bkg_std"] = Column(bkg_std, unit=u.adu, description="Standard deviation of background level")
+            table["exposure_time"] = Column([exposure_time] * len(x), unit=u.s, description="Exposure time")
+            table["wavelength"] = Column([wavelength] * len(x), unit=u.nm, description="Wavelength of observation")
+        return pipeBase.Struct(cbp_spot_detection=table)
