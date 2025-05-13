@@ -44,7 +44,7 @@ class SpotMeasurementTaskConfig(pipeBase.PipelineTaskConfig,
                               dtype=float, default=4000000.0)
     force_circle = pexConfig.Field(doc="Force spot shape to be a circle",
                                    dtype=bool, default=True)
-
+    
 
 class SpotMeasurementTask(pipeBase.PipelineTask):
     """Spot measurement task for CCOB narrow bean data."""
