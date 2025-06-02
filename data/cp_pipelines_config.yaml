@@ -22,8 +22,7 @@ b_protocol:
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
   env_vars:
-    - DAYOBS
-    - SEQNUM_RANGE
+    - SCIENCE_PROGRAM
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
 
@@ -32,5 +31,4 @@ ptc:
     - bps_cpLinearizer_dense.yaml
     - bps_cpPtc_dense.yaml
   env_vars:
-    - DAYOBS
-    - SEQNUM_RANGE
+    - SCIENCE_PROGRAM
