@@ -29,8 +29,7 @@ b_protocol:
 #    - bps_eoPersistence.yaml
 #    - bps_eoBiasShifts.yaml
   env_vars:
-    - DAYOBS
-    - SEQNUM_RANGE
+    - SCIENCE_PROGRAM
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
     - GUIDER_DESELECTION

@@ -2,7 +2,7 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoPersistence.yaml
-extraQgraphOptions: "--config persistence:acq_run=' ${B_PROTOCOL_RUN}'"
+extraQgraphOptions: "--config persistence:acq_run=' ${SCIENCE_PROGRAM}'"
 
 payload:
   day_obs: ${DAYOBS}
@@ -10,6 +10,6 @@ payload:
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${INCOLLECTION}
-  payloadName: eo_persistence{payload_modifier}_{b_protocol_run}_{weekly}
+  payloadName: eo_persistence{payload_modifier}_{science_program}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range}) and exposure.observation_type in ('dark', 'flat') ${DETECTOR_SELECTION}"
