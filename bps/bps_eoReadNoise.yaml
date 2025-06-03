@@ -15,4 +15,4 @@ payload:
   inCollection: ${INCOLLECTION}
   payloadName: eo_read_noise{payload_modifier}_{science_program}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{science_program}') ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{science_program}' ${DETECTOR_SELECTION}"
