@@ -1,7 +1,7 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
-plot_label: "${DAYOBS}, ${SEQNUM_RANGE}"
+plot_label: "${SCIENCE_PROGRAM}"
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoise.yaml
 extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' {plot_label}'"
@@ -9,11 +9,10 @@ extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' {plot_label}'"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  day_obs: ${DAYOBS}
-  seq_num_range: ${SEQNUM_RANGE}
+  science_program: ${SCIENCE_PROGRAM}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${INCOLLECTION}
-  payloadName: eo_read_noise{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
+  payloadName: eo_read_noise{payload_modifier}_{science_program}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range}) ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{science_program}') ${DETECTOR_SELECTION}"
