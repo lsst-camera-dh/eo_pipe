@@ -35,7 +35,7 @@ else:
     payload_modifier = args.payload_modifier
 
 if acq_run is None:
-    acq_run = "_".join((os.environ['DAYOBS'], os.environ['SEQNUM_RANGE']))
+    acq_run = os.environ['SCIENCE_PROGRAM']
 
 weekly = os.environ['WEEKLY']
 if args.pattern is None:
