@@ -6,11 +6,10 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftAmpCorrelations.yaml
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  day_obs: ${DAYOBS}
-  seq_num_range: ${SEQNUM_RANGE}
+  science_program: ${SCIENCE_PROGRAM}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
   inCollection: ${INCOLLECTION}
-  payloadName: eo_raft_amp_correlations{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
+  payloadName: eo_raft_amp_correlations{payload_modifier}_{science_program}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range}) and ((exposure.observation_type='bias') or (exposure.observation_type='flat' and physical_filter='${HIGH_FLUX_FILTER}')) ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{science_program}' and ((exposure.observation_type='bias') or (exposure.observation_type='flat' and physical_filter='${HIGH_FLUX_FILTER}')) ${DETECTOR_SELECTION}"
