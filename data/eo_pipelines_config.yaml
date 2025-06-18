@@ -8,12 +8,14 @@ baseline:
     - INCOLLECTION
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
+    - DO_PARALLEL_OSCAN
 
 b_protocol:
   pipelines:
     - bps_eoReadNoise.yaml
-#    - bps_eoRaftAmpCorrelations.yaml
+    - bps_eoRaftAmpCorrelations.yaml
     - bps_eoBiasStability.yaml
+    - bps_eoDarkStability.yaml
 #    - bps_eoBrightDefects.yaml
 #    - bps_eoDarkDefects.yaml
 #    - bps_eoVampireDefects.yaml
