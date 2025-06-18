@@ -4,7 +4,7 @@ includeConfigs:
 plot_label: "${SCIENCE_PROGRAM}"
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStability.yaml
-extraQgraphOptions: "--config biasStabilityPlots:acq_run=' {plot_label}' --config biasStability:acq_run=' {plot_label}'"
+extraQgraphOptions: "--config biasStabilityPlots:acq_run=' {plot_label}' --config biasStability:acq_run=' {plot_label}' --config biasStability:isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan=${DO_PARALLEL_OSCAN}"
 
 pipetask:
   biasStability:
