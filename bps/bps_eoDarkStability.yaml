@@ -1,0 +1,26 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+
+plot_label: "${SCIENCE_PROGRAM}"
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStability.yaml
+extraQgraphOptions: "--config biasStabilityPlots:acq_run=' {plot_label}' --config biasStability:acq_run=' {plot_label}' --config biasStability:isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan=${DO_PARALLEL_OSCAN}"
+
+pipetask:
+  biasStability:
+    requestMemory: 4000
+    memoryMultiplier: 1.5
+
+requestMemoryMax: 10000
+memoryLimit: 10000
+
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  science_program: ${SCIENCE_PROGRAM}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${INCOLLECTION}
+  payloadName: eo_bias_stability{payload_modifier}_{science_program}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='dark' and exposure.science_program='{science_program}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"
