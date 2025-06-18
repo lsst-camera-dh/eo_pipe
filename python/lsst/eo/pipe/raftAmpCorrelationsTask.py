@@ -170,8 +170,8 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         raws = [ref for ref in inputs['raw_frames']
                 if ref.dataId.records['exposure'].observation_type=='bias']
         #
-        # Get the exposure IDs, sort, and use the first one for the analysis.
-        target = sorted(list(set(_.dataId['exposure'] for _ in raws)))[0]
+        # Get the exposure IDs, sort, and use the last one for the analysis.
+        target = sorted(list(set(_.dataId['exposure'] for _ in raws)))[-1]
         #
         # Organize refs by raft and slot.
         acq_run = None
