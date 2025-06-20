@@ -85,7 +85,7 @@ def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
 
     interval = viz.PercentileInterval(98.)
     if vrange is None:
-        vrange = interval.get_limits(np.abs(data.ravel()))
+        vrange = interval.get_limits(data.ravel())
     norm = ImageNormalize(vmin=vrange[0], vmax=vrange[1], stretch=stretch())
     image = ax.imshow(data, interpolation='none', norm=norm, cmap=cmap)
     set_ticks(ax, slots, amps=16)
@@ -174,7 +174,7 @@ def raft_imaging_correlations(flat1_refs, flat2_refs, camera,
 
     interval = viz.PercentileInterval(98.)
     if vrange is None:
-        vrange = interval.get_limits(np.abs(data.ravel()))
+        vrange = interval.get_limits(data.ravel())
     norm = ImageNormalize(vmin=vrange[0], vmax=vrange[1], stretch=stretch())
     image = ax.imshow(data, interpolation='none', norm=norm, cmap=cmap)
     set_ticks(ax, slots, amps=16)

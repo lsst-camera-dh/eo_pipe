@@ -1,14 +1,15 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
+plot_label: "${CALIB_TICKET}"
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoRaftCalibMosaics.yaml
-extraQgraphOptions: "--config raftCalibMosaic:acq_run=' ${B_PROTOCOL_RUN}'"
+extraQgraphOptions: "--config raftCalibMosaic:acq_run=' {plot_label}'"
 
 payload:
-  b_protocol_run: ${B_PROTOCOL_RUN}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_raft_calib_mosaics{payload_modifier}_{b_protocol_run}_{weekly}
+  inCollection: ${INCOLLECTION}
+  payloadName: eo_raft_calib_mosaics{payload_modifier}_${CALIB_TICKET}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"

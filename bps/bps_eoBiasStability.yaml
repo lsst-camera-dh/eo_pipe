@@ -1,8 +1,10 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
+plot_label: "${DAYOBS}, ${SEQNUM_RANGE}"
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStability.yaml
-extraQgraphOptions: "--config biasStabilityPlots:acq_run=' ${B_PROTOCOL_RUN}' --config biasStability:acq_run=' ${B_PROTOCOL_RUN}'"
+extraQgraphOptions: "--config biasStabilityPlots:acq_run=' {plot_label}' --config biasStability:acq_run=' {plot_label}'"
 
 pipetask:
   biasStability:
@@ -15,11 +17,11 @@ memoryLimit: 10000
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  b_protocol_run: ${B_PROTOCOL_RUN}
-  ptc_run: ${PTC_RUN}
+  day_obs: ${DAYOBS}
+  seq_num_range: ${SEQNUM_RANGE}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_bias_stability{payload_modifier}_{b_protocol_run}_{weekly}
+  inCollection: ${INCOLLECTION}
+  payloadName: eo_bias_stability{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{b_protocol_run}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range}) ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"

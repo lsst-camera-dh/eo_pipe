@@ -29,14 +29,14 @@ class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
         multiple=True,
         deferLoad=True)
 
-    bias = cT.Input(
+    bias = cT.PrerequisiteInput(
         name="bias_frame",
         doc="Combined bias frame",
         storageClass="Exposure",
         dimensions=("instrument", "detector"),
         isCalibration=True)
 
-    dark = cT.Input(
+    dark = cT.PrerequisiteInput(
         name="dark_frame",
         doc="Combined dark frame",
         storageClass="Exposure",
@@ -64,6 +64,11 @@ class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
              "integrals, as a function of time."),
         storageClass="DataFrame",
         dimensions=("instrument", "detector"))
+
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+        if not config.do_apply_pd_normalization:
+            self.inputs.remove("pd_data")
 
 
 class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
@@ -111,6 +116,12 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
             "``CHARGE_SUM`` integration method.",
         default=-1.0,
     )
+    do_apply_pd_normalization = pexConfig.Field(
+        dtype=bool,
+        doc=("Flag to normalize the measured flux by the pd integral "
+             "for each exposure."),
+        default=True,
+    )
     ccob_led_constraint = pexConfig.Field(
         dtype=str,
         doc="Value of CCOBLED keyword to use for filtering sflat exposures. "
@@ -134,17 +145,36 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
         self.deg = self.config.polynomial_degree
         self.pd_integration_method = self.config.pd_integration_method
         self.pd_current_scale = self.config.pd_current_scale
+        self.apply_pd_norm = self.config.do_apply_pd_normalization
         self.ccob_led_constraint = self.config.ccob_led_constraint
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        if not self.apply_pd_norm:
+            pd_data = None
+        else:
+            pd_data = inputs['pd_data']
+
+        struct = self.run(inputs['raws'],
+                          inputs['bias'],
+                          inputs['dark'],
+                          pd_data,
+                          inputs['camera'])
+        butlerQC.put(struct, outputRefs)
 
     def run(self, raws, bias, dark, pd_data, camera):
         # Prepare dict of photodiode integrals and key by exposure.
-        pd_integrals = {}
-        for ref in pd_data:
-            exposure = ref.dataId['exposure']
-            pd_calib = ref.get()
-            pd_calib.integrationMethod = self.pd_integration_method
-            pd_calib.currentScale = self.pd_current_scale
-            pd_integrals[exposure] = pd_calib.integrate()
+        if self.apply_pd_norm:
+            pd_integrals = {}
+            for ref in pd_data:
+                exposure = ref.dataId['exposure']
+                pd_calib = ref.get()
+                pd_calib.integrationMethod = self.pd_integration_method
+                pd_calib.currentScale = self.pd_current_scale
+                pd_integrals[exposure] = pd_calib.integrate()
+        else:
+            # Set the pd_integral values to unity for all exposures.
+            pd_integrals = defaultdict(lambda: 1.0)
 
         det = camera[raws[0].dataId['detector']]
         det_name = det.getName()

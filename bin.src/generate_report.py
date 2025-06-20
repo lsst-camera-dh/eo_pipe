@@ -6,7 +6,7 @@ from lsst.eo.pipe import generate_report
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--repo', help='data repository', type=str, default=None)
-parser.add_argument('--acq_run', help='acquisition run', type=str)
+parser.add_argument('--acq_run', help='acquisition run', type=str, default=None)
 parser.add_argument('--pattern', help='pattern to find collections', type=str,
                     default=None)
 parser.add_argument('--staging_dir', help='staging directory for plots',
@@ -33,6 +33,9 @@ if args.payload_modifier is None:
     payload_modifier = os.environ.get("PAYLOAD_MODIFIER", "")
 else:
     payload_modifier = args.payload_modifier
+
+if acq_run is None:
+    acq_run = "_".join((os.environ['DAYOBS'], os.environ['SEQNUM_RANGE']))
 
 weekly = os.environ['WEEKLY']
 if args.pattern is None:

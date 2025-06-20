@@ -5,33 +5,32 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
-    - EO_PIPE_INCOLLECTION
+    - INCOLLECTION
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
-    - DO_PARALLEL_OSCAN
 
 b_protocol:
   pipelines:
     - bps_eoReadNoise.yaml
     - bps_eoRaftAmpCorrelations.yaml
     - bps_eoBiasStability.yaml
-    - bps_eoBrightDefects.yaml
-    - bps_eoDarkDefects.yaml
-    - bps_eoVampireDefects.yaml
+#    - bps_eoBrightDefects.yaml
+#    - bps_eoDarkDefects.yaml
+#    - bps_eoVampireDefects.yaml
     - bps_eoDarkCurrent.yaml
-    - bps_eoEper.yaml
-    - bps_eoPtcPlots.yaml
-    - bps_eoRaftCalibMosaics.yaml
-    - bps_eoRaftLambdaMosaics.yaml
-    - bps_eoLinearityPlots.yaml
-    - bps_eoDivisaderoTearing.yaml
-    - bps_eoBFAnalysis.yaml
-    - bps_eoCtiVsFlux.yaml
-    - bps_eoPersistence.yaml
-    - bps_eoBiasShifts.yaml
+#    - bps_eoEper.yaml
+#    - bps_eoPtcPlots.yaml
+#    - bps_eoRaftCalibMosaics.yaml
+#    - bps_eoRaftLambdaMosaics.yaml
+#    - bps_eoLinearityPlots.yaml
+#    - bps_eoDivisaderoTearing.yaml
+#    - bps_eoBFAnalysis.yaml
+#    - bps_eoCtiVsFlux.yaml
+#    - bps_eoPersistence.yaml
+#    - bps_eoBiasShifts.yaml
   env_vars:
-    - B_PROTOCOL_RUN
-    - PTC_RUN
+    - DAYOBS
+    - SEQNUM_RANGE
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
     - GUIDER_DESELECTION
@@ -55,8 +54,8 @@ flat_gain_stability:
   pipelines:
     - bps_eoFlatGainStability.yaml
   env_vars:
-    - GAIN_STABILITY_RUN
-    - CCOBLED
+    - DAYOBS
+    - SEQNUM_RANGE
 
 scan_mode:
   pipelines:

@@ -5,10 +5,11 @@ pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoPersistence.yaml
 extraQgraphOptions: "--config persistence:acq_run=' ${B_PROTOCOL_RUN}'"
 
 payload:
-  b_protocol_run: ${B_PROTOCOL_RUN}
+  day_obs: ${DAYOBS}
+  seq_num_range: ${SEQNUM_RANGE}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${EO_PIPE_INCOLLECTION}
+  inCollection: ${INCOLLECTION}
   payloadName: eo_persistence{payload_modifier}_{b_protocol_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type in ('dark', 'flat') and exposure.observation_reason='bot_persistence' ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and day_obs={day_obs} and exposure.seq_num in ({seq_num_range}) and exposure.observation_type in ('dark', 'flat') ${DETECTOR_SELECTION}"
