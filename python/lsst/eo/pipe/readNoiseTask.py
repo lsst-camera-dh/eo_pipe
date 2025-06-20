@@ -156,6 +156,8 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                 overscan = exposure.getImage()[bbox]
                 if self.bin_size > 1:
                     overscan = afwMath.binImage(overscan, self.bin_size)
+                    # binImage scales by bin_size**2, so undo that scaling:
+                    overscan *= self.bin_size**2
                 sampler = SubRegionSampler(overscan, self.dxy, self.dxy)
                 stdevs = [
                     afwMath.makeStatistics(subregion, afwMath.STDEV).getValue()
