@@ -18,6 +18,9 @@ tasks:
       isr.doLinearize: false
       isr.doDefect: false
       isr.doSaturation: false
+      isr.doITLEdgeBleedMask: false
+      isr.doE2VEdgeBleedMask: false
+      isr.doITLSatSagMask: false
       isr.doSuspect: false
       isr.doCrosstalk: false
       isr.doDeferredCharge: false
@@ -25,6 +28,9 @@ tasks:
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 4
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 4
+      python: >
+        import numpy;
+        config.isr.ampNoiseThreshold = numpy.inf
   biasStabilityPlots:
     class: lsst.eo.pipe.BiasStabilityPlotsTask
     config:

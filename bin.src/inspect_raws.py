@@ -5,9 +5,12 @@ import numpy as np
 import lsst.daf.butler as daf_butler
 
 parser = argparse.ArgumentParser()
-parser.add_argument('run', type=str, help='acquisition run')
-parser.add_argument('--exp_md_key', type=str, help='exposure metadata key',
-                    default='science_program')
+#parser.add_argument('run', type=str, help='acquisition run')
+#parser.add_argument('--exp_md_key', type=str, help='exposure metadata key',
+#                    default='science_program')
+parser.add_argument('day_obs', type=str, help='day_obs constraint')
+parser.add_argument('--seq_num_range', type=str, default=None,
+                    help='Desired range of seq_num values')
 parser.add_argument('--repo', type=str, default='/repo/main',
                     help='data repository')
 parser.add_argument('--instrument',
@@ -21,13 +24,20 @@ instrument = args.instrument
 get_ccobled = args.get_ccobled
 butler = daf_butler.Butler(args.repo)
 
-acq_run = args.run
-exp_md_key = args.exp_md_key
-if exp_md_key == "science_program":
-    where = f"instrument='{instrument}' and exposure.{exp_md_key}='{acq_run}'"
-else:
-    where = f"instrument='{instrument}' and exposure.{exp_md_key}={acq_run}"
-print(where)
+#acq_run = args.run
+#exp_md_key = args.exp_md_key
+#if exp_md_key == "science_program":
+#    where = f"instrument='{instrument}' and exposure.{exp_md_key}='{acq_run}'"
+#else:
+#    where = f"instrument='{instrument}' and exposure.{exp_md_key}={acq_run}"
+#print(where)
+
+day_obs = args.day_obs
+seq_num_range = args.seq_num_range
+
+where = f"instrument='{instrument}' and day_obs={day_obs}"
+if seq_num_range is not None:
+    where += f" and exposure.seq_num in ({seq_num_range})"
 
 refs = list(set(butler.registry.queryDatasets(
     "raw", where=where, collections=[f'{instrument}/raw/all']).expanded()))
@@ -50,10 +60,10 @@ for ref in refs:
         md = butler.get(ref.makeComponentRef("metadata"))
         ccobled = md.get('CCOBLED', None)
     exposure_rec = ref.dataId.records['exposure']
-    md_key = str(eval(f"exposure_rec.{exp_md_key}"))
+#    md_key = str(eval(f"exposure_rec.{exp_md_key}"))
     physical_filter = ref.dataId['physical_filter']
     entry = (
-        f"{md_key:6s}  "
+#        f"{md_key:6s}  "
         f"{exposure}  "
         f"{exposure_rec.obs_id:6s}  "
         f"{exposure_rec.observation_type:6s}  "
@@ -74,9 +84,10 @@ for ref in refs:
 
 unique_frames = np.unique(frame_data)
 for i, item in enumerate(unique_frames):
-    exposure = int(item.split()[1])
+#    exposure = int(item.split()[1])
+    print("", flush=True)
     print(f"{i:05d}  {item}", end="  ")
-    print(f"{ccd_count[exposure]:3d}", flush=True)
+#    print(f"{ccd_count[exposure]:3d}", flush=True)
 
 if exposure_rec is not None:
     print()

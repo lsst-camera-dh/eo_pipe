@@ -1,14 +1,17 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
+plot_label: "${DAYOBS}, ${SEQNUM_RANGE}"
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBFAnalysis.yaml
-extraQgraphOptions: "--config bfAnalysisTask:acq_run=' ${PTC_RUN}' --config bfAnalysisFpPlotsTask:acq_run=' ${PTC_RUN}'"
+extraQgraphOptions: "--config bfAnalysisTask:acq_run=' {plot_label}' --config bfAnalysisFpPlotsTask:acq_run=' {plot_label}'"
 
 payload:
-  ptc_run: ${PTC_RUN}
+  day_obs: ${DAYOBS}
+  seq_num_range: ${SEQNUM_RANGE}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${EO_PIPE_INCOLLECTION}
+  inCollection: u/{operator}/ptc{payload_modifier}_{day_obs}_{seq_num_range}_{weekly},${INCOLLECTION}
   payloadName: eo_bf_analysis{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION}"

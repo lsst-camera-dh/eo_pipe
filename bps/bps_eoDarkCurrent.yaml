@@ -1,14 +1,17 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
+plot_label: "${DAYOBS}, ${SEQNUM_RANGE}"
+
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDarkCurrent.yaml
-extraQgraphOptions: "--config darkCurrentTask:acq_run=' ${B_PROTOCOL_RUN}'"
+extraQgraphOptions: "--config darkCurrentTask:acq_run=' {plot_label}'"
 
 payload:
-  b_protocol_run: ${B_PROTOCOL_RUN}
+  day_obs: ${DAYOBS}
+  seq_num_range: ${SEQNUM_RANGE}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${EO_PIPE_INCOLLECTION}
-  payloadName: eo_dark_current{payload_modifier}_{b_protocol_run}_{weekly}
+  inCollection: u/{operator}/dark_{day_obs}_{seq_num_range}_{weekly},${INCOLLECTION}
+  payloadName: eo_dark_current{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION}"

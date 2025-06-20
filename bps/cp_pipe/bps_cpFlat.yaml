@@ -9,10 +9,10 @@ pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlat.yaml#cpFlatIsr
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  b_protocol_run: ${B_PROTOCOL_RUN}
+  science_program: ${SCIENCE_PROGRAM}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/dark{payload_modifier}_{b_protocol_run}_{weekly}
-  payloadName: flat{payload_modifier}_{b_protocol_run}_{weekly}
+  inCollection: u/{operator}/dark{payload_modifier}_{science_program}_{weekly}
+  payloadName: flat{payload_modifier}_{science_program}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{b_protocol_run}' and exposure.observation_type='flat' and exposure.observation_reason in ('sflat', 'sflat_hi') and physical_filter='${HIGH_FLUX_FILTER}' ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{science_program}' and exposure.observation_type='flat' and exposure.observation_reason in ('sflat', 'sflat_hi') and physical_filter='${HIGH_FLUX_FILTER}' ${DETECTOR_SELECTION}"

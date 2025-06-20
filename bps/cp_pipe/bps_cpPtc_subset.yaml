@@ -14,7 +14,7 @@ instrument: ${INSTRUMENT_CLASS}
 
 payload:
   ptc_run: ${PTC_RUN}
-  b_protocol_run: ${B_PROTOCOL_RUN}
+  science_program: ${SCIENCE_PROGRAM}
   weekly: ${WEEKLY}
   inCollection: ${PTC_CHAINED_COLLECTION}
   payloadName: ptc_subset_{ptc_run}_{weekly}

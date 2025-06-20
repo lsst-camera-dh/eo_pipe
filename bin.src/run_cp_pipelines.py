@@ -12,6 +12,8 @@ parser.add_argument('--laconic', action='store_true', default=False,
                     help='Verbosity flag')
 parser.add_argument('--dry_run', action='store_true', default=False,
                     help='Dry-run flag')
+parser.add_argument('--bps_yaml', type=str, default=None,
+                    help="Specific pipeline to run for a given run type")
 parser.add_argument('--max_cpe_count', type=int, default=5,
                     help='Maximum number of CalledProcessErrors per pipeline')
 args = parser.parse_args()
@@ -26,4 +28,4 @@ if not os.path.isfile(config_file):
 cp_pipelines = CpPipelines(config_file, verbose=not args.laconic,
                            dry_run=args.dry_run,
                            max_cpe_count=args.max_cpe_count)
-cp_pipelines.submit(args.run_type)
+cp_pipelines.submit(args.run_type, bps_yaml=args.bps_yaml)

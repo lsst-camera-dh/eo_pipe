@@ -10,10 +10,10 @@ instrument: ${INSTRUMENT_CLASS}
 
 payload:
   ptc_run: ${PTC_RUN}
-  b_protocol_run: ${B_PROTOCOL_RUN}
+  science_program: ${SCIENCE_PROGRAM}
   payload_modifier: ${PAYLOAD_MODIFIER}
   weekly: ${WEEKLY}
-  inCollection: u/{operator}/defects{payload_modifier}_{b_protocol_run}_{weekly},${INSTRUMENT_NAME}/photodiode
+  inCollection: u/{operator}/defects{payload_modifier}_{science_program}_{weekly},${INSTRUMENT_NAME}/photodiode
   payloadName: linearizer{payload_modifier}_{ptc_run}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{ptc_run}' and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"
