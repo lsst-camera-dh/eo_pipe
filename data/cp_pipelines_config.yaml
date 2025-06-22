@@ -5,7 +5,7 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
-    - CURATED_CALIBS
+    - INCOLLECTION
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
     - DO_PARALLEL_OSCAN
@@ -22,8 +22,8 @@ b_protocol:
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
   env_vars:
-    - B_PROTOCOL_RUN
-    - PTC_RUN
+    - DAYOBS
+    - SEQNUM_RANGE
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
 
@@ -32,5 +32,5 @@ ptc:
     - bps_cpLinearizer_dense.yaml
     - bps_cpPtc_dense.yaml
   env_vars:
-    - B_PROTOCOL_RUN
-    - PTC_RUN
+    - DAYOBS
+    - SEQNUM_RANGE
