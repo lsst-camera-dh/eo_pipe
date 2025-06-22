@@ -111,6 +111,9 @@ class ReadNoiseTaskConfig(pipeBase.PipelineTaskConfig,
                             dtype=int, default=100)
     dxy = pexConfig.Field(doc="Size in pixels of sub-regions.",
                           dtype=int, default=20)
+    bin_size = pexConfig.Field(doc="Rebin the image by this factor.  The "
+                               "sub-region size will be scaled by this factor.",
+                               dtype=int, default=1)
     usePtcGains = pexConfig.Field(doc="Use gains from PTC dataset. If False, "
                                   "then use the gains from obs_lsst",
                                   dtype=bool, default=True)
@@ -125,7 +128,8 @@ class ReadNoiseTask(pipeBase.PipelineTask):
         super().__init__(**kwargs)
         self.edge_buffer = self.config.edge_buffer
         self.nsamp = self.config.nsamp
-        self.dxy = self.config.dxy
+        self.bin_size = self.config.bin_size
+        self.dxy = self.config.dxy // self.bin_size
         self.use_ptc_gains = self.config.usePtcGains
 
     def run(self, raw_frames, ptc_results=None, camera=None):
@@ -150,12 +154,21 @@ class ReadNoiseTask(pipeBase.PipelineTask):
                 bbox = amp.getRawSerialOverscanBBox()
                 bbox.grow(-self.edge_buffer)
                 overscan = exposure.getImage()[bbox]
+                if self.bin_size > 1:
+                    overscan = afwMath.binImage(overscan, self.bin_size)
+                    # binImage scales by bin_size**2, so undo that scaling:
+                    overscan *= self.bin_size**2
                 sampler = SubRegionSampler(overscan, self.dxy, self.dxy)
                 stdevs = [
                     afwMath.makeStatistics(subregion, afwMath.STDEV).getValue()
                     for _, subregion in zip(range(self.nsamp), sampler)]
-                data['read_noise'].append(gain*float(np.median(stdevs)))
-                data['bias_level'].append(float(np.median(overscan.array)))
+                data['read_noise'].append(
+                    gain * float(np.median(stdevs)) / self.bin_size
+                )
+                data['bias_level'].append(
+                    float(np.median(overscan.array)) / self.bin_size**2
+                )
+                data['bin_size'].append(self.bin_size)
         return pipeBase.Struct(read_noise=pd.DataFrame(data))
 
 
@@ -224,13 +237,17 @@ class ReadNoiseFpPlotsTask(pipeBase.PipelineTask):
             det = camera[ref.dataId['detector']]
             det_name = det.getName()
             df0 = ref.get()
+            bin_size = int(df0['bin_size'][0])
             for amp in det:
                 amp_name = amp.getName()
                 df = df0.query(f"amp_name == '{amp_name}'")
                 amp_data[det_name][amp_name] = np.median(df['read_noise'])
         read_noise_plot = plt.figure(figsize=self.figsize)
         ax = read_noise_plot.add_subplot(111)
-        title = append_acq_run(self, "Read Noise (e-)")
+        title = "Read Noise (e-)"
+        if bin_size > 1:
+            title = f"{title}, {bin_size}x{bin_size} rebinning"
+        title = append_acq_run(self, title)
         plot_focal_plane(ax, amp_data, camera=camera, z_range=self.z_range,
                          scale_factor=self.z_scale_factor, title=title)
         read_noise_hist = plt.figure()

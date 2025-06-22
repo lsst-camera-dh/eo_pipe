@@ -4,7 +4,7 @@ includeConfigs:
 plot_label: "${SCIENCE_PROGRAM}"
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoise.yaml
-extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' {plot_label}'"
+extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' {plot_label}' --config readNoise:bin_size=${READ_NOISE_BIN_SIZE}"
 
 instrument: ${INSTRUMENT_CLASS}
 

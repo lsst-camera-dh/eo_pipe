@@ -35,6 +35,7 @@ b_protocol:
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
     - GUIDER_DESELECTION
+    - READ_NOISE_BIN_SIZE
 
 ptc:
   pipelines:
