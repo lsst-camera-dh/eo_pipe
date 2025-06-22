@@ -12,12 +12,12 @@ baseline:
 b_protocol:
   pipelines:
     - bps_eoReadNoise.yaml
-    - bps_eoRaftAmpCorrelations.yaml
+#    - bps_eoRaftAmpCorrelations.yaml
     - bps_eoBiasStability.yaml
 #    - bps_eoBrightDefects.yaml
 #    - bps_eoDarkDefects.yaml
 #    - bps_eoVampireDefects.yaml
-    - bps_eoDarkCurrent.yaml
+#    - bps_eoDarkCurrent.yaml
 #    - bps_eoEper.yaml
 #    - bps_eoPtcPlots.yaml
 #    - bps_eoRaftCalibMosaics.yaml
@@ -29,8 +29,7 @@ b_protocol:
 #    - bps_eoPersistence.yaml
 #    - bps_eoBiasShifts.yaml
   env_vars:
-    - DAYOBS
-    - SEQNUM_RANGE
+    - SCIENCE_PROGRAM
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
     - GUIDER_DESELECTION
