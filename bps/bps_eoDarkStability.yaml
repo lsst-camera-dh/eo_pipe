@@ -23,4 +23,4 @@ payload:
   inCollection: ${INCOLLECTION}
   payloadName: eo_bias_stability{payload_modifier}_{science_program}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{science_program}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='dark' and exposure.science_program='{science_program}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"
