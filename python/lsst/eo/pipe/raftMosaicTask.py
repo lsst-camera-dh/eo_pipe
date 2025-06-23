@@ -104,7 +104,7 @@ class RaftMosaicTask(pipeBase.PipelineTask):
                 if raft not in ref_map:
                     continue
                 exposure = list(exposure_refs.values())[0].dataId['exposure']
-                title = (f'{physical_filter}, {raft}, acq. run {acq_run}, '
+                title = (f'{physical_filter}, {raft}, dataset {acq_run}, '
                          f'{exposure}')
                 raft_plot = make_mosaic(exposure_refs, camera, self.binSize,
                                         self.figsize, self.cmap, self.nsig,

@@ -10,10 +10,11 @@ pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlatBootstrap.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  science_program: ${SCIENCE_PROGRAM}
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/dark_bootstrap{payload_modifier}_{science_program}_{weekly}
-  payloadName: flat_bootstrap{payload_modifier}_{science_program}_{weekly}
+  inCollection: u/{operator}/dark_bootstrap{payload_modifier}_{dataset_label}_{weekly}
+  payloadName: flat_bootstrap{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.science_program='{science_program}' and exposure.observation_type='flat' and exposure.observation_reason in ('sflat', 'sflat_hi') and physical_filter='${HIGH_FLUX_FILTER}' ${DETECTOR_SELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and {dataset_selection} and exposure.observation_type='flat' and exposure.observation_reason in ('flat', 'sflat', 'sflat_hi') and physical_filter='${HIGH_FLUX_FILTER}' ${DETECTOR_SELECTION}"

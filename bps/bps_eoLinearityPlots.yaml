@@ -1,17 +1,17 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
-plot_label: "${DAYOBS}, ${SEQNUM_RANGE}"
+plot_label: ${DATASET_LABEL}
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoLinearityPlots.yaml
 extraQgraphOptions: "--config linearityPlots:acq_run=' {plot_label}' --config linearityFocalPlanePlots:acq_run=' {plot_label}'"
 
 payload:
-  day_obs: ${DAYOBS}
-  seq_num_range: ${SEQNUM_RANGE}
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/linearizer{payload_modifier}_{day_obs}_{seq_num_range}_{weekly},${INSTRUMENT_NAME}/photodiode
-  payloadName: eo_linearity_plots{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
+  inCollection: u/{operator}/linearizer{payload_modifier}_{dataset_label}_{weekly},${INSTRUMENT_NAME}/calib/photodiode
+  payloadName: eo_linearity_plots{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION}"

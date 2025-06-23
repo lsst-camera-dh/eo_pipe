@@ -6,10 +6,11 @@ pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpDefects.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  science_program: ${SCIENCE_PROGRAM}
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/flat_bootstrap{payload_modifier}_{science_program}_{weekly}
-  payloadName: defects{payload_modifier}_{science_program}_{weekly}
+  inCollection: u/{operator}/flat_bootstrap{payload_modifier}_{dataset_label}_{weekly}
+  payloadName: defects{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}'"

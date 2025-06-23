@@ -6,9 +6,12 @@ baseline:
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
     - INCOLLECTION
+    - DATASET_SELECTION
+    - DATASET_LABEL
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
     - DO_PARALLEL_OSCAN
+    - GUIDER_DESELECTION
 
 b_protocol:
   pipelines:
@@ -22,7 +25,6 @@ b_protocol:
     - bps_cpDark.yaml
     - bps_cpFlat.yaml
   env_vars:
-    - SCIENCE_PROGRAM
     - HIGH_FLUX_FILTER
     - LOW_FLUX_FILTER
 
@@ -30,5 +32,3 @@ ptc:
   pipelines:
     - bps_cpLinearizer_dense.yaml
     - bps_cpPtc_dense.yaml
-  env_vars:
-    - SCIENCE_PROGRAM

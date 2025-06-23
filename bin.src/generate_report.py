@@ -6,7 +6,8 @@ from lsst.eo.pipe import generate_report
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--repo', help='data repository', type=str, default=None)
-parser.add_argument('--acq_run', help='acquisition run', type=str, default=None)
+parser.add_argument('--dataset_label', help='dataset label', type=str,
+                    default=None)
 parser.add_argument('--pattern', help='pattern to find collections', type=str,
                     default=None)
 parser.add_argument('--staging_dir', help='staging directory for plots',
@@ -21,7 +22,7 @@ parser.add_argument('--payload_modifier',
 args = parser.parse_args()
 
 repo = args.repo
-acq_run = args.acq_run
+dataset_label = args.dataset_label
 pattern = args.pattern
 staging_dir = args.staging_dir
 htmldir = args.htmldir
@@ -34,13 +35,13 @@ if args.payload_modifier is None:
 else:
     payload_modifier = args.payload_modifier
 
-if acq_run is None:
-    acq_run = os.environ['SCIENCE_PROGRAM']
+if dataset_label is None:
+    dataset_label = os.environ['DATASET_LABEL']
 
 weekly = os.environ['WEEKLY']
 if args.pattern is None:
     user = os.environ['USER']
-    pattern = f"u/{user}/eo_*{payload_modifier}_{acq_run}_{weekly}"
+    pattern = f"u/{user}/eo_*{payload_modifier}_{dataset_label}_{weekly}"
 
-generate_report(repo, pattern, acq_run, staging_dir=staging_dir,
+generate_report(repo, pattern, dataset_label, staging_dir=staging_dir,
                 htmldir=htmldir, weekly=weekly+payload_modifier)

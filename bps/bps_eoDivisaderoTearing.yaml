@@ -1,17 +1,17 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
-plot_label: "${DAYOBS}, ${SEQNUM_RANGE}"
+plot_label: ${DATASET_LABEL}"
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoDivisaderoTearing.yaml
 extraQgraphOptions: "--config divisaderoRaftPlots:acq_run=' {plot_label}' --config divisaderoFpPlots:acq_run=' {plot_label}'"
 
 payload:
-  day_obs: ${DAYOBS}
-  seq_num_range: ${SEQNUM_RANGE}
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/flat{payload_modifier}_{day_obs}_{seq_num_range}_{weekly},${INCOLLECTION}
-  payloadName: eo_divisadero_tearing{payload_modifier}_{day_obs}_{seq_num_range}_{weekly}
+  inCollection: u/{operator}/flat{payload_modifier}_{dataset_label}_{weekly}
+  payloadName: eo_divisadero_tearing{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and {dataset_selectin} ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"

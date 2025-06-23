@@ -104,7 +104,7 @@ class ImagingCorrelationsTask(pipeBase.PipelineTask):
 
         for raft, raws in raft_data.items():
             title = (f"imaging region correlations, {raft}, "
-                     f"acq. run {acq_run}, {exposures}")
+                     f"dataset {acq_run}, {exposures}")
             flat1_refs, flat2_refs = list(raws.values())
             fig, _ = raft_imaging_correlations(flat1_refs, flat2_refs, raft,
                                                camera, buffer=self.buffer,
@@ -195,7 +195,7 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         ref_map = raft_output_refs_mapper.create(output_refs)
 
         for raft, raws in raft_data.items():
-            title = (f"Overscan correlations, {raft}, acq. run {acq_run}, "
+            title = (f"Overscan correlations, {raft}, dataset {acq_run}, "
                      f"{exposure}")
             fig, _ = raft_oscan_correlations(raws, raft, camera,
                                              buffer=self.buffer,
