@@ -44,7 +44,7 @@ class PipelinesBase:
     def _check_env_vars(self, run_type):
         # Check for required env vars for the specified run type.
         required = (self.config['baseline']['env_vars']
-                    + self.config[run_type]['env_vars'])
+                    + self.config[run_type].get('env_vars', []))
         missing = [_ for _ in required if _ not in os.environ]
         if self.verbose:
             print("Using environment variables:")
