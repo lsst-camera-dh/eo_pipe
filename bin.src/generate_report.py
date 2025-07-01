@@ -10,6 +10,8 @@ parser.add_argument('--dataset_label', help='dataset label', type=str,
                     default=None)
 parser.add_argument('--pattern', help='pattern to find collections', type=str,
                     default=None)
+parser.add_argument('--collections', help="list of collections", type=str,
+                    default=None)
 parser.add_argument('--staging_dir', help='staging directory for plots',
                     type=str, default='./eo_report_staging')
 parser.add_argument('--htmldir', help='directory to contain html output',
@@ -24,6 +26,7 @@ args = parser.parse_args()
 repo = args.repo
 dataset_label = args.dataset_label
 pattern = args.pattern
+collections = args.collections.split(",") if args.collections is not None else None
 staging_dir = args.staging_dir
 htmldir = args.htmldir
 
@@ -44,4 +47,5 @@ if args.pattern is None:
     pattern = f"u/{user}/eo_*{payload_modifier}_{dataset_label}_{weekly}"
 
 generate_report(repo, pattern, dataset_label, staging_dir=staging_dir,
-                htmldir=htmldir, weekly=weekly+payload_modifier)
+                htmldir=htmldir, weekly=weekly+payload_modifier,
+                collections=collections)
