@@ -3,7 +3,6 @@ includeConfigs:
   - ${PWD}/bps/cp_pipe/bps_qgraph_options.yaml
 
 isrTaskName: cpFlatBootstrapIsr
-#extraQgraphOptions: "{isr_QgraphOptions} --config cpFlatBootstrapCombine:exposureScaling='Unity'"
 extraQgraphOptions: "{isr_QgraphOptions}"
 
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlatBootstrap.yaml"

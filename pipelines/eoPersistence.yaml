@@ -5,14 +5,17 @@ tasks:
     config:
       connections.ccdExposure: 'raw'
       connections.outputExposure: 'eoDarkIsr'
-      doBrighterFatter: false
       doBias: true
       doDark: false
       doFlat: false
+      doBrighterFatter: false
       doApplyGains: false
       doLinearize: false
       doDefect: true
       doSaturation: false
+      doITLEdgeBleedMask: false
+      doE2VEdgeBleedMask: false
+      doITLSatSagMask: false
       doSuspect: false
       doCrosstalk: false
       doDeferredCharge: false
@@ -20,6 +23,9 @@ tasks:
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
+      python: >
+        import numpy;
+        config.ampNoiseThreshold = numpy.inf
   persistence:
     class: lsst.eo.pipe.PersistenceTask
     config:
