@@ -40,6 +40,7 @@ b_protocol:
     - bps_eoCtiVsFlux.yaml
     - bps_eoPersistence.yaml
     - bps_eoBiasShifts.yaml
+    - bps_eoFlatGainStability.yaml
   env_vars:
     - READ_NOISE_BIN_SIZE
 
