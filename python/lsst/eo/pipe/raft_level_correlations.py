@@ -18,7 +18,7 @@ def pearson_r(x, y):
     return (np.mean(x*y) - np.mean(x)*np.mean(y))/np.std(x)/np.std(y)
 
 
-def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
+def raft_oscan_correlations(bias_refs, raft, camera, buffer=10, title='',
                             vrange=None, stretch=viz.LinearStretch,
                             cmap='jet', figsize=(8, 8)):
     """
@@ -30,6 +30,8 @@ def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
     bias_refs: dict
         Dictionary of dataset references to bias image files, indexed
         by sensor slot id.
+    raft: str
+        Raft name e.g., "R00"
     camera: lsst.afw.cameraGeom.Camera
         Camera to use to find amplifier flips to put the overscan
         arrays in readout order.
@@ -60,24 +62,38 @@ def raft_oscan_correlations(bias_refs, camera, buffer=10, title='',
     overscans = []
 
     for slot in slots:
-        ref = bias_refs[slot]
-        exp = ref.get()
-        det = exp.getDetector()
-        raw_det = camera[det.getName()]
-        for amp, raw_amp in zip(det, raw_det):
-            bbox = amp.getRawSerialOverscanBBox()
-            bbox.grow(-buffer)
-            data = exp.getImage()[bbox].array.copy()
-            # Put the overscan data in readout order.
-            if raw_amp.getRawFlipX():
-                data = data[:, ::-1]
-            if raw_amp.getRawFlipY():
-                data = data[::-1, :]
-            overscans.append(data)
+        try:
+            ref = bias_refs[slot]
+        except KeyError:
+            overscans.append(None)
+            det_name = f"{raft}_{slot}"
+            raw_det = camera[det_name]
+            for raw_amp in raw_det:
+                overscans.append(None)
+        else:
+            exp = ref.get()
+            det = exp.getDetector()
+            raw_det = camera[det.getName()]
+            for amp, raw_amp in zip(det, raw_det):
+                bbox = amp.getRawSerialOverscanBBox()
+                bbox.grow(-buffer)
+                data = exp.getImage()[bbox].array.copy()
+                # Put the overscan data in readout order.
+                if raw_amp.getRawFlipX():
+                    data = data[:, ::-1]
+                if raw_amp.getRawFlipY():
+                    data = data[::-1, :]
+                overscans.append(data)
     namps = len(overscans)
-    data = np.array([np.corrcoef(overscans[i[0]].ravel(),
-                                 overscans[i[1]].ravel())[0, 1]
-                     for i in itertools.product(range(namps), range(namps))])
+    data = []
+    for  i in itertools.product(range(namps), range(namps)):
+        oscan0 = overscans[i[0]]
+        oscan1 = overscans[i[1]]
+        if oscan0 is None or oscan1 is None:
+            data.append(0)
+        else:
+            data.append(np.corrcoef(oscan0.ravel(), oscan1.ravel())[0, 1])
+    data = np.array(data)
     data = data.reshape((namps, namps))
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
@@ -109,7 +125,7 @@ def set_ticks(ax, slots, amps=16):
         axis.set_minor_formatter(ticker.FixedFormatter(slots))
 
 
-def raft_imaging_correlations(flat1_refs, flat2_refs, camera,
+def raft_imaging_correlations(flat1_refs, flat2_refs, raft, camera,
                               buffer=10, title='', vrange=None,
                               stretch=viz.LinearStretch, cmap='jet',
                               figsize=(8, 8)):
@@ -126,6 +142,8 @@ def raft_imaging_correlations(flat1_refs, flat2_refs, camera,
         These should be from the same flat pair frame as the flat2_refs.
     flat2_refs: dict
         Dictionary of flat2 exposure references, indexed by sensor slot id.
+    raft: str
+        Raft name, e.g., "R00".
     camera: lsst.afw.cameraGeom.Camera
         Camera to use to find amplifier flips to put the overscan
         arrays in readout order.
@@ -152,21 +170,35 @@ def raft_imaging_correlations(flat1_refs, flat2_refs, camera,
     segments = []
 
     for slot in slots:
-        exp1 = flat1_refs[slot].get()
-        exp2 = flat2_refs[slot].get()
-        det = exp1.getDetector()
-        raw_det = camera[det.getName()]
-        imarrs = diff_image_arrays(exp1, exp2, buffer=buffer)
-        for amp_name, data in imarrs.items():
-            raw_amp = raw_det[amp_name]
-            if raw_amp.getRawFlipX():
-                data = data[:, ::-1]
-            if raw_amp.getRawFlipY():
-                data = data[::-1, :]
-            segments.append(data)
+        try:
+            exp1 = flat1_refs[slot].get()
+            exp2 = flat2_refs[slot].get()
+        except KeyError:
+            det_name = f"{raft}_{slot}"
+            raw_det = camera[det_name]
+            for raw_amp in raw_det:
+                segments.append(None)
+        else:
+            det = exp1.getDetector()
+            raw_det = camera[det.getName()]
+            imarrs = diff_image_arrays(exp1, exp2, buffer=buffer)
+            for amp_name, data in imarrs.items():
+                raw_amp = raw_det[amp_name]
+                if raw_amp.getRawFlipX():
+                    data = data[:, ::-1]
+                if raw_amp.getRawFlipY():
+                    data = data[::-1, :]
+                segments.append(data)
     namps = len(segments)
-    data = np.array([pearson_r(segments[i[0]].ravel(), segments[i[1]].ravel())
-                     for i in itertools.product(range(namps), range(namps))])
+    data = []
+    for i in itertools.product(range(namps), range(namps)):
+        seg0 = segments[i[0]]
+        seg1 = segments[i[1]]
+        if seg0 is None or seg1 is None:
+            data.append(0)
+        else:
+            data.append(pearson_r(seg0.ravel(), seg1.ravel()))
+    data = np.array(data)
     data = data.reshape((namps, namps))
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
