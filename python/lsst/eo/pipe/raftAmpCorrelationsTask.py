@@ -106,8 +106,8 @@ class ImagingCorrelationsTask(pipeBase.PipelineTask):
             title = (f"imaging region correlations, {raft}, "
                      f"acq. run {acq_run}, {exposures}")
             flat1_refs, flat2_refs = list(raws.values())
-            fig, _ = raft_imaging_correlations(flat1_refs, flat2_refs, camera,
-                                               buffer=self.buffer,
+            fig, _ = raft_imaging_correlations(flat1_refs, flat2_refs, raft,
+                                               camera, buffer=self.buffer,
                                                title=title, cmap=self.cmap,
                                                figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
@@ -197,7 +197,8 @@ class OverscanCorrelationsTask(pipeBase.PipelineTask):
         for raft, raws in raft_data.items():
             title = (f"Overscan correlations, {raft}, acq. run {acq_run}, "
                      f"{exposure}")
-            fig, _ = raft_oscan_correlations(raws, camera, buffer=self.buffer,
+            fig, _ = raft_oscan_correlations(raws, raft, camera,
+                                             buffer=self.buffer,
                                              title=title, cmap=self.cmap,
                                              figsize=self.figsize)
             butlerQC.put(fig, ref_map[raft])
