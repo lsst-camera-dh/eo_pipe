@@ -134,7 +134,7 @@ class EoPipelines(PipelinesBase):
     def _print_in_collection(self):
         print("Using input collection:")
         command = (f"butler query-collections {os.environ['BUTLER_CONFIG']} "
-                   f"{os.environ['INCOLLECTION']}")
+                   f"{os.environ['EO_PIPE_INCOLLECTION']}")
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:

@@ -5,7 +5,7 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
-    - INCOLLECTION
+    - EO_PIPE_INCOLLECTION
     - DATASET_SELECTION
     - DATASET_LABEL
     - PAYLOAD_MODIFIER
@@ -45,8 +45,6 @@ b_protocol:
     - bps_eoPersistence.yaml
     - bps_eoBiasShifts.yaml
   env_vars:
-    - HIGH_FLUX_FILTER
-    - LOW_FLUX_FILTER
     - READ_NOISE_BIN_SIZE
 
 ptc:

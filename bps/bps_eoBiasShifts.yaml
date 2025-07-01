@@ -13,7 +13,7 @@ payload:
   dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${INCOLLECTION}
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_bias_shifts{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and {dataset_selection} and exposure.observation_type!='scan' ${DETECTOR_SELECTION}"

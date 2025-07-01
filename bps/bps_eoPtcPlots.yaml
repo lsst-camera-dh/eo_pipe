@@ -11,7 +11,7 @@ payload:
   dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/ptc{payload_modifier}_{dataset_label}_{weekly}
+  inCollection: ${EO_PIPE_INCOLLECTION}
   payloadName: eo_ptc_plots{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' ${DETECTOR_SELECTION}"
