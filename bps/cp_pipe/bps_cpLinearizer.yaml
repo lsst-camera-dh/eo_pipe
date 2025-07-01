@@ -8,6 +8,19 @@ extraQgraphOptions: "{isr_QgraphOptions} --config cpLinearizerSolve:splineKnots=
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpLinearizer.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+  cp_linearizer_isr:
+    pipetasks: cpLinearizerIsr
+    dimensions: detector
+    partitionDimensions: exposure
+    partitionMaxClusters: 1000
+  cp_linearizer_ptc_extract_pair:
+    pipetasks: cpLinearizerPtcExtractPair
+    dimensions: detector
+    partitionDimensions: exposure
+    partitionMaxClusters: 1000
+
 payload:
   dataset_selection: ${DATASET_SELECTION}
   dataset_label: ${DATASET_LABEL}

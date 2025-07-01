@@ -8,6 +8,14 @@ extraQgraphOptions: "{isr_QgraphOptions}"
 pipelineYaml: "$CP_PIPE_DIR/pipelines/${INSTRUMENT_NAME}/cpDark.yaml#cpDarkIsr,cpDark,cpDarkCombine"
 instrument: ${INSTRUMENT_CLASS}
 
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+  cp_dark_isr:
+    pipetasks: cpDarkIsr,cpDark
+    dimensions: detector
+    partitionDimensions: exposure
+    partitionMaxClusters: 1000
+
 payload:
   dataset_selection: ${DATASET_SELECTION}
   dataset_label: ${DATASET_LABEL}

@@ -8,6 +8,14 @@ extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doBrighterFatter
 pipelineYaml: "${CP_PIPE_DIR}/pipelines/${INSTRUMENT_NAME}/cpFlat.yaml#cpFlatIsr,cpFlatMeasure,cpFlatNormalize,cpFlatCombine"
 instrument: ${INSTRUMENT_CLASS}
 
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+  cp_flat_isr:
+    pipetasks: cpFlatIsr,cpFlatMeasure
+    dimensions: detector
+    partitionDimensions: exposure
+    partitionMaxClusters: 1000
+
 payload:
   dataset_selection: ${DATASET_SELECTION}
   dataset_label: ${DATASET_LABEL}
