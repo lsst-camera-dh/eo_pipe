@@ -16,6 +16,8 @@ parser.add_argument('--bps_yaml', type=str, default=None,
                     help="Specific pipeline to run for a given run type")
 parser.add_argument('--max_cpe_count', type=int, default=5,
                     help='Maximum number of CalledProcessErrors per pipeline')
+parser.add_argument('--no_confirm', action='store_true', default=False,
+                    help='Run pipelines without confirmation.')
 args = parser.parse_args()
 
 config_file = './cp_pipelines_config.yaml'
@@ -26,6 +28,6 @@ if not os.path.isfile(config_file):
     shutil.copy(src, config_file)
 
 cp_pipelines = CpPipelines(config_file, verbose=not args.laconic,
-                           dry_run=args.dry_run,
+                           dry_run=args.dry_run, no_confirm=args.no_confirm,
                            max_cpe_count=args.max_cpe_count)
 cp_pipelines.submit(args.run_type, bps_yaml=args.bps_yaml)

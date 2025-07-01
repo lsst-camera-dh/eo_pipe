@@ -9,13 +9,16 @@ parser.add_argument('--run_type', default='b_protocol',
                     help='Type of analysis run',
                     choices=['b_protocol', 'ptc', 'flat_gain_stability',
                              'scan_mode', 'dark_mosaic', 'run_info',
-                             'spot_measurement', 'ccob_nb'])
+                             'spot_measurement', 'ccob_nb',
+                             'bias_sequence', 'dark_sequence'])
 parser.add_argument('--laconic', action='store_true', default=False,
                     help='Verbosity flag')
 parser.add_argument('--dry_run', action='store_true', default=False,
                     help='Dry-run flag')
 parser.add_argument('--bps_yaml', type=str, default=None,
                     help='Specific pipeline to run for a given run type')
+parser.add_argument('--no_confirm', action='store_true', default=False,
+                    help='Run pipelines without confirmation.')
 args = parser.parse_args()
 
 config_file = './eo_pipelines_config.yaml'
@@ -26,6 +29,6 @@ if not os.path.isfile(config_file):
     shutil.copy(src, config_file)
 
 eo_pipelines = EoPipelines(config_file, verbose=not args.laconic,
-                           dry_run=args.dry_run)
+                           dry_run=args.dry_run, no_confirm=args.no_confirm)
 
 eo_pipelines.submit(args.run_type, bps_yaml=args.bps_yaml)
