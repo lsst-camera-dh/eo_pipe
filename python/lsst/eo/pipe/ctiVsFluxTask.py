@@ -35,7 +35,8 @@ def find_flat_pairs(raws, flux_keyword=""):
         if flux_keyword != "":
             key_values.append(handle.get().getMetadata()[flux_keyword])
         else:
-            key_values.append(handle.dataId.records['exposure'].exposure_time)
+            key_values.append(
+                np.round(handle.dataId.records['exposure'].exposure_time, 2))
 
     # Find the pairs based on the key_values.
     raw_pairs = []
