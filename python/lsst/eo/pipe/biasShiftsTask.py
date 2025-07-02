@@ -99,7 +99,7 @@ def scan_for_shifts(data, window=30, noise_filter=30,
             shift_peaks.append(
                 [shift_conv[region_peak], region_peak, region[0], region[1]])
     if len(shift_peaks) == 0:
-        return np.array([[np.NaN]*4]), local_noise
+        return np.array([[np.nan]*4]), local_noise
     return np.asarray(shift_peaks),  local_noise
 
 
