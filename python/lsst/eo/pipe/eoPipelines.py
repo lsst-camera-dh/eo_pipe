@@ -18,7 +18,7 @@ class PipelinesBase:
     B-protocol or a PTC run.
     """
     def __init__(self, pipeline_config, verbose=True, dry_run=False,
-                 log_dir='./logs'):
+                 no_confirm=False, log_dir='./logs'):
         """
         Parameters
         ----------
@@ -29,12 +29,15 @@ class PipelinesBase:
             Set to True for verbose output.
         dry_run : bool [False]
             Set to True to do a dry-run, listing pipelines to be run.
-        log_idr : str ['./logs']
+        no_confirm : bool [False]
+            Run pipelines without confirmation.
+        log_dir : str ['./logs']
             Directory for log files that contain the `bps submit`
             screen output.
         """
         self.verbose = verbose
         self.dry_run = dry_run
+        self.no_confirm = no_confirm
         self.log_dir = log_dir
         os.makedirs(log_dir, exist_ok=True)
         with open(pipeline_config) as fobj:
@@ -44,7 +47,7 @@ class PipelinesBase:
     def _check_env_vars(self, run_type):
         # Check for required env vars for the specified run type.
         required = (self.config['baseline']['env_vars']
-                    + self.config[run_type]['env_vars'])
+                    + self.config[run_type].get('env_vars', []))
         missing = [_ for _ in required if _ not in os.environ]
         if self.verbose:
             print("Using environment variables:")
@@ -92,7 +95,9 @@ class PipelinesBase:
             print()
             if check_in_collection:
                 self._print_in_collection()
-        if not click.confirm("Proceed?", default=True) or not self.verbose:
+        if ((not self.no_confirm and
+             not click.confirm("Proceed?", default=True))
+            or not self.verbose):
             print("Aborting runs.")
             return
         self._run_pipelines(pipelines)
@@ -122,14 +127,14 @@ class EoPipelines(PipelinesBase):
     Class to manage bps submissions of eo_pipe pipelines.
     """
     def __init__(self, eo_pipelines_config, verbose=True, dry_run=False,
-                 log_dir='./logs'):
+                 no_confirm=False, log_dir='./logs'):
         super().__init__(eo_pipelines_config, verbose=verbose, dry_run=dry_run,
-                         log_dir=log_dir)
+                         no_confirm=no_confirm, log_dir=log_dir)
 
     def _print_in_collection(self):
         print("Using input collection:")
         command = (f"butler query-collections {os.environ['BUTLER_CONFIG']} "
-                   f"{os.environ['INCOLLECTION']}")
+                   f"{os.environ['EO_PIPE_INCOLLECTION']}")
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
@@ -167,8 +172,9 @@ class CpPipelines(PipelinesBase):
     Class to manage sequential bps submission of cp_pipe pipelines.
     """
     def __init__(self, cp_pipelines_config, verbose=True, dry_run=False,
-                 log_dir='./logs', max_cpe_count=5):
-        super().__init__(cp_pipelines_config, verbose=verbose, dry_run=dry_run)
+                 no_confirm=False, log_dir='./logs', max_cpe_count=5):
+        super().__init__(cp_pipelines_config, verbose=verbose, dry_run=dry_run,
+                         no_confirm=no_confirm)
         self.max_cpe_count = max_cpe_count
 
     def _run_pipelines(self, pipelines):

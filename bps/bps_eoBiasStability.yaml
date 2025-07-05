@@ -1,10 +1,10 @@
 includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
 
-plot_label: "${SCIENCE_PROGRAM}"
+plot_label: "${DATASET_LABEL}"
 
 pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoBiasStability.yaml
-extraQgraphOptions: "--config biasStabilityPlots:acq_run=' {plot_label}' --config biasStability:acq_run=' {plot_label}' --config biasStability:isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan=${DO_PARALLEL_OSCAN}"
+extraQgraphOptions: "--config biasStabilityPlots:acq_run=' {plot_label}' --config biasStability:acq_run=' {plot_label}' --config biasStability:isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.doParallelOverscan=False"
 
 pipetask:
   biasStability:
@@ -17,10 +17,11 @@ memoryLimit: 10000
 instrument: ${INSTRUMENT_CLASS}
 
 payload:
-  science_program: ${SCIENCE_PROGRAM}
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
   payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: ${INCOLLECTION}
-  payloadName: eo_bias_stability{payload_modifier}_{science_program}_{weekly}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_bias_stability{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
-  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.science_program='{science_program}' ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and exposure.observation_reason='bias_stability' and {dataset_selection} ${DETECTOR_SELECTION} ${GUIDER_DESELECTION}"

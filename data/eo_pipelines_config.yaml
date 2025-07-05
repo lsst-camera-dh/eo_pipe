@@ -5,36 +5,43 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
-    - INCOLLECTION
+    - EO_PIPE_INCOLLECTION
+    - DATASET_SELECTION
+    - DATASET_LABEL
     - PAYLOAD_MODIFIER
     - DETECTOR_SELECTION
     - DO_PARALLEL_OSCAN
+    - GUIDER_DESELECTION
+
+bias_sequence:
+  pipelines:
+    - bps_eoReadNoise.yaml
+    - bps_eoRaftAmpCorrelations.yaml
+    - bps_eoBiasStability.yaml
+  env_vars:
+    - READ_NOISE_BIN_SIZE
+
+dark_sequence:
+  pipelines:
+    - bps_eoDarkStability.yaml
 
 b_protocol:
   pipelines:
     - bps_eoReadNoise.yaml
     - bps_eoRaftAmpCorrelations.yaml
     - bps_eoBiasStability.yaml
-    - bps_eoDarkStability.yaml
-#    - bps_eoBrightDefects.yaml
-#    - bps_eoDarkDefects.yaml
-#    - bps_eoVampireDefects.yaml
-#    - bps_eoDarkCurrent.yaml
-#    - bps_eoEper.yaml
-#    - bps_eoPtcPlots.yaml
-#    - bps_eoRaftCalibMosaics.yaml
-#    - bps_eoRaftLambdaMosaics.yaml
-#    - bps_eoLinearityPlots.yaml
-#    - bps_eoDivisaderoTearing.yaml
-#    - bps_eoBFAnalysis.yaml
-#    - bps_eoCtiVsFlux.yaml
-#    - bps_eoPersistence.yaml
-#    - bps_eoBiasShifts.yaml
+    - bps_eoBrightDefects.yaml
+    - bps_eoDarkDefects.yaml
+    - bps_eoDarkCurrent.yaml
+    - bps_eoEper.yaml
+    - bps_eoPtcPlots.yaml
+    - bps_eoDivisaderoTearing.yaml
+    - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
+    - bps_eoPersistence.yaml
+    - bps_eoBiasShifts.yaml
+    - bps_eoFlatGainStability.yaml
   env_vars:
-    - SCIENCE_PROGRAM
-    - HIGH_FLUX_FILTER
-    - LOW_FLUX_FILTER
-    - GUIDER_DESELECTION
     - READ_NOISE_BIN_SIZE
 
 ptc:
@@ -43,8 +50,6 @@ ptc:
     - bps_eoLinearityPlots.yaml
     - bps_eoBFAnalysis.yaml
     - bps_eoCtiVsFlux.yaml
-  env_vars:
-    - PTC_RUN
 
 ptc_subset:
   pipelines:
@@ -55,9 +60,6 @@ ptc_subset:
 flat_gain_stability:
   pipelines:
     - bps_eoFlatGainStability.yaml
-  env_vars:
-    - DAYOBS
-    - SEQNUM_RANGE
 
 scan_mode:
   pipelines:
@@ -86,5 +88,3 @@ dark_mosaic:
 run_info:
   pipelines:
     - bps_eoRunInfo.yaml
-  env_vars:
-    - ACQ_RUN

@@ -23,7 +23,7 @@ def nsigma_range(data, nsigma=3):
 
 def append_acq_run(cls_instance, title, suffix=None):
     if cls_instance.config.acq_run != -1:
-        title = f"{title}, acq. run {cls_instance.config.acq_run.strip()}"
+        title = f"{title}, dataset {cls_instance.config.acq_run.strip()}"
     if suffix is not None:
         title = f"{title}, {suffix}"
     return title
