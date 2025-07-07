@@ -1,0 +1,11 @@
+description:
+  Pipeline to plot cpLinearizer results for the CCDs in the LSSTCam focal plane.
+tasks:
+  linearizerFocalPlanePlots:
+    class: lsst.eo.pipe.LinearizerFpPlotsTask
+    config:
+      connections.linearizers: "linearizer"
+      connections.linearizerPtcs: "linearizerPtc"
+      connections.max_frac_dev: "max_frac_dev"
+      connections.max_observed_signal: "max_observed_signal"
+      connections.linearity_turnoff: "linearity_turnoff"

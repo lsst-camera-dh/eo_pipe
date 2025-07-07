@@ -35,6 +35,7 @@ b_protocol:
     - bps_eoDarkCurrent.yaml
     - bps_eoEper.yaml
     - bps_eoPtcPlots.yaml
+    - bps_eoLinearizerPlots.yaml
     - bps_eoDivisaderoTearing.yaml
     - bps_eoBFAnalysis.yaml
     - bps_eoCtiVsFlux.yaml
