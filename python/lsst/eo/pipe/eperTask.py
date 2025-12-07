@@ -121,6 +121,11 @@ class EperTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="DataFrame",
         dimensions=("instrument", "detector", "physical_filter"))
 
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+        if config.no_per_frame_isr:
+            self.inputs.remove("bias")
+
 
 class EperTaskConfig(pipeBase.PipelineTaskConfig,
                      pipelineConnections=EperTaskConnections):
@@ -177,6 +182,17 @@ class EperTask(pipeBase.PipelineTask):
         self.do_parallel = self.config.do_parallel_oscan
         self.max_raws = self.config.max_raws
         self.no_per_frame_isr = self.config.no_per_frame_isr
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        if self.no_per_frame_isr:
+            bias = None
+        else:
+            bias = inputs['bias']
+
+        struct = self.run(inputs['raws'],
+                          bias,
+                          inputs['camera'])
 
     def run(self, raws, bias, camera):
         det = camera[raws[0].dataId['detector']]

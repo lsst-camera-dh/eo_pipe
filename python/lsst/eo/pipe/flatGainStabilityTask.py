@@ -69,6 +69,10 @@ class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
         super().__init__(config=config)
         if not config.do_apply_pd_normalization:
             self.inputs.remove("pd_data")
+        if not config.do_bias:
+            self.prerequisiteInputs.remove("bias")
+        if not config.do_dark:
+            self.prerequisiteInputs.remove("dark")
 
 
 class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
@@ -126,7 +130,18 @@ class FlatGainStabilityTaskConfig(pipeBase.PipelineTaskConfig,
         dtype=str,
         doc="Value of CCOBLED keyword to use for filtering sflat exposures. "
         "If 'None', then process all of the exposures.",
-        default="None")
+        default="None"
+    )
+    do_bias = pexConfig.Field(
+        dtype=bool,
+        doc="Flag to apply bias subtraction.",
+        default=True
+    )
+    do_dark = pexConfig.Field(
+        dtype=bool,
+        doc="Flag to apply dark subtraction.",
+        default=True
+    )
 
 
 class FlatGainStabilityTask(pipeBase.PipelineTask):
@@ -147,6 +162,8 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
         self.pd_current_scale = self.config.pd_current_scale
         self.apply_pd_norm = self.config.do_apply_pd_normalization
         self.ccob_led_constraint = self.config.ccob_led_constraint
+        self.do_bias = self.config.do_bias
+        self.do_dark = self.config.do_dark
 
     def runQuantum(self, butlerQC, inputRefs, outputRefs):
         inputs = butlerQC.get(inputRefs)
@@ -154,10 +171,18 @@ class FlatGainStabilityTask(pipeBase.PipelineTask):
             pd_data = None
         else:
             pd_data = inputs['pd_data']
+        if not self.do_bias:
+            bias = None
+        else:
+            bias = inputs['bias']
+        if not self.do_dark:
+            dark = None
+        else:
+            dark = inputs['dark']
 
         struct = self.run(inputs['raws'],
-                          inputs['bias'],
-                          inputs['dark'],
+                          bias,
+                          dark,
                           pd_data,
                           inputs['camera'])
         butlerQC.put(struct, outputRefs)
