@@ -96,6 +96,11 @@ class CtiVsFluxTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Plot",
         dimensions=("instrument", "detector"))
 
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+        if not config.do_bias:
+            self.inputs.remove("bias")
+
 
 class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
                           pipelineConnections=CtiVsFluxTaskConnections):
@@ -135,6 +140,10 @@ class CtiVsFluxTaskConfig(pipeBase.PipelineTaskConfig,
     acq_run = pexConfig.Field(
         doc="Acquisition run number.",
         dtype=str, default="")
+    do_bias = pexConfig.Field(
+        doc="Flag to do bias subtraction.",
+        default=True,
+        dtype=bool)
 
 
 class CtiVsFluxTask(pipeBase.PipelineTask):
@@ -151,6 +160,19 @@ class CtiVsFluxTask(pipeBase.PipelineTask):
         self.deg = self.config.polynomial_degree
         self.do_parallel = self.config.do_parallel_oscan
         self.flux_keyword = self.config.flux_keyword
+        self.do_bias = self.config.do_bias
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        inputs = butlerQC.get(inputRefs)
+        if not self.do_bias:
+            bias = None
+        else:
+            bias= inputs['bias']
+
+        struct = self.run(inputs['raws'],
+                          bias,
+                          inputs['camera'])
+        butlerQC.put(struct, outputRefs)
 
     def run(self, raws, bias, camera):
         det = camera[raws[0].dataId['detector']]
