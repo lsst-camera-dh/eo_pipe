@@ -19,6 +19,34 @@ def get_plot_locations(repo, collections):
     return get_plot_locations_by_dstype(repo, collections, dstypes)
 
 
+def extract_median_scaling(handles):
+    stats = defaultdict(list)
+    data = defaultdict(list)
+    for raft in handles:
+        for slot, ref in handles[raft].items():
+            df = ref.get()
+            for _, row in df.iterrows():
+                data['detector'].append(ref.dataId['detector'])
+                data['raft'].append(row['raft'])
+                data['slot'].append(row['slot'])
+                data['amp_name'].append(row['amp_name'])
+                data['mjd'].append(row['mjd'])
+                data['median'].append(row['median'])
+            amp_names = sorted(set(df['amp_name']))
+            for amp_name in amp_names:
+                stats['detector'].append(ref.dataId['detector'])
+                stats['amp_name'].append(amp_name)
+                median_values = df.query(f"amp_name=='{amp_name}'")['median']
+                stats['mean'].append(np.mean(median_values))
+    stats = pd.DataFrame(stats).sort_values('mean')
+    df0 = pd.DataFrame(data).sort_values("mjd")
+    scaling_row = stats.iloc[len(stats) // 2]
+    detector = scaling_row['detector']
+    amp_name = scaling_row['amp_name']
+    values = df0.query(f"detector=={detector} and amp_name=='{amp_name}'")
+    return values['median'].to_numpy()
+
+
 class FlatGainStabilityTaskConnections(pipeBase.PipelineTaskConnections,
                                        dimensions=("instrument", "detector")):
     raws = cT.Input(
@@ -280,6 +308,11 @@ class FlatGainStabilityPlotsTaskConfig(pipeBase.PipelineTaskConfig,
         default="None")
     acq_run = pexConfig.Field(doc="Acquisition run number.",
                               dtype=str, default="")
+    apply_median_scaling = pexConfig.Field(
+        dtype=bool,
+        doc="Flag to normalize by median amp-level curve of mean values.",
+        default=False,
+    )
 
 
 class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
@@ -295,6 +328,7 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
         self.figsize = self.config.yfigsize, self.config.xfigsize
         self.y_range = self.config.y_range_min, self.config.y_range_max
         self.ccob_led = self.config.ccob_led_constraint
+        self.apply_median_scaling = self.config.apply_median_scaling
 
     def run(self, flat_gain_stability_stats, camera):
         # Sort by raft and slot:
@@ -303,6 +337,8 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
             det = camera[ref.dataId['detector']]
             raft, slot = det.getName().split('_')
             handles[raft][slot] = ref
+        if self.apply_median_scaling:
+            median_scaling = extract_median_scaling(handles)
         fig = plt.figure(figsize=self.figsize)
         rafts = sorted(handles.keys())
         t0 = None
@@ -310,7 +346,7 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
             plt.subplot(5, 5, i)
             slots = sorted(handles[raft].keys())
             for slot in slots:
-                stats = handles[raft][slot].get()
+                stats = handles[raft][slot].get().sort_values('mjd')
                 if t0 is None:
                     t0 = np.floor(min(stats['mjd']))
                 time = 24.*(stats['mjd'].to_numpy() - t0)
@@ -319,9 +355,12 @@ class FlatGainStabilityPlotsTask(pipeBase.PipelineTask):
                 pd_integrals = stats['pd_integral'].to_numpy()
                 for amp in det:
                     index = np.where(amp_names == amp.getName())
-                    pd_values = pd_integrals[index].copy()
-                    pd_values /= np.mean(pd_values)
-                    signal[index] /= pd_values
+                    if self.apply_median_scaling:
+                        signal[index] /= median_scaling
+                    else:
+                        pd_values = pd_integrals[index].copy()
+                        pd_values /= np.mean(pd_values)
+                        signal[index] /= pd_values
                     signal[index] /= np.mean(signal[index])
                 plt.scatter(time, signal, s=2, label=slot)
             plt.ylim(*self.y_range)
