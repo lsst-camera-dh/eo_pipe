@@ -98,7 +98,7 @@ class ReadNoiseTaskConnections(pipeBase.PipelineTaskConnections,
     def __init__(self, *, config=None):
         super().__init__(config=config)
 
-        if not config.usePtcGains:
+        if not config.usePtcGains or not config.apply_gains:
             self.inputs.remove('ptc_results')
 
 
@@ -117,6 +117,9 @@ class ReadNoiseTaskConfig(pipeBase.PipelineTaskConfig,
     usePtcGains = pexConfig.Field(doc="Use gains from PTC dataset. If False, "
                                   "then use the gains from obs_lsst",
                                   dtype=bool, default=True)
+    apply_gains = pexConfig.Field(doc="Flag to apply gains.  If False, "
+                                  "then do not apply gains.", dtype=bool,
+                                  default=False)
 
 
 class ReadNoiseTask(pipeBase.PipelineTask):
@@ -131,6 +134,7 @@ class ReadNoiseTask(pipeBase.PipelineTask):
         self.bin_size = self.config.bin_size
         self.dxy = self.config.dxy // self.bin_size
         self.use_ptc_gains = self.config.usePtcGains
+        self.apply_gains = self.config.apply_gains
 
     def run(self, raw_frames, ptc_results=None, camera=None):
         data = defaultdict(list)
@@ -142,7 +146,9 @@ class ReadNoiseTask(pipeBase.PipelineTask):
             for amp in det:
                 amp_name = amp.getName()
                 gain = camera[det_name][amp_name].getGain()
-                if self.use_ptc_gains:
+                if not self.apply_gains:
+                    gain = 1.0
+                elif self.use_ptc_gains:
                     ptc_gain = ptc_results.gain[amp_name]
                     if not np.isnan(ptc_gain):
                         gain = ptc_gain
