@@ -1,16 +1,10 @@
 import numpy as np
-from astropy.io import fits
 from astropy.table import Table
 from lsst.daf.butler import Butler
 import lsst.afw.detection as afwDetect
 from lsst.afw.geom import SpanSet
-from photutils.detection import DAOStarFinder
-from photutils.aperture import CircularAperture, aperture_photometry, ApertureStats, CircularAnnulus
-from photutils.background import Background2D, BkgZoomInterpolator
-import sys, os
-
-sys.path.append('/sdf/group/rubin/user/amouroux/comissioning/cbp_analysis/python/lsst/python/exposure_time_calculator')
-from rubin_calib_etc import RubinCalibETC
+from photutils.aperture import CircularAperture, ApertureStats, CircularAnnulus
+from photutils.background import Background2D#, BkgZoomInterpolator
 
 class Spot:
     def __init__(self, x=None, y=None, radius=None, mask_size = 150): 
@@ -22,6 +16,25 @@ class Spot:
         self.radius = radius
         if self.x is not None and self.y is not None:
             self.centroid = (self.x, self.y)
+
+    def _check_image_quality(self, image, min_signal_ratio=10.0):
+        """
+        Check if the image has sufficient signal to contain a spot.
+        
+        Parameters:
+        min_signal_ratio: Minimum ratio between max pixel and median
+        """
+        image_array = image.array
+        median_val = np.median(image_array)
+        max_val = np.percentile(image_array, 99.99)
+        std_val = np.std(image_array)
+        
+        signal_ratio = (max_val - median_val) / std_val
+        print(signal_ratio)
+        if signal_ratio < min_signal_ratio:
+            print(f"Low signal detected (ratio: {signal_ratio:.2f}). Skipping spot detection.")
+            return False
+        return True
 
     def get_mask_size(self):
         self.mask_size_fp = self.mask_size * self.magnification_factor
@@ -55,7 +68,7 @@ class Spot:
                 break
         self.found_spot = found_spot
         return self.found_spot
-    
+
     def get_spot_information(self, spot=None):
         """
         Get the centroid and radius of a spot.
@@ -137,7 +150,10 @@ class Spot:
                             np.percentile(image.array, 60),
                             np.median(image.array)
                           ])
-        self.find_spot_iteratively(image, threshold_array=threshold_array, minarea=int(self.mask_area_fp_px*.9))
+        if not self._check_image_quality(image):
+            self.found_spot = []
+        else:
+            self.find_spot_iteratively(image, threshold_array=threshold_array, minarea=int(self.mask_area_fp_px*.9))
         if len(self.found_spot) == 0:
             print("No spot found")
             ss = SpanSet.fromShape(0, offset=(0,0))
@@ -334,79 +350,3 @@ class AperturePhotometry:
         self.background_mean, self.background_std = self.background_stats.mean, self.background_stats.std
         adu_count = self.do_aperture_photometry(image = substracted_background_image, aperture = aperture)
         return adu_count
-
-    ######### Useless for now ##########    
-    def get_detector_efficiency(self, wavelength, exptime_config = "/sdf/data/rubin/user/amouroux/comissioning/cbp_codes/notebooks/imsim/cbp_calib.yaml"):
-        try:
-            ETC = RubinCalibETC(exptime_config)
-            ETC.get_detector_efficiency()
-            d_eff = ETC.detector_efficiency
-            w_index = np.where(ETC.rubin_wavelength == float(wavelength * 1e9))[0][0]
-            self.detector_efficiency = d_eff[w_index]
-        except Exception as e:
-            print(f"Error calculating detector efficiency: {e}")
-            self.detector_efficiency = None
-    
-    def adu_to_electron(self, gain=1):
-        """
-        Convert ADU counts to electron counts.
-
-        Parameters:
-        gain (float): Gain factor to convert ADU to electrons.
-
-        Returns:
-        np.ndarray: Electron counts.
-        """
-        self.el_count = np.array(self.adu_count) * gain
-        return self.el_count
-
-    def electron_to_photon(self):
-        """
-        Convert electron counts to photon counts.
-
-        Returns:
-        np.ndarray: Photon counts.
-        """
-        if self.detector_efficiency is None:
-            raise ValueError("Detector efficiency is not set. Please run get_detector_efficiency first.")
-        
-        h = 6.62607015e-34  # Planck constant in J*s
-        c = 3e8  # Speed of light in m/s
-        self.n_photons = self.el_count / self.detector_efficiency
-        return self.n_photons
-
-    def get_flux(self, count, total_exptime=13):
-        """
-        Calculate the flux from the count and exposure time.
-
-        Parameters:
-        count (float): Count value.
-        total_exptime (float): Total exposure time in seconds.
-
-        Returns:
-        float: Flux value.
-        """
-        area = self.found_spot.getArea() * (1e-5)**2  # Area in m^2
-        self.flux = count / (area * total_exptime)
-        return self.flux
-
-    def get_physical_photon_flux(self, total_exptime=13):
-        """
-        Calculate the physical photon flux.
-
-        Parameters:
-        total_exptime (float): Total exposure time in seconds.
-
-        Returns:
-        float: Physical photon flux in W/m^2.
-        """
-        if self.wavelength is None:
-            raise ValueError("Wavelength is not set. Please set the wavelength first.")
-        
-        h = 6.62607015e-34  # Planck constant in J*s
-        c = 3e8  # Speed of light in m/s
-        E_photon = h * c / self.wavelength  # Energy per photon in J
-        E_tot = self.n_photons * E_photon  # Total energy in J
-        area = self.found_spot.getArea() * (1e-5)**2  # Area in m^2
-        self.physical_photon_flux = E_tot / (area * total_exptime)  # Flux in W/m^2
-        return self.physical_photon_flux

@@ -8,18 +8,25 @@ tasks:
       doBrighterFatter: false
       doFlat: false
       doAmpOffset: false
+      
   cbpspotmeasurement_unforced:
     class: lsst.eo.pipe.CBPSpotMeasurementTask
     config:
       doForcedPhotometry: false
-      aperture : 300
+      doMultipleDetections: false
   cbpspotmeasurement_forced:
     class: lsst.eo.pipe.CBPSpotMeasurementTask
     config:
       doForcedPhotometry: true
+      doMultipleApertures: false
       aperture : 300
-    
 subsets:
   noISR:
-    - cbpspotMeasurement_unforced
-    - cbpspotMeasurement_forced
+    - cbpspotmeasurement_unforced
+    - cbpspotmeasurement_forced
+  noISR_unforced:
+    - cbpspotmeasurement_unforced
+  noISR_forced:
+    - cbpspotmeasurement_forced
+  simpleISR:
+    - isr
