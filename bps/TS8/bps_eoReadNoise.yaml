@@ -1,0 +1,19 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+
+plot_label: "${DATASET_LABEL}"
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoReadNoise.yaml
+extraQgraphOptions: "--config readNoiseFpPlots:acq_run=' {plot_label}' --config readNoise:bin_size=${READ_NOISE_BIN_SIZE}"
+
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_read_noise{payload_modifier}_{dataset_label}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='bias' and {dataset_selection} ${DETECTOR_SELECTION}"

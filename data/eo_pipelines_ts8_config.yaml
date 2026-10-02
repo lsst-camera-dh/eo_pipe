@@ -1,0 +1,69 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - EO_PIPE_INCOLLECTION
+    - DATASET_SELECTION
+    - DATASET_LABEL
+    - PAYLOAD_MODIFIER
+    - DETECTOR_SELECTION
+    - DO_PARALLEL_OSCAN
+
+b_protocol:
+  pipelines:
+    - TS8/bps_eoReadNoise.yaml
+    - TS8/bps_eoRaftAmpCorrelations.yaml
+    - TS8/bps_eoBrightDefects.yaml
+    - TS8/bps_eoDarkDefects.yaml
+    - TS8/bps_eoDarkCurrent.yaml
+    - TS8/bps_eoEper.yaml
+    - TS8/bps_eoPtcPlots.yaml
+    - TS8/bps_eoDivisaderoTearing.yaml
+    - TS8/bps_eoBFAnalysis.yaml
+    - TS8/bps_eoCtiVsFlux.yaml
+    - TS8/bps_eoPersistence.yaml
+    - TS8/bps_eoBiasShifts.yaml
+  env_vars:
+    - READ_NOISE_BIN_SIZE
+
+ptc:
+  pipelines:
+    - bps_eoPtcPlots.yaml
+    - bps_eoLinearityPlots.yaml
+    - bps_eoBFAnalysis.yaml
+    - bps_eoCtiVsFlux.yaml
+
+ptc_subset:
+  pipelines:
+    - bps_cpPtc_tagged.yaml
+  env_vars:
+    - PTC_CHAINED_COLLECTION
+
+flat_gain_stability:
+  pipelines:
+    - bps_eoFlatGainStability.yaml
+
+scan_mode:
+  pipelines:
+    - bps_eoScanMode.yaml
+  env_vars:
+    - SCAN_MODE_RUN
+
+spot_measurement:
+  pipelines:
+    - bps_eoSpotMeasurement.yaml
+  env_vars:
+    - SPOT_RUN
+
+dark_mosaic:
+  pipelines:
+    - bps_eoDarkMosaic.yaml
+  env_vars:
+    - EXPOSURE_ID
+
+run_info:
+  pipelines:
+    - bps_eoRunInfo.yaml

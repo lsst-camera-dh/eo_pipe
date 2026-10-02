@@ -1,0 +1,19 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - CP_PIPE_INCOLLECTION
+    - DATASET_SELECTION
+    - DATASET_LABEL
+    - PAYLOAD_MODIFIER
+
+b_protocol:
+  pipelines:
+    - TS8/bps_cpBias.yaml
+    - TS8/bps_cpDark.yaml
+    - TS8/bps_cpFlat.yaml
+    - TS8/bps_cpDefects.yaml
+    - TS8/bps_cpPtc.yaml

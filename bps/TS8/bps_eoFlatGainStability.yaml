@@ -1,0 +1,19 @@
+includeConfigs:
+  - ${PWD}/bps/bps_butler_config.yaml
+
+plot_label: "${DATASET_LABEL}, no pd data"
+
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoFlatGainStability.yaml
+extraQgraphOptions: "--config flatGainStabilityPlots:acq_run=' {plot_label}' --config flatGainStabilityTask:do_parallel_oscan=${DO_PARALLEL_OSCAN} --config flatGainStabilityTask:do_apply_pd_normalization=False"
+
+instrument: ${INSTRUMENT_CLASS}
+
+payload:
+  dataset_selection: ${DATASET_SELECTION}
+  dataset_label: ${DATASET_LABEL}
+  weekly: ${WEEKLY}
+  payload_modifier: ${PAYLOAD_MODIFIER}
+  inCollection: ${EO_PIPE_INCOLLECTION}
+  payloadName: eo_flat_gain_stability{payload_modifier}_{dataset_label}_{weekly}
+  butlerConfig: ${BUTLER_CONFIG}
+  dataQuery: "instrument='${INSTRUMENT_NAME}' and exposure.observation_type='flat' and exposure.observation_reason='gain_stability' and {dataset_selection} ${DETECTOR_SELECTION}"
