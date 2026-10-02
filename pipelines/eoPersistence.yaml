@@ -20,6 +20,7 @@ tasks:
       doCrosstalk: false
       doDeferredCharge: false
       doBootstrap: true
+      doCorrectGains: false
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 2
       overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'

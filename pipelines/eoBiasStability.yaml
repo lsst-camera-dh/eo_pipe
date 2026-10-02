@@ -25,6 +25,7 @@ tasks:
       isr.doCrosstalk: false
       isr.doDeferredCharge: false
       isr.doBootstrap: true
+      isr.doCorrectGains: false
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.fitType: 'MEDIAN_PER_ROW'
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.leadingToSkip: 4
       isr.overscanCamera.defaultDetectorConfig.defaultAmpConfig.serialOverscanConfig.trailingToSkip: 4
