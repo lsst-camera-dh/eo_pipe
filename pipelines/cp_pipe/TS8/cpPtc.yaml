@@ -10,5 +10,6 @@ tasks:
       numEdgeSuspect: 20
       doExtractPhotodiodeData: true
       useEfdPhotodiodeData: false
+      photodiodeCurrentScale: 1.0
       auxiliaryHeaderKeys: ["CCOBCURR", "CCOBFLUX"]
       matchExposuresType: TIME
