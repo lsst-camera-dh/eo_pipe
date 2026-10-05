@@ -2,6 +2,7 @@
 
 import os
 import argparse
+import subprocess
 from lsst.eo.pipe import generate_report
 
 parser = argparse.ArgumentParser()
@@ -49,3 +50,6 @@ if args.pattern is None:
 generate_report(repo, pattern, dataset_label, staging_dir=staging_dir,
                 htmldir=htmldir, weekly=weekly+payload_modifier,
                 collections=collections)
+
+report_folder = os.path.join(htmldir, dataset_label)
+subprocess.check_call(f"chmod o+rx {report_folder} -R")
