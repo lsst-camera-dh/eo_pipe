@@ -3,7 +3,7 @@ includeConfigs:
 
 plot_label: ${DATASET_LABEL}
 
-pipelineYaml: ${EO_PIPE_DIR}/pipelines/eoLinearityPlots.yaml
+pipelineYaml: ${EO_PIPE_DIR}/pipelines/TS8/eoLinearityPlots.yaml
 extraQgraphOptions: "--config linearityPlots:acq_run=' {plot_label}' --config linearityFocalPlanePlots:acq_run=' {plot_label}'"
 
 payload:
