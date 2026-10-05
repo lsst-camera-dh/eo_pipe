@@ -10,6 +10,7 @@ baseline:
     - DATASET_LABEL
     - DETECTOR_SELECTION
     - DO_PARALLEL_OSCAN
+    - PAYLOAD_MODIFIER
 
 b_protocol:
   pipelines:
