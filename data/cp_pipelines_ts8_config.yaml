@@ -5,7 +5,7 @@ baseline:
     - INSTRUMENT_CLASS_NAME
     - INSTRUMENT_CLASS
     - INSTRUMENT_NAME
-    - CP_PIPE_INCOLLECTION
+    - ACQ_RUN
     - DATASET_SELECTION
     - DATASET_LABEL
     - PAYLOAD_MODIFIER
@@ -17,3 +17,11 @@ b_protocol:
     - TS8/bps_cpFlat.yaml
     - TS8/bps_cpDefects.yaml
     - TS8/bps_cpPtc.yaml
+    - TS8/bps_cpLinearizer.yaml
+
+ptc:
+  pipelines:
+    - TS8/bps_cpPtc_ptc_run.yaml
+    - TS8/bps_cpLinearizer.yaml
+  env_vars:
+    - B_PROTOCOL_RUN

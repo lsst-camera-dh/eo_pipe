@@ -2,10 +2,7 @@ includeConfigs:
   - ${PWD}/bps/bps_butler_config.yaml
   - ${PWD}/bps/cp_pipe/TS8/bps_qgraph_options.yaml
 
-isrTaskName: cpPtcIsr
-extraQgraphOptions: "{isr_QgraphOptions} --config {isrTaskName}:doDeferredCharge=False --config {isrTaskName}:doLinearize=False --config cpPtcSolve:ptcFitType='EXPAPPROXIMATION' --config cpPtcSolve:maxSignalInitialPtcOutlierFit=50000"
-
-pipelineYaml: "${EO_PIPE_DIR}/pipelines/cp_pipe/TS8/cpPtc.yaml"
+pipelineYaml: "${EO_PIPE_DIR}/pipelines/cp_pipe/TS8/cpLinearizer.yaml"
 instrument: ${INSTRUMENT_CLASS}
 
 payload:

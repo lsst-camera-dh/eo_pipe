@@ -9,8 +9,6 @@ payload:
   dataset_selection: ${DATASET_SELECTION}
   dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
-  payload_modifier: ${PAYLOAD_MODIFIER}
-  inCollection: u/{operator}/flat{payload_modifier}_{dataset_label}_{weekly}
-  payloadName: defects{payload_modifier}_{dataset_label}_{weekly}
+  output: u/${USER}/{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}'"
