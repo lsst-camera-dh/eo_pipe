@@ -44,7 +44,7 @@ if dataset_label is None:
 weekly = os.environ['WEEKLY']
 if args.pattern is None:
     user = os.environ['USER']
-    pattern = f"u/{user}/{dataset_label}_{weekly}"
+    pattern = f"u/{user}/eo_*{payload_modifier}_{dataset_label}_{weekly}"
 
 generate_report(repo, pattern, dataset_label, staging_dir=staging_dir,
                 htmldir=htmldir, weekly=weekly+payload_modifier,
