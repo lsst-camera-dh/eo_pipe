@@ -8,7 +8,6 @@ baseline:
     - ACQ_RUN
     - DATASET_SELECTION
     - DATASET_LABEL
-    - PAYLOAD_MODIFIER
 
 b_protocol:
   pipelines:
