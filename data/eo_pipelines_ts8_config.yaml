@@ -26,6 +26,7 @@ b_protocol:
     - TS8/bps_eoCtiVsFlux.yaml
     - TS8/bps_eoPersistence.yaml
     - TS8/bps_eoBiasShifts.yaml
+    - TS8/bps_eoLinearityPlots.yaml
   env_vars:
     - READ_NOISE_BIN_SIZE
 
