@@ -1,0 +1,26 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - ACQ_RUN
+    - DATASET_SELECTION
+    - DATASET_LABEL
+
+b_protocol:
+  pipelines:
+    - TS8/bps_cpBias.yaml
+    - TS8/bps_cpDark.yaml
+    - TS8/bps_cpFlat.yaml
+    - TS8/bps_cpDefects.yaml
+    - TS8/bps_cpPtc.yaml
+    - TS8/bps_cpLinearizer.yaml
+
+ptc:
+  pipelines:
+    - TS8/bps_cpPtc_ptc_run.yaml
+    - TS8/bps_cpLinearizer.yaml
+  env_vars:
+    - B_PROTOCOL_RUN

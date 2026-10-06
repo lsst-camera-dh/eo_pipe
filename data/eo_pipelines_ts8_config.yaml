@@ -1,0 +1,39 @@
+baseline:
+  env_vars:
+    - WEEKLY
+    - BUTLER_CONFIG
+    - INSTRUMENT_CLASS_NAME
+    - INSTRUMENT_CLASS
+    - INSTRUMENT_NAME
+    - ACQ_RUN
+    - DATASET_SELECTION
+    - DATASET_LABEL
+    - DETECTOR_SELECTION
+    - DO_PARALLEL_OSCAN
+    - PAYLOAD_MODIFIER
+    - EO_PIPE_INCOLLECTION
+
+b_protocol:
+  pipelines:
+    - TS8/bps_eoReadNoise.yaml
+    - TS8/bps_eoRaftAmpCorrelations.yaml
+    - TS8/bps_eoBrightDefects.yaml
+    - TS8/bps_eoDarkDefects.yaml
+    - TS8/bps_eoDarkCurrent.yaml
+    - TS8/bps_eoEper.yaml
+    - TS8/bps_eoPtcPlots.yaml
+    - TS8/bps_eoDivisaderoTearing.yaml
+    - TS8/bps_eoBFAnalysis.yaml
+    - TS8/bps_eoCtiVsFlux.yaml
+    - TS8/bps_eoPersistence.yaml
+    - TS8/bps_eoBiasShifts.yaml
+    - TS8/bps_eoLinearityPlots.yaml
+  env_vars:
+    - READ_NOISE_BIN_SIZE
+
+ptc:
+  pipelines:
+    - TS8/bps_eoPtcPlots.yaml
+    - TS8/bps_eoLinearityPlots.yaml
+    - TS8/bps_eoBFAnalysis.yaml
+    - TS8/bps_eoCtiVsFlux.yaml

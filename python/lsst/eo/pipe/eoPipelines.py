@@ -110,7 +110,7 @@ class PipelinesBase:
 
     def _bps_submit_command(self, bps_sub_folder, bps_yaml):
         root_dir = '.'
-        log_file = os.path.join(self.log_dir, bps_yaml.replace('.yaml', '.log'))
+        log_file = os.path.join(self.log_dir, os.path.basename(bps_yaml).replace('.yaml', '.log'))
         if os.path.isfile(log_file):
             os.remove(log_file)
         command = ' '.join(['bps', 'submit',

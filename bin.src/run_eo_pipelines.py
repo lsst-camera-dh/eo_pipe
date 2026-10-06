@@ -26,6 +26,8 @@ if not os.path.isfile(config_file):
     src = os.path.join(os.environ['EO_PIPE_DIR'], 'data', config_file)
     if os.environ['INSTRUMENT_NAME'] == "LATISS":
         src = src.replace("eo_pipelines_config", "eo_pipelines_latiss_config")
+    elif os.environ['INSTRUMENT_NAME'] == "LSST-TS8":
+        src = src.replace("eo_pipelines_config", "eo_pipelines_ts8_config")
     shutil.copy(src, config_file)
 
 eo_pipelines = EoPipelines(config_file, verbose=not args.laconic,
