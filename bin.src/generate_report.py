@@ -52,4 +52,4 @@ generate_report(repo, pattern, dataset_label, staging_dir=staging_dir,
                 collections=collections)
 
 report_folder = os.path.join(htmldir, dataset_label)
-subprocess.check_call(f"chmod o+rx {report_folder} -R")
+subprocess.check_call(f"chmod o+rx {report_folder} -R", shell=True)

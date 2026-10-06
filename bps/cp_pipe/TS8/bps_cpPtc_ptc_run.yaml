@@ -12,7 +12,7 @@ payload:
   dataset_selection: ${DATASET_SELECTION}
   dataset_label: ${DATASET_LABEL}
   weekly: ${WEEKLY}
-  inCollection: u/${USER}/${B_PROTOCOL_RUN}_{weekly}
-  output: u/${USER}/{dataset_label}_{weekly}
+  inCollection: u/{operator}/defects{payload_modifier}_${B_PROTOCOL_RUN}_{weekly}
+  payloadName: ptc{payload_modifier}_{dataset_label}_{weekly}
   butlerConfig: ${BUTLER_CONFIG}
   dataQuery: "instrument='${INSTRUMENT_NAME}' and {dataset_selection} and exposure.observation_type='flat' and exposure.observation_reason='flat' ${DETECTOR_SELECTION}"
